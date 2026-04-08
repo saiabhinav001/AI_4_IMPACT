@@ -2,17 +2,55 @@ import { NextResponse } from "next/server";
 
 const SESSION_COOKIE = "admin_session";
 
-export function middleware(request) {
-  const { pathname } = request.nextUrl;
-  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
+const ADMIN_EMAILS = (
+  process.env.ADMIN_EMAILS ||
+  process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
+  ""
+)
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
 
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login") && !hasSession) {
+function isAllowedAdminEmail(email) {
+  return ADMIN_EMAILS.includes((email || "").trim().toLowerCase());
+}
+
+async function verifyAdminToken(idToken) {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey || !idToken) return false;
+
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      }
+    );
+
+    if (!res.ok) return false;
+    const data = await res.json();
+    const email = data?.users?.[0]?.email;
+    return isAllowedAdminEmail(email);
+  } catch {
+    return false;
+  }
+}
+
+export async function middleware(request) {
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const isAdminSession = await verifyAdminToken(token);
+
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login") && !isAdminSession) {
     const loginUrl = new URL("/admin/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.set({ name: SESSION_COOKIE, value: "", path: "/", maxAge: 0 });
+    return response;
   }
 
-  if (pathname.startsWith("/admin/login") && hasSession) {
+  if (pathname.startsWith("/admin/login") && isAdminSession) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 

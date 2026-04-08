@@ -33,13 +33,15 @@ export default function AdminLogin() {
     setError("");
     setLoading(true);
     try {
-      await loginAdmin(email, password);
+      await loginAdmin();
       router.replace("/admin");
     } catch (err) {
       if (err?.code === "ACCESS_DENIED" || err?.message?.includes("ACCESS_DENIED")) {
         setError(">>> ACCESS DENIED. UNAUTHORIZED ACCOUNT.");
-      } else if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
-        setError(">>> INVALID CREDENTIALS. TRY AGAIN.");
+      } else if (err?.code === "auth/popup-closed-by-user") {
+        setError(">>> LOGIN INTERRUPTED. COMPLETE GOOGLE SIGN-IN.");
+      } else if (err?.code === "auth/cancelled-popup-request") {
+        setError(">>> SIGN-IN REQUEST CANCELLED. TRY AGAIN.");
       } else {
         setError(">>> SYSTEM ERROR: " + (err?.message || "Authentication failed"));
       }
@@ -99,7 +101,6 @@ export default function AdminLogin() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               style={{
                 width: "100%", padding: "0.8rem", background: "var(--bg-dark)",
                 border: "2px solid var(--border-color)", color: "var(--neon-cyan)",
@@ -117,7 +118,6 @@ export default function AdminLogin() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
               style={{
                 width: "100%", padding: "0.8rem", background: "var(--bg-dark)",
                 border: "2px solid var(--border-color)", color: "var(--neon-cyan)",

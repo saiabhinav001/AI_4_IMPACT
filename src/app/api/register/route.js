@@ -90,11 +90,27 @@ export async function POST(request) {
     const cleanPayment = {
       transactionId: sanitizeText(payment.transactionId || ''),
       screenshotUrl: sanitizeText(payment.screenshotUrl || ''),
+      status: sanitizeText(payment.status || ''),
+      paymentId: sanitizeText(payment.paymentId || ''),
+      orderId: sanitizeText(payment.orderId || ''),
+      amount: Number(payment.amount || 0),
     };
 
     if (!cleanTeamName || !cleanCollegeName) {
       return NextResponse.json(
         { success: false, error: 'Team and college name are required' },
+        { status: 400 }
+      );
+    }
+
+    const hasUploadProof = Boolean(cleanPayment.transactionId && cleanPayment.screenshotUrl);
+    const hasRazorpayProof =
+      cleanPayment.status === 'SUCCESS' &&
+      Boolean(cleanPayment.paymentId && cleanPayment.orderId && cleanPayment.amount > 0);
+
+    if (!hasUploadProof && !hasRazorpayProof) {
+      return NextResponse.json(
+        { success: false, error: 'Valid payment proof is required' },
         { status: 400 }
       );
     }

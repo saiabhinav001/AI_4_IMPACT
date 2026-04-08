@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
 const SESSION_COOKIE = "admin_session";
-const DEFAULT_ADMIN_EMAILS = ["admin@ai4impact.com", "cbitnss@cbit.ac.in"];
 
 const ADMIN_EMAILS = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS || DEFAULT_ADMIN_EMAILS.join(",")
+  process.env.ADMIN_EMAILS ||
+  process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
+  ""
 )
   .split(",")
   .map((email) => email.trim().toLowerCase())

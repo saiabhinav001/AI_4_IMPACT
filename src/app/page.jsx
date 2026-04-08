@@ -49,15 +49,10 @@ export default function Home() {
         setIsSubmitting(true);
         const formElement = event.target;
 
-        // Collect team info from form inputs by name
-        const getValue = (name) => {
-            const input = formElement.querySelector(`[name="${name}"]`);
-            return input ? input.value.trim() : "";
-        };
-
-        const teamName = getValue("entry.682122354");
-        const collegeName = getValue("entry.469370867");
-        const transactionId = getValue("entry.440398806");
+        // Collect team info from semantic field IDs (no Google Form entry-id dependency)
+        const teamName = formElement.querySelector("#team-name")?.value?.trim() || "";
+        const collegeName = formElement.querySelector("#college-name")?.value?.trim() || "";
+        const transactionId = formElement.querySelector("#tx-input")?.value?.trim() || "";
 
         // Build participants array from the ACTIVE team-size container only
         const containerId = teamSize === 3 ? "team-size-3-fields" : "team-size-4-fields";
@@ -289,7 +284,7 @@ export default function Home() {
                     <p style={{ marginBottom: '2rem', color: 'var(--neon-cyan)' }}>&gt;&gt;&gt; ENTER CREDENTIALS TO SECURE DATABASE UPLINK</p>
 
                     <form
-                        id="google-form"
+                        id="registration-form"
                         onSubmit={handleSubmit}
                         style={{ display: formSuccess ? 'none' : 'block' }}
                     >
@@ -297,12 +292,12 @@ export default function Home() {
                         <div className="grid-2" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
                             <div>
                                 <label style={{ display: 'block', color: 'var(--text-main)', marginBottom: '0.5rem', fontWeight: 'bold' }}>[ TEAM NAME ]</label>
-                                <input type="text" name="entry.682122354" required
+                                <input type="text" id="team-name" name="teamName" required
                                     style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-dark)', border: '2px solid var(--border-color)', color: 'var(--text-main)', fontFamily: 'var(--font-body)', textTransform: 'uppercase' }} />
                             </div>
                             <div>
                                 <label style={{ display: 'block', color: 'var(--text-main)', marginBottom: '0.5rem', fontWeight: 'bold' }}>[ COLLEGE NAME ]</label>
-                                <input type="text" name="entry.469370867" required
+                                <input type="text" id="college-name" name="collegeName" required
                                     style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-dark)', border: '2px solid var(--border-color)', color: 'var(--text-main)', fontFamily: 'var(--font-body)', textTransform: 'uppercase' }} />
                             </div>
                         </div>
@@ -312,11 +307,11 @@ export default function Home() {
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <label style={{ color: 'var(--text-main)', cursor: 'pointer' }}>
                                     <input type="radio"
-                                        name="entry.1352171013" value="3" checked={teamSize === 3} onChange={() => setTeamSize(3)}
+                                        name="teamSize" value="3" checked={teamSize === 3} onChange={() => setTeamSize(3)}
                                         style={{ marginRight: '0.5rem' }} /> SIZE: 3</label>
                                 <label style={{ color: 'var(--text-main)', cursor: 'pointer' }}>
                                     <input type="radio"
-                                        name="entry.1352171013" value="4" checked={teamSize === 4} onChange={() => setTeamSize(4)}
+                                        name="teamSize" value="4" checked={teamSize === 4} onChange={() => setTeamSize(4)}
                                         style={{ marginRight: '0.5rem' }} /> SIZE: 4</label>
                             </div>
                         </div>
@@ -329,13 +324,13 @@ export default function Home() {
                             <div style={{ marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '3px solid var(--neon-cyan)' }}>
                                 <p style={{ color: 'var(--neon-cyan)', marginBottom: '1rem', fontWeight: 'bold' }}>PARTICIPANT 1 (LEADER)</p>
                                 <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                                    <input type="text" name="entry.2092238618" placeholder="NAME" required={teamSize === 3}
+                                    <input type="text" name="p1Name" placeholder="NAME" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="text" name="entry.1453223653" placeholder="ROLL NO." required={teamSize === 3}
+                                    <input type="text" name="p1Roll" placeholder="ROLL NO." required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="email" name="entry.1556369182" placeholder="EMAIL" required={teamSize === 3}
+                                    <input type="email" name="p1Email" placeholder="EMAIL" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="tel" name="entry.479301265" placeholder="PHONE" required={teamSize === 3}
+                                    <input type="tel" name="p1Phone" placeholder="PHONE" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
@@ -343,13 +338,13 @@ export default function Home() {
                             <div style={{ marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '3px solid var(--text-muted)' }}>
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 'bold' }}>PARTICIPANT 2</p>
                                 <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                                    <input type="text" name="entry.1200946591" placeholder="NAME" required={teamSize === 3}
+                                    <input type="text" name="p2Name" placeholder="NAME" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="text" name="entry.682995650" placeholder="ROLL NO." required={teamSize === 3}
+                                    <input type="text" name="p2Roll" placeholder="ROLL NO." required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="email" name="entry.1667195051" placeholder="EMAIL" required={teamSize === 3}
+                                    <input type="email" name="p2Email" placeholder="EMAIL" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="tel" name="entry.2085555616" placeholder="PHONE" required={teamSize === 3}
+                                    <input type="tel" name="p2Phone" placeholder="PHONE" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
@@ -357,13 +352,13 @@ export default function Home() {
                             <div style={{ marginBottom: '2rem', paddingLeft: '1rem', borderLeft: '3px solid var(--text-muted)' }}>
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 'bold' }}>PARTICIPANT 3</p>
                                 <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                                    <input type="text" name="entry.831650347" placeholder="NAME" required={teamSize === 3}
+                                    <input type="text" name="p3Name" placeholder="NAME" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="text" name="entry.1797257873" placeholder="ROLL NO." required={teamSize === 3}
+                                    <input type="text" name="p3Roll" placeholder="ROLL NO." required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="email" name="entry.592363765" placeholder="EMAIL" required={teamSize === 3}
+                                    <input type="email" name="p3Email" placeholder="EMAIL" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="tel" name="entry.1682645597" placeholder="PHONE" required={teamSize === 3}
+                                    <input type="tel" name="p3Phone" placeholder="PHONE" required={teamSize === 3}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
@@ -375,13 +370,13 @@ export default function Home() {
                             <div style={{ marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '3px solid var(--neon-cyan)' }}>
                                 <p style={{ color: 'var(--neon-cyan)', marginBottom: '1rem', fontWeight: 'bold' }}>PARTICIPANT 1 (LEADER)</p>
                                 <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                                    <input type="text" name="entry.1066704282" placeholder="NAME" required={teamSize === 4}
+                                    <input type="text" name="p1Name4" placeholder="NAME" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="text" name="entry.1921778609" placeholder="ROLL NO." required={teamSize === 4}
+                                    <input type="text" name="p1Roll4" placeholder="ROLL NO." required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="email" name="entry.317140976" placeholder="EMAIL" required={teamSize === 4}
+                                    <input type="email" name="p1Email4" placeholder="EMAIL" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="tel" name="entry.588219429" placeholder="PHONE" required={teamSize === 4}
+                                    <input type="tel" name="p1Phone4" placeholder="PHONE" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
@@ -389,13 +384,13 @@ export default function Home() {
                             <div style={{ marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '3px solid var(--text-muted)' }}>
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 'bold' }}>PARTICIPANT 2</p>
                                 <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                                    <input type="text" name="entry.309199499" placeholder="NAME" required={teamSize === 4}
+                                    <input type="text" name="p2Name4" placeholder="NAME" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="text" name="entry.1462489882" placeholder="ROLL NO." required={teamSize === 4}
+                                    <input type="text" name="p2Roll4" placeholder="ROLL NO." required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="email" name="entry.1642769502" placeholder="EMAIL" required={teamSize === 4}
+                                    <input type="email" name="p2Email4" placeholder="EMAIL" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="tel" name="entry.1439538951" placeholder="PHONE" required={teamSize === 4}
+                                    <input type="tel" name="p2Phone4" placeholder="PHONE" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
@@ -403,13 +398,13 @@ export default function Home() {
                             <div style={{ marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '3px solid var(--text-muted)' }}>
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 'bold' }}>PARTICIPANT 3</p>
                                 <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                                    <input type="text" name="entry.1682043492" placeholder="NAME" required={teamSize === 4}
+                                    <input type="text" name="p3Name4" placeholder="NAME" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="text" name="entry.383213264" placeholder="ROLL NO." required={teamSize === 4}
+                                    <input type="text" name="p3Roll4" placeholder="ROLL NO." required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="email" name="entry.853379407" placeholder="EMAIL" required={teamSize === 4}
+                                    <input type="email" name="p3Email4" placeholder="EMAIL" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="tel" name="entry.1699768095" placeholder="PHONE" required={teamSize === 4}
+                                    <input type="tel" name="p3Phone4" placeholder="PHONE" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
@@ -417,13 +412,13 @@ export default function Home() {
                             <div style={{ marginBottom: '2rem', paddingLeft: '1rem', borderLeft: '3px solid var(--text-muted)' }}>
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 'bold' }}>PARTICIPANT 4</p>
                                 <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                                    <input type="text" name="entry.720594734" placeholder="NAME" required={teamSize === 4}
+                                    <input type="text" name="p4Name4" placeholder="NAME" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="text" name="entry.648020202" placeholder="ROLL NO." required={teamSize === 4}
+                                    <input type="text" name="p4Roll4" placeholder="ROLL NO." required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="email" name="entry.901252480" placeholder="EMAIL" required={teamSize === 4}
+                                    <input type="email" name="p4Email4" placeholder="EMAIL" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                                    <input type="tel" name="entry.533049513" placeholder="PHONE" required={teamSize === 4}
+                                    <input type="tel" name="p4Phone4" placeholder="PHONE" required={teamSize === 4}
                                         style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
@@ -446,7 +441,7 @@ export default function Home() {
 
                             <div>
                                 <label style={{ display: 'block', color: 'var(--text-main)', marginBottom: '0.5rem', fontWeight: 'bold' }}>[ TRANSACTION ID ]</label>
-                                <input type="text" id="tx-input" name="entry.440398806" required
+                                <input type="text" id="tx-input" name="transactionId" required
                                     style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-dark)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)', fontFamily: 'var(--font-body)', textTransform: 'uppercase' }} />
                             </div>
                         </div>

@@ -23,17 +23,45 @@ service cloud.firestore {
         && request.resource.data.participants is list
         && request.resource.data.participants.size() == request.resource.data.teamSize
         && request.resource.data.payment is map
-        && request.resource.data.payment.transactionId is string
-        && request.resource.data.payment.screenshotUrl is string
+        && request.resource.data.payment.keys().hasOnly([
+          "transactionId",
+          "screenshotUrl",
+          "status",
+          "paymentId",
+          "orderId",
+          "amount"
+        ])
+        && (!('transactionId' in request.resource.data.payment) || request.resource.data.payment.transactionId is string)
+        && (!('screenshotUrl' in request.resource.data.payment) || request.resource.data.payment.screenshotUrl is string)
+        && (!('status' in request.resource.data.payment) || request.resource.data.payment.status is string)
+        && (!('paymentId' in request.resource.data.payment) || request.resource.data.payment.paymentId is string)
+        && (!('orderId' in request.resource.data.payment) || request.resource.data.payment.orderId is string)
+        && (!('amount' in request.resource.data.payment) || request.resource.data.payment.amount is number)
+        && (
+          (
+            ('transactionId' in request.resource.data.payment)
+            && request.resource.data.payment.transactionId.size() > 0
+            && ('screenshotUrl' in request.resource.data.payment)
+            && request.resource.data.payment.screenshotUrl.size() > 0
+          )
+          ||
+          (
+            ('status' in request.resource.data.payment)
+            && request.resource.data.payment.status == "SUCCESS"
+            && ('paymentId' in request.resource.data.payment)
+            && request.resource.data.payment.paymentId.size() > 0
+            && ('orderId' in request.resource.data.payment)
+            && request.resource.data.payment.orderId.size() > 0
+            && ('amount' in request.resource.data.payment)
+            && request.resource.data.payment.amount > 0
+          )
+        )
         && request.resource.data.status == "pending"
         && request.resource.data.notes is string;
 
-      // Only authenticated admin emails can READ, UPDATE, DELETE
+      // Only authenticated admins with a custom claim can READ, UPDATE, DELETE
       allow read, update, delete: if request.auth != null
-        && request.auth.token.email in [
-          "admin@ai4impact.com",
-          "cbitnss@cbit.ac.in"
-        ];
+        && request.auth.token.admin == true;
     }
 
     // Block all other collections by default
