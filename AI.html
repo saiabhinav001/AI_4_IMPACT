@@ -72,7 +72,8 @@
             <div class="card cyber-card">
                 <h3 class="text-cyan">[O.P.] 30HRS HACKATHON</h3>
                 <p>In an intensive brainstorming and developing solutions in a competitive environment... we provide
-                    <strong>ready-to-use</strong> templates.</p>
+                    <strong>ready-to-use</strong> templates.
+                </p>
             </div>
             <div class="card cyber-card">
                 <h3 class="text-cyan">[O.P.] SOLUTIONS IMPACT</h3>
@@ -188,35 +189,268 @@
                 function handleGoogleFormLoad() {
                     if (googleFormSubmitted) {
                         document.getElementById("form-success").style.display = "block";
-                        document.getElementById("google-form").reset();
+                        document.getElementById("google-form").style.display = "none";
                         googleFormSubmitted = false;
                     }
                 }
+
+                function mergeDataBeforeSubmit(event) {
+                    const txElement = document.getElementById("tx-input");
+                    const imgUrl = document.getElementById("secret-image-url").value;
+                    if (imgUrl && !txElement.value.includes("IMG:")) {
+                        txElement.value = "IMG: " + imgUrl + " | TX: " + txElement.value;
+                    }
+                    googleFormSubmitted = true;
+                    return true;
+                }
+
+                function toggleTeamSize(size) {
+                    const size3 = document.getElementById("team-size-3-fields");
+                    const size4 = document.getElementById("team-size-4-fields");
+
+                    if (size === 3) {
+                        size3.style.display = "block";
+                        size4.style.display = "none";
+                        toggleRequired(size3, true);
+                        toggleRequired(size4, false);
+                    } else {
+                        size3.style.display = "none";
+                        size4.style.display = "block";
+                        toggleRequired(size3, false);
+                        toggleRequired(size4, true);
+                    }
+                }
+
+                function toggleRequired(container, isRequired) {
+                    const inputs = container.querySelectorAll("input");
+                    inputs.forEach(inp => {
+                        inp.required = isRequired;
+                        if (!isRequired) inp.value = "";
+                    });
+                }
+
+                async function handleFileUpload(event) {
+                    const fileInput = event.target;
+                    const file = fileInput.files[0];
+                    if (!file) return;
+
+                    const statusText = document.getElementById("upload-status");
+                    statusText.innerText = ">>> TRANSMITTING IMAGE TO SECURE VAULT...";
+                    statusText.style.color = "var(--neon-cyan)";
+                    document.getElementById("submit-btn").disabled = true;
+
+                    const formData = new FormData();
+                    formData.append("image", file);
+
+                    try {
+                        const response = await fetch(`https://api.imgbb.com/1/upload?key=0ecd99dfa4798765e3d236c0626175bd`, {
+                            method: "POST",
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            document.getElementById("secret-image-url").value = data.data.url;
+                            statusText.innerText = ">>> IMAGE UPLOAD COMPLETE. SECURE LINK ESTABLISHED.";
+                            statusText.style.color = "var(--neon-pink)";
+                            document.getElementById("submit-btn").disabled = false;
+                        } else {
+                            statusText.innerText = "[!] UPLOAD FAILED. TRY AGAIN.";
+                            statusText.style.color = "var(--neon-red)";
+                            document.getElementById("submit-btn").disabled = false;
+                        }
+                    } catch (error) {
+                        statusText.innerText = "[!] SECURE CONNECTION LOST. TRY AGAIN.";
+                        statusText.style.color = "var(--neon-red)";
+                        document.getElementById("submit-btn").disabled = false;
+                    }
+                }
+
+                document.addEventListener("DOMContentLoaded", () => {
+                    toggleTeamSize(3);
+                });
             </script>
-            <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleGoogleFormLoad()"></iframe>
 
-            <form id="google-form" action="https://docs.google.com/forms/d/e/1FAIpQLSeZKTI8IQsIHDg3FuieIUSQRBoAsC_OQADjHcPrKD0a_0ZTHg/formResponse" method="POST" target="hidden_iframe" onsubmit="googleFormSubmitted=true;">
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[ FULL NAME ]</label>
-                    <input type="text" name="entry.2092238618" required style="width:100%; padding:1rem; background:var(--bg-dark); border:2px solid var(--border-color); color:var(--text-main); font-family:var(--font-body); text-transform:uppercase;">
-                </div>
-                
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[ EMAIL ADDRESS ]</label>
-                    <input type="email" name="entry.1556369182" required style="width:100%; padding:1rem; background:var(--bg-dark); border:2px solid var(--border-color); color:var(--text-main); font-family:var(--font-body); text-transform:uppercase;">
+            <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"
+                onload="handleGoogleFormLoad()"></iframe>
+
+            <form id="google-form"
+                action="https://docs.google.com/forms/d/e/1FAIpQLSf_UBTPQCmrSEoEUC5ajacLCzudl-Jm28yvIkF7KgJZdwUU5g/formResponse"
+                method="POST" target="_blank">
+
+                <div class="grid-2" style="margin-bottom: 2rem; gap:1.5rem;">
+                    <div>
+                        <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[
+                            TEAM NAME ]</label>
+                        <input type="text" name="entry.682122354" required
+                            style="width:100%; padding:0.8rem; background:var(--bg-dark); border:2px solid var(--border-color); color:var(--text-main); font-family:var(--font-body); text-transform:uppercase;">
+                    </div>
+                    <div>
+                        <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[
+                            COLLEGE NAME ]</label>
+                        <input type="text" name="entry.469370867" required
+                            style="width:100%; padding:0.8rem; background:var(--bg-dark); border:2px solid var(--border-color); color:var(--text-main); font-family:var(--font-body); text-transform:uppercase;">
+                    </div>
                 </div>
 
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[ CONTACT NUMBER ]</label>
-                    <input type="tel" name="entry.479301265" required style="width:100%; padding:1rem; background:var(--bg-dark); border:2px solid var(--border-color); color:var(--text-main); font-family:var(--font-body); text-transform:uppercase;">
+                <div style="margin-bottom: 2rem;">
+                    <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[ TEAM
+                        SIZE ]</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <label style="color:var(--text-main); cursor:pointer;"><input type="radio"
+                                name="entry.1352171013" value="3" checked onchange="toggleTeamSize(3)"
+                                style="margin-right:0.5rem;"> SIZE: 3</label>
+                        <label style="color:var(--text-main); cursor:pointer;"><input type="radio"
+                                name="entry.1352171013" value="4" onchange="toggleTeamSize(4)"
+                                style="margin-right:0.5rem;"> SIZE: 4</label>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn" style="width: 100%; text-align: center;">TRANSMIT DATA()</button>
-                <div id="form-success"
-                    style="display:none; margin-top:2rem; padding:1rem; border:2px dashed var(--neon-pink); color:var(--neon-pink); background:rgba(255,0,255,0.1); font-weight:bold; text-align:center;">
-                    >>> TRANSMISSION RECEIVED. SECURE REGISTRATION COMPLETED AND SYNCED TO GOOGLE SHEETS.
+                <hr style="border:1px dashed var(--neon-pink); margin-bottom: 2rem;">
+
+                <div id="team-size-3-fields">
+                    <h3 class="text-pink" style="margin-bottom:1.5rem;">[ PARTICIPANT DATA: SIZE 3 ]</h3>
+
+                    <div style="margin-bottom:1rem; padding-left:1rem; border-left:3px solid var(--neon-cyan);">
+                        <p style="color:var(--neon-cyan); margin-bottom:1rem; font-weight:bold;">PARTICIPANT 1 (LEADER)
+                        </p>
+                        <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+                            <input type="text" name="entry.2092238618" placeholder="NAME" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="text" name="entry.1453223653" placeholder="ROLL NO." required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="email" name="entry.1556369182" placeholder="EMAIL" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="tel" name="entry.479301265" placeholder="PHONE" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:1rem; padding-left:1rem; border-left:3px solid var(--text-muted);">
+                        <p style="color:var(--text-muted); margin-bottom:1rem; font-weight:bold;">PARTICIPANT 2</p>
+                        <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+                            <input type="text" name="entry.1200946591" placeholder="NAME" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="text" name="entry.682995650" placeholder="ROLL NO." required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="email" name="entry.1667195051" placeholder="EMAIL" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="tel" name="entry.2085555616" placeholder="PHONE" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:2rem; padding-left:1rem; border-left:3px solid var(--text-muted);">
+                        <p style="color:var(--text-muted); margin-bottom:1rem; font-weight:bold;">PARTICIPANT 3</p>
+                        <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+                            <input type="text" name="entry.831650347" placeholder="NAME" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="text" name="entry.1797257873" placeholder="ROLL NO." required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="email" name="entry.592363765" placeholder="EMAIL" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="tel" name="entry.1682645597" placeholder="PHONE" required
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                        </div>
+                    </div>
                 </div>
+
+                <div id="team-size-4-fields" style="display:none;">
+                    <h3 class="text-pink" style="margin-bottom:1.5rem;">[ PARTICIPANT DATA: SIZE 4 ]</h3>
+
+                    <div style="margin-bottom:1rem; padding-left:1rem; border-left:3px solid var(--neon-cyan);">
+                        <p style="color:var(--neon-cyan); margin-bottom:1rem; font-weight:bold;">PARTICIPANT 1 (LEADER)
+                        </p>
+                        <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+                            <input type="text" name="entry.1066704282" placeholder="NAME"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="text" name="entry.1921778609" placeholder="ROLL NO."
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="email" name="entry.317140976" placeholder="EMAIL"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="tel" name="entry.588219429" placeholder="PHONE"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:1rem; padding-left:1rem; border-left:3px solid var(--text-muted);">
+                        <p style="color:var(--text-muted); margin-bottom:1rem; font-weight:bold;">PARTICIPANT 2</p>
+                        <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+                            <input type="text" name="entry.309199499" placeholder="NAME"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="text" name="entry.1462489882" placeholder="ROLL NO."
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="email" name="entry.1642769502" placeholder="EMAIL"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="tel" name="entry.1439538951" placeholder="PHONE"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:1rem; padding-left:1rem; border-left:3px solid var(--text-muted);">
+                        <p style="color:var(--text-muted); margin-bottom:1rem; font-weight:bold;">PARTICIPANT 3</p>
+                        <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+                            <input type="text" name="entry.1682043492" placeholder="NAME"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="text" name="entry.383213264" placeholder="ROLL NO."
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="email" name="entry.853379407" placeholder="EMAIL"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="tel" name="entry.1699768095" placeholder="PHONE"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:2rem; padding-left:1rem; border-left:3px solid var(--text-muted);">
+                        <p style="color:var(--text-muted); margin-bottom:1rem; font-weight:bold;">PARTICIPANT 4</p>
+                        <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+                            <input type="text" name="entry.720594734" placeholder="NAME"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="text" name="entry.648020202" placeholder="ROLL NO."
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="email" name="entry.901252480" placeholder="EMAIL"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                            <input type="tel" name="entry.533049513" placeholder="PHONE"
+                                style="padding:0.8rem; background:transparent; border:1px solid var(--border-color); color:var(--text-main);">
+                        </div>
+                    </div>
+                </div>
+
+                <hr style="border:1px dashed var(--neon-cyan); margin-bottom: 2rem;">
+
+                <div>
+                    <h3 class="text-cyan" style="margin-bottom:1.5rem;">[ PAYMENT AUTHENTICATION ]</h3>
+
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[
+                            UPLOAD SCREENSHOT ]</label>
+                        <input type="file" accept="image/*" id="file-uploader" required
+                            onchange="handleFileUpload(event)"
+                            style="width:100%; padding:0.8rem; background:var(--bg-dark); border:2px solid var(--neon-cyan); color:var(--text-main); cursor:pointer;">
+                        <p id="upload-status"
+                            style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted); font-weight:bold;">
+                        </p>
+
+                        <!-- The stealth URL will be appended to the Transaction ID on Submit -->
+                        <input type="hidden" id="secret-image-url">
+                    </div>
+
+                    <div>
+                        <label style="display:block; color:var(--text-main); margin-bottom:0.5rem; font-weight:bold;">[
+                            TRANSACTION ID ]</label>
+                        <input type="text" id="tx-input" name="entry.440398806" required
+                            style="width:100%; padding:0.8rem; background:var(--bg-dark); border:2px solid var(--neon-cyan); color:var(--neon-cyan); font-family:var(--font-body); text-transform:uppercase;">
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn"
+                    style="width: 100%; text-align: center; margin-top:2rem;">TRANSMIT COMPLETION()</button>
             </form>
+
+            <div id="form-success"
+                style="display:none; margin-top:2rem; padding:1rem; border:2px dashed var(--neon-pink); color:var(--neon-pink); background:rgba(255,0,255,0.1); font-weight:bold; text-align:center;">
+                >>> TRANSMISSION RECEIVED. SECURE REGISTRATION COMPLETED AND SYNCED TO GOOGLE SHEETS.
+            </div>
         </div>
     </section>
 
@@ -227,7 +461,8 @@
         <div class="contact-box">
             <div class="contact-item">
                 <p><strong>AKHILESH:</strong> 63034 87822 | <strong>NIKHIL:</strong> 93814 37649 |
-                    <strong>PRAGNA:</strong> 84988 98884</p>
+                    <strong>PRAGNA:</strong> 84988 98884
+                </p>
             </div>
             <div class="contact-item">
                 <p><span class="text-cyan">MAIL:</span> CBITNSS@CBIT.AC.IN</p>
