@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { adminAuth } from "../../../../../firebaseAdmin";
 
 const SESSION_COOKIE = "admin_session";
 
@@ -16,36 +17,15 @@ function isAllowedAdminEmail(email) {
 }
 
 async function lookupFirebaseUser(idToken) {
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Server is missing Firebase API key.");
-  }
-
-  const res = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
-      cache: "no-store",
-    }
-  );
-
-  if (!res.ok) {
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(idToken, true);
+    return {
+      email: decodedToken.email || "",
+      isAdminClaim: decodedToken.admin === true,
+    };
+  } catch {
     return null;
   }
-
-  const data = await res.json();
-  const user = data?.users?.[0];
-
-  if (!user?.email) {
-    return null;
-  }
-
-  return {
-    email: user.email,
-  };
 }
 
 export async function POST(request) {
@@ -62,7 +42,7 @@ export async function POST(request) {
 
     const user = await lookupFirebaseUser(idToken);
 
-    if (!user || !isAllowedAdminEmail(user.email)) {
+    if (!user || (!user.isAdminClaim && !isAllowedAdminEmail(user.email))) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
