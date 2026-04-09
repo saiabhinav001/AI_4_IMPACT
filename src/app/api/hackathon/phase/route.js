@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "../../../../../lib/admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { PHASE_LIST } from "../../../../../lib/constants/phases";
 import { ROLES } from "../../../../../lib/constants/roles";

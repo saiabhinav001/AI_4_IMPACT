@@ -9,11 +9,6 @@ export default function Home() {
     const [secretImageUrl, setSecretImageUrl] = useState("");
     const [formSuccess, setFormSuccess] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [workshopUploadStatus, setWorkshopUploadStatus] = useState("");
-    const [isWorkshopUploading, setIsWorkshopUploading] = useState(false);
-    const [workshopImageUrl, setWorkshopImageUrl] = useState("");
-    const [isWorkshopSubmitting, setIsWorkshopSubmitting] = useState(false);
-    const [workshopSuccess, setWorkshopSuccess] = useState(false);
 
     const handleFileUpload = async (event) => {
         const file = event.target.files[0];
@@ -42,7 +37,7 @@ export default function Home() {
             } else {
                 setUploadStatus(`[!] UPLOAD FAILED. TRY AGAIN.`);
             }
-        } catch (error) {
+        } catch {
             setUploadStatus("[!] SECURE CONNECTION LOST. TRY AGAIN.");
         } finally {
             setIsUploading(false);
@@ -114,78 +109,12 @@ export default function Home() {
         }
     };
 
-    const handleWorkshopFileUpload = async (event) => {
-        const file = event.target.files[0];
-        if (!file) {
-            setWorkshopImageUrl("");
-            setWorkshopUploadStatus("");
-            return;
-        }
-
-        setWorkshopUploadStatus(">>> TRANSMITTING IMAGE TO SECURE VAULT...");
-        setIsWorkshopUploading(true);
-        const formData = new FormData();
-        formData.append("image", file);
-
-        try {
-            const response = await fetch("/api/upload", {
-                method: "POST",
-                body: formData
-            });
-            const data = await response.json();
-            if (data.success && data.url) {
-                setWorkshopImageUrl(data.url);
-                setWorkshopUploadStatus(">>> IMAGE UPLOAD COMPLETE. SECURE LINK ESTABLISHED.");
-            } else {
-                setWorkshopUploadStatus("[!] UPLOAD FAILED. TRY AGAIN.");
-            }
-        } catch {
-            setWorkshopUploadStatus("[!] SECURE CONNECTION LOST. TRY AGAIN.");
-        } finally {
-            setIsWorkshopUploading(false);
-        }
-    };
-
-    const handleWorkshopSubmit = async (event) => {
-        event.preventDefault();
-        setIsWorkshopSubmitting(true);
-        const formElement = event.target;
-        const payload = {
-            fullName: formElement.querySelector("#workshop-name")?.value?.trim() || "",
-            email: formElement.querySelector("#workshop-email")?.value?.trim() || "",
-            college: formElement.querySelector("#workshop-college")?.value?.trim() || "",
-            phone: formElement.querySelector("#workshop-phone")?.value?.trim() || "",
-            paymentReference: formElement.querySelector("#workshop-tx")?.value?.trim() || "",
-            paymentScreenshotUrl: workshopImageUrl || "",
-        };
-
-        try {
-            const response = await fetch("/api/workshop-register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            const data = await response.json();
-            if (data.success) {
-                setWorkshopSuccess(true);
-                formElement.reset();
-                setWorkshopImageUrl("");
-                setWorkshopUploadStatus("");
-            } else {
-                alert("Workshop registration rejected. Error: " + data.error);
-            }
-        } catch {
-            alert("Workshop registration failed.");
-        } finally {
-            setIsWorkshopSubmitting(false);
-        }
-    };
-
     return (
         <>
             <nav className="navbar">
                 <div className="logo">AI<span>4</span>Impact <span className="decal-barcode">|| | || |</span></div>
                 <div className="nav-links">
+                    <a href="/auth">[ AUTH ]</a>
                     <a href="#about">[ ABOUT ]</a>
                     <a href="#objectives">[ OBJECTIVES ]</a>
                     <a href="#timeline">[ TIMELINE ]</a>
@@ -201,9 +130,11 @@ export default function Home() {
                     <h1>AI <span className="text-pink">4</span> IMPACT</h1>
                     <p className="tagline">/// LEARN. BUILD. IMPACT.</p>
                     <p className="dates">DATE: 15.04.26 - 18.04.26 <span className="text-red">!WARNING!</span></p>
-                    <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-                        <a href="#register" className="btn">REGISTER_HACKATHON()</a>
-                        <a href="#workshop-register" className="btn">REGISTER_WORKSHOP()</a>
+                    <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                        <a href="#register" className="btn">INITIATE_REGISTRATION()</a>
+                        <a href="/auth" className="btn" style={{ boxShadow: '5px 5px 0 var(--neon-pink)' }}>
+                            OPEN_AUTH_PORTAL()
+                        </a>
                     </div>
                 </div>
                 <div className="hero-graphic">
@@ -521,9 +452,9 @@ export default function Home() {
                             </div>
                         </div>
 
-                        <button type="submit" id="submit-btn" className="btn" disabled={isUploading}
-                            style={{ width: '100%', textAlign: 'center', marginTop: '2rem', opacity: isUploading ? 0.5 : 1 }}>
-                            TRANSMIT COMPLETION()
+                        <button type="submit" id="submit-btn" className="btn" disabled={isUploading || isSubmitting}
+                            style={{ width: '100%', textAlign: 'center', marginTop: '2rem', opacity: (isUploading || isSubmitting) ? 0.5 : 1 }}>
+                            {isSubmitting ? 'TRANSMITTING...' : 'TRANSMIT COMPLETION()'}
                         </button>
                     </form>
 
@@ -531,53 +462,6 @@ export default function Home() {
                         <div id="form-success"
                             style={{ marginTop: '2rem', padding: '1rem', border: '2px dashed var(--neon-pink)', color: 'var(--neon-pink)', background: 'rgba(255,0,255,0.1)', fontWeight: 'bold', textAlign: 'center' }}>
                             &gt;&gt;&gt; TRANSMISSION RECEIVED. SECURE REGISTRATION COMPLETED AND SYNCED TO DATABASE.
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            <section id="workshop-register" className="section">
-                <div className="section-header">
-                    <h2>/// WORKSHOP_REGISTRATION</h2>
-                </div>
-                <div className="cyber-card" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'left' }}>
-                    <p style={{ marginBottom: '2rem', color: 'var(--neon-cyan)' }}>&gt;&gt;&gt; INDIVIDUAL WORKSHOP UPLINK</p>
-                    <form onSubmit={handleWorkshopSubmit} style={{ display: workshopSuccess ? 'none' : 'block' }}>
-                        <div className="grid-2" style={{ marginBottom: '1rem', gap: '1rem' }}>
-                            <input id="workshop-name" type="text" placeholder="FULL NAME" required
-                                style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                            <input id="workshop-email" type="email" placeholder="EMAIL" required
-                                style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                            <input id="workshop-college" type="text" placeholder="COLLEGE NAME" required
-                                style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                            <input id="workshop-phone" type="tel" placeholder="PHONE" required
-                                style={{ padding: '0.8rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} />
-                        </div>
-
-                        <div style={{ marginTop: '1rem' }}>
-                            <label style={{ display: 'block', color: 'var(--text-main)', marginBottom: '0.5rem', fontWeight: 'bold' }}>[ UPLOAD SCREENSHOT ]</label>
-                            <input type="file" accept="image/*" required onChange={handleWorkshopFileUpload}
-                                style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-dark)', border: '2px solid var(--neon-cyan)', color: 'var(--text-main)', cursor: 'pointer' }} />
-                            <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: workshopUploadStatus.includes('FAILED') || workshopUploadStatus.includes('LOST') ? 'var(--danger-red)' : (workshopUploadStatus.includes('COMPLETE') ? 'var(--neon-pink)' : 'var(--neon-cyan)'), fontWeight: 'bold' }}>
-                                {workshopUploadStatus}
-                            </p>
-                        </div>
-
-                        <div style={{ marginTop: '1rem' }}>
-                            <label style={{ display: 'block', color: 'var(--text-main)', marginBottom: '0.5rem', fontWeight: 'bold' }}>[ TRANSACTION ID ]</label>
-                            <input id="workshop-tx" type="text" required
-                                style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-dark)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)', fontFamily: 'var(--font-body)', textTransform: 'uppercase' }} />
-                        </div>
-
-                        <button type="submit" className="btn" disabled={isWorkshopUploading || isWorkshopSubmitting}
-                            style={{ width: '100%', textAlign: 'center', marginTop: '2rem', opacity: (isWorkshopUploading || isWorkshopSubmitting) ? 0.5 : 1 }}>
-                            {isWorkshopSubmitting ? "TRANSMITTING..." : "REGISTER_WORKSHOP()"}
-                        </button>
-                    </form>
-
-                    {workshopSuccess && (
-                        <div style={{ marginTop: '2rem', padding: '1rem', border: '2px dashed var(--neon-pink)', color: 'var(--neon-pink)', background: 'rgba(255,0,255,0.1)', fontWeight: 'bold', textAlign: 'center' }}>
-                            &gt;&gt;&gt; WORKSHOP REGISTRATION RECEIVED. AWAIT ADMIN VERIFICATION.
                         </div>
                     )}
                 </div>

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthChange, logoutAdmin } from "../../../lib/auth";
-import { PHASE_LIST } from "../../../lib/constants/phases";
+import { getUserRole, logoutAdmin, onUserAuthChange } from "../../../lib/auth";
+import { ROLES } from "../../../lib/constants/roles";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Legend
@@ -11,6 +11,97 @@ import {
 
 const CHART_COLORS = ["#00FFFF", "#FF00FF", "#B026FF", "#FF2A2A", "#00FF88"];
 const PAGE_SIZE = 15;
+
+function getLeaderParticipant(registration) {
+  return Array.isArray(registration?.participants) ? registration.participants[0] || null : null;
+}
+
+function getLeaderName(registration) {
+  return getLeaderParticipant(registration)?.name || "—";
+}
+
+function getLeaderContact(registration) {
+  const leader = getLeaderParticipant(registration);
+  return leader?.phone || leader?.email || "—";
+}
+
+function mapRegistrationItem(item) {
+  const registrationType = item?.registration_type;
+  const registration = item?.registration || {};
+
+  if (registrationType === "workshop") {
+    const participant = registration?.participant || {};
+    const workshopId = registration?.workshop_id || item?.transaction_id || "";
+    const fallbackName = workshopId
+      ? `WORKSHOP_${String(workshopId).slice(0, 6).toUpperCase()}`
+      : "WORKSHOP";
+    const hasParticipant =
+      Boolean(participant?.name) || Boolean(participant?.email) || Boolean(participant?.phone);
+
+    return {
+      id: item?.transaction_id,
+      transactionDocId: item?.transaction_id,
+      registrationType,
+      teamName: participant?.name || fallbackName,
+      collegeName: participant?.college || "",
+      teamSize: 1,
+      participants: hasParticipant
+        ? [
+            {
+              name: participant?.name || "",
+              roll: "",
+              email: participant?.email || "",
+              phone: participant?.phone || "",
+            },
+          ]
+        : [],
+      payment: {
+        transactionId: item?.upi_transaction_id || "",
+        screenshotUrl: item?.screenshot_url || "",
+      },
+      status: item?.status || "pending",
+      createdAt: item?.created_at || null,
+      notes: item?.status === "verified" ? "Payment verified" : "",
+      accessCredentials: null,
+    };
+  }
+
+  const members = Array.isArray(registration?.members) ? registration.members : [];
+  const rawAccessCredentials = registration?.access_credentials || null;
+  const accessCredentials = rawAccessCredentials
+    ? {
+        teamId: rawAccessCredentials?.team_id || "",
+        password: "",
+        passwordVersion: Number(rawAccessCredentials?.password_version || 0),
+        leaderName: rawAccessCredentials?.leader_name || "",
+        leaderEmail: rawAccessCredentials?.leader_email || "",
+        leaderPhone: rawAccessCredentials?.leader_phone || "",
+      }
+    : null;
+
+  return {
+    id: item?.transaction_id,
+    transactionDocId: item?.transaction_id,
+    registrationType: registrationType || "hackathon",
+    teamName: registration?.team_name || "",
+    collegeName: registration?.college || "",
+    teamSize: Number(registration?.team_size) || members.length || null,
+    participants: members.map((member) => ({
+      name: member?.name || "",
+      roll: "",
+      email: member?.email || "",
+      phone: member?.phone || "",
+    })),
+    payment: {
+      transactionId: item?.upi_transaction_id || "",
+      screenshotUrl: item?.screenshot_url || "",
+    },
+    status: item?.status || "pending",
+    createdAt: item?.created_at || null,
+    notes: item?.status === "verified" ? "Payment verified" : "",
+    accessCredentials,
+  };
+}
 
 export default function AdminDashboard() {
   const [user, setUser] = useState(null);
@@ -26,8 +117,10 @@ export default function AdminDashboard() {
   const [noteText, setNoteText] = useState("");
   const [updateBusy, setUpdateBusy] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [phaseConfig, setPhaseConfig] = useState(null);
-  const [submissions, setSubmissions] = useState([]);
+  const [previewScreenshot, setPreviewScreenshot] = useState({
+    url: "",
+    label: "PAYMENT SCREENSHOT",
+  });
   const router = useRouter();
 
   const toDateSafe = useCallback((value) => {
@@ -38,88 +131,113 @@ export default function AdminDashboard() {
 
   // ── Auth guard ──
   useEffect(() => {
-    const unsub = onAuthChange(
+    let isActive = true;
+
+    const unsub = onUserAuthChange(
       (u) => {
-        if (u) {
-          setUser(u);
-          setLoading(false);
-        } else {
-          setLoading(false);
-          router.replace("/admin/login");
-        }
+        const resolveRole = async () => {
+          if (!u) {
+            if (!isActive) return;
+            setLoading(false);
+            router.replace("/auth");
+            return;
+          }
+
+          const role = await getUserRole(u);
+          if (!isActive) return;
+
+          if (role === ROLES.ADMIN) {
+            setUser(u);
+            setLoading(false);
+          } else {
+            setLoading(false);
+            router.replace("/auth?reason=admin-only");
+          }
+        };
+
+        void resolveRole();
       },
       () => {
+        if (!isActive) return;
         setLoading(false);
-        router.replace("/admin/login");
+        router.replace("/auth");
       }
     );
-    return () => unsub();
+
+    return () => {
+      isActive = false;
+      unsub();
+    };
   }, [router]);
 
-  const normalizeTeam = useCallback((team) => {
-    const members = Array.isArray(team?.members) ? team.members : [];
-    return {
-      id: team.id,
-      teamName: team.teamName || "",
-      collegeName: members[0]?.college || "",
-      teamSize: members.length,
-      participants: members.map((m) => ({
-        name: m?.name || "",
-        roll: m?.roll || "",
-        email: m?.email || "",
-        phone: m?.phone || "",
-      })),
-      payment: {
-        transactionId: team?.payment?.reference || "",
-        screenshotUrl: team?.payment?.screenshotUrl || "",
-        status: (team?.payment?.status || "PENDING").toLowerCase(),
+  const fetchRegistrations = useCallback(async () => {
+    if (!user) return;
+
+    const idToken = await user.getIdToken();
+    const response = await fetch("/api/admin/registrations", {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
       },
-      status: (team?.payment?.status || "PENDING").toLowerCase() === "verified" ? "verified" : "pending",
-      notes: team?.notes || "",
-      createdAt: team?.createdAt || null,
-      submission: team?.submission || {},
-    };
-  }, []);
+      cache: "no-store",
+    });
 
-  const loadAdminData = useCallback(async () => {
-    try {
-      const [regsRes, phaseRes, submissionsRes] = await Promise.all([
-        fetch("/api/admin/registrations", { cache: "no-store" }),
-        fetch("/api/hackathon/phase", { cache: "no-store" }),
-        fetch("/api/admin/submissions", { cache: "no-store" }),
-      ]);
-      const regsData = await regsRes.json();
-      const phaseData = await phaseRes.json();
-      const submissionsData = await submissionsRes.json();
+    const data = await response.json().catch(() => ({}));
 
-      if (!regsRes.ok || !regsData?.success) {
-        throw new Error(regsData?.error || "Failed to load registrations.");
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error("Admin custom claim is missing. Please set { admin: true } for this user.");
       }
 
-      setRegistrations((regsData.teams || []).map(normalizeTeam));
-      setPhaseConfig(phaseData?.config || null);
-      setSubmissions(Array.isArray(submissionsData?.submissions) ? submissionsData.submissions : []);
-      setDataError("");
-    } catch (error) {
-      setDataError(error?.message || "Failed to sync dashboard data.");
+      throw new Error(data?.error || "Failed to sync dashboard data.");
     }
-  }, [normalizeTeam]);
 
+    const mapped = Array.isArray(data?.registrations)
+      ? data.registrations.map((item) => mapRegistrationItem(item))
+      : [];
+
+    setRegistrations(mapped);
+    setDataError("");
+  }, [user]);
+
+  // ── Admin API sync ──
   useEffect(() => {
     if (!user) return;
-    loadAdminData();
-    const timer = setInterval(loadAdminData, 10000);
-    return () => clearInterval(timer);
-  }, [user, loadAdminData]);
+
+    let isCancelled = false;
+
+    const syncOnce = async () => {
+      try {
+        await fetchRegistrations();
+      } catch (error) {
+        if (!isCancelled) {
+          setDataError(error?.message || "Failed to sync dashboard data.");
+        }
+      }
+    };
+
+    void syncOnce();
+    const intervalId = setInterval(() => {
+      void syncOnce();
+    }, 15000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [user, fetchRegistrations]);
 
   // ── Filtering + Search ──
   const filtered = useMemo(() => {
     return registrations.filter((r) => {
+      const leader = getLeaderParticipant(r);
       const matchSearch =
         !searchTerm ||
         r.teamName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.collegeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.payment?.transactionId?.toLowerCase().includes(searchTerm.toLowerCase());
+        r.payment?.transactionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        leader?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        leader?.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        leader?.email?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchSize = filterSize === "all" || r.teamSize === Number(filterSize);
       const matchCollege = filterCollege === "all" || r.collegeName === filterCollege;
       return matchSearch && matchSize && matchCollege;
@@ -216,8 +334,10 @@ export default function AdminDashboard() {
     const rows = registrations.map((r) => {
       const dateObj = toDateSafe(r.createdAt);
       const date = dateObj ? dateObj.toISOString() : "N/A";
+      const leaderName = getLeaderName(r);
+      const leaderContact = getLeaderContact(r);
       const row = [
-        r.teamName, r.collegeName, r.teamSize, r.status || "pending",
+        r.teamName, leaderName, leaderContact, r.collegeName, r.teamSize, r.status || "pending",
         r.payment?.transactionId || "", r.payment?.screenshotUrl || "",
         date, r.notes || "",
       ];
@@ -241,21 +361,21 @@ export default function AdminDashboard() {
     URL.revokeObjectURL(url);
   }, [registrations, toDateSafe]);
 
+  const openScreenshotPreview = useCallback((url, label = "PAYMENT SCREENSHOT") => {
+    if (!url) return;
+    setPreviewScreenshot({ url, label });
+  }, []);
+
+  const closeScreenshotPreview = useCallback(() => {
+    setPreviewScreenshot({ url: "", label: "PAYMENT SCREENSHOT" });
+  }, []);
+
   // ── Status / Notes update ──
-  const updateTeamField = async (id, payload) => {
-    const response = await fetch("/api/admin/registrations", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target: "team", id, ...payload }),
-    });
-    const data = await response.json();
-    if (!response.ok || !data?.success) {
-      throw new Error(data?.error || "Update failed.");
-    }
-  };
 
   useEffect(() => {
-    setNoteText(selectedTeam?.notes || "");
+    setNoteText(
+      selectedTeam?.notes || (selectedTeam?.status === "verified" ? "Payment verified" : "")
+    );
     setActionError("");
   }, [selectedTeam]);
 
@@ -263,65 +383,166 @@ export default function AdminDashboard() {
     try {
       await logoutAdmin();
     } finally {
-      router.replace("/admin/login");
+      router.replace("/auth");
     }
   }, [router]);
 
   const handleStatusToggle = useCallback(async () => {
-    if (!selectedTeam || updateBusy) return;
-    const newStatus = selectedTeam.status === "verified" ? "pending" : "verified";
+    if (!selectedTeam || !user || updateBusy) return;
+    const action = selectedTeam.status === "verified" ? "reject" : "verify";
+    const newStatus = action === "verify" ? "verified" : "rejected";
+    const nextNotes = newStatus === "verified" ? "Payment verified" : "";
+
     setUpdateBusy(true);
     setActionError("");
+
     try {
-      await updateTeamField(selectedTeam.id, {
-        status: newStatus === "verified" ? "VERIFIED" : "PENDING",
+      const idToken = await user.getIdToken();
+      const response = await fetch("/api/admin/verify-payment", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transaction_id: selectedTeam.transactionDocId || selectedTeam.id,
+          action,
+        }),
       });
-      setSelectedTeam((prev) => (prev ? { ...prev, status: newStatus } : prev));
-      loadAdminData();
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to update status.");
+      }
+
+      const nextAccessCredentials = data?.access_credentials
+        ? {
+            teamId: data.access_credentials.team_id || "",
+            password: data.access_credentials.password || "",
+            passwordVersion: Number(data.access_credentials.password_version || 0),
+            leaderName: data.access_credentials.leader_name || "",
+            leaderEmail: data.access_credentials.leader_email || "",
+            leaderPhone: data.access_credentials.leader_phone || "",
+          }
+        : null;
+
+      setRegistrations((prev) =>
+        prev.map((item) =>
+          item.id === selectedTeam.id
+            ? {
+                ...item,
+                status: newStatus,
+                notes: nextNotes,
+                accessCredentials: nextAccessCredentials || item.accessCredentials,
+              }
+            : item
+        )
+      );
+      setSelectedTeam((prev) => (
+        prev
+          ? {
+              ...prev,
+              status: newStatus,
+              notes: nextNotes,
+              accessCredentials: nextAccessCredentials || prev.accessCredentials,
+            }
+          : prev
+      ));
+      setNoteText(nextNotes);
     } catch (err) {
       setActionError(err?.message || "Failed to update status.");
     } finally {
       setUpdateBusy(false);
     }
-  }, [selectedTeam, updateBusy]);
+  }, [selectedTeam, updateBusy, user]);
+
+  const handleRegenerateCredentials = useCallback(async () => {
+    if (!selectedTeam || !user || updateBusy) return;
+
+    if (selectedTeam.registrationType !== "hackathon") {
+      setActionError("Credentials apply only to hackathon teams.");
+      return;
+    }
+
+    if (selectedTeam.status !== "verified") {
+      setActionError("Payment must be VERIFIED before regenerating credentials.");
+      return;
+    }
+
+    setUpdateBusy(true);
+    setActionError("");
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch("/api/admin/regenerate-team-credentials", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transaction_id: selectedTeam.transactionDocId || selectedTeam.id,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to regenerate credentials.");
+      }
+
+      const regeneratedCredentials = data?.access_credentials
+        ? {
+            teamId: data.access_credentials.team_id || "",
+            password: data.access_credentials.password || "",
+            passwordVersion: Number(data.access_credentials.password_version || 0),
+            leaderName: data.access_credentials.leader_name || "",
+            leaderEmail: data.access_credentials.leader_email || "",
+            leaderPhone: data.access_credentials.leader_phone || "",
+          }
+        : null;
+
+      setRegistrations((prev) =>
+        prev.map((item) =>
+          item.id === selectedTeam.id
+            ? { ...item, accessCredentials: regeneratedCredentials || item.accessCredentials }
+            : item
+        )
+      );
+
+      setSelectedTeam((prev) =>
+        prev
+          ? {
+              ...prev,
+              accessCredentials: regeneratedCredentials || prev.accessCredentials,
+            }
+          : prev
+      );
+    } catch (err) {
+      setActionError(err?.message || "Failed to regenerate credentials.");
+    } finally {
+      setUpdateBusy(false);
+    }
+  }, [selectedTeam, updateBusy, user]);
 
   const handleSaveNotes = useCallback(async () => {
     if (!selectedTeam || updateBusy) return;
     const nextNotes = noteText.trim();
+
     setUpdateBusy(true);
     setActionError("");
+
     try {
-      await updateTeamField(selectedTeam.id, { notes: nextNotes });
+      setRegistrations((prev) =>
+        prev.map((item) => (item.id === selectedTeam.id ? { ...item, notes: nextNotes } : item))
+      );
       setSelectedTeam((prev) => (prev ? { ...prev, notes: nextNotes } : prev));
       setNoteText(nextNotes);
-      loadAdminData();
     } catch (err) {
       setActionError(err?.message || "Failed to save notes.");
     } finally {
       setUpdateBusy(false);
     }
-  }, [selectedTeam, noteText, updateBusy, loadAdminData]);
-
-  const handlePhaseUpdate = useCallback(async (updates) => {
-    try {
-      setUpdateBusy(true);
-      setActionError("");
-      const response = await fetch("/api/hackathon/phase", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      const data = await response.json();
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.error || "Failed to update phase config.");
-      }
-      setPhaseConfig(data.config);
-    } catch (err) {
-      setActionError(err?.message || "Failed to update phase config.");
-    } finally {
-      setUpdateBusy(false);
-    }
-  }, []);
+  }, [selectedTeam, noteText, updateBusy]);
 
   // ── Loading state ──
   if (loading) {
@@ -340,6 +561,15 @@ export default function AdminDashboard() {
     if (!d) return "N/A";
     return d.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
   };
+
+  const selectedLeaderName = selectedTeam ? getLeaderName(selectedTeam) : "—";
+  const selectedLeaderContact = selectedTeam ? getLeaderContact(selectedTeam) : "—";
+  const selectedAccessCredentials = selectedTeam?.accessCredentials || null;
+  const credentialMailto = selectedAccessCredentials?.leaderEmail && selectedAccessCredentials?.password
+    ? `mailto:${selectedAccessCredentials.leaderEmail}?subject=${encodeURIComponent("AI4Impact Team Dashboard Access Credentials")}&body=${encodeURIComponent(
+        `Hello ${selectedAccessCredentials.leaderName || "Team Leader"},\n\nYour team dashboard credentials are ready.\n\nTeam ID: ${selectedAccessCredentials.teamId || "N/A"}\nPassword: ${selectedAccessCredentials.password || "N/A"}\n\nLogin URL: ${typeof window !== "undefined" ? `${window.location.origin}/auth` : "/auth"}\n\nPlease keep these credentials private.\n\nRegards,\nAI4Impact Admin`
+      )}`
+    : "";
 
   const isDupName = (name) => duplicates.dupNames.has(name?.toLowerCase());
   const isDupTx = (tx) => duplicates.dupTx.has(tx?.toLowerCase());
@@ -404,39 +634,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* ── Master Control ── */}
-        <div className="cyber-card" style={{ padding: "1.2rem", marginBottom: "2rem" }}>
-          <h3 style={{ color: "var(--neon-cyan)", marginBottom: "0.8rem" }}>[ MASTER CONTROL ]</h3>
-          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-            <select
-              value={phaseConfig?.currentPhase || "REGISTRATION"}
-              onChange={(e) => handlePhaseUpdate({ currentPhase: e.target.value })}
-              style={{
-                padding: "0.6rem", background: "var(--bg-dark)", border: "1px solid var(--border-color)",
-                color: "var(--text-main)", fontFamily: "monospace"
-              }}
-            >
-              {PHASE_LIST.map((phase) => (
-                <option key={phase} value={phase}>{phase}</option>
-              ))}
-            </select>
-            <button
-              className="btn"
-              style={{ padding: "0.35rem 0.8rem", fontSize: "0.8rem" }}
-              onClick={() => handlePhaseUpdate({ psSelectionLocked: !phaseConfig?.psSelectionLocked })}
-            >
-              {phaseConfig?.psSelectionLocked ? "UNLOCK_PS()" : "LOCK_PS()"}
-            </button>
-            <button
-              className="btn"
-              style={{ padding: "0.35rem 0.8rem", fontSize: "0.8rem" }}
-              onClick={() => handlePhaseUpdate({ submissionLocked: !phaseConfig?.submissionLocked })}
-            >
-              {phaseConfig?.submissionLocked ? "UNLOCK_SUBMISSION()" : "LOCK_SUBMISSION()"}
-            </button>
-          </div>
-        </div>
-
         {/* ── Duplicate alerts ── */}
         {(duplicates.dupNames.size > 0 || duplicates.dupTx.size > 0) && (
           <div style={{
@@ -487,7 +684,7 @@ export default function AdminDashboard() {
             <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
               <input
                 type="text"
-                placeholder="SEARCH TEAM / COLLEGE / TX ID..."
+                placeholder="SEARCH TEAM / LEADER / CONTACT / COLLEGE / TX ID..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -543,7 +740,7 @@ export default function AdminDashboard() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "monospace", fontSize: "0.85rem" }}>
                 <thead>
                   <tr style={{ borderBottom: "2px solid var(--neon-cyan)" }}>
-                    {["#", "TEAM", "COLLEGE", "SIZE", "TX ID", "STATUS", "SCREENSHOT", "TIME"].map((h) => (
+                    {["#", "TEAM", "LEADER", "CONTACT", "COLLEGE", "SIZE", "TX ID", "STATUS", "SCREENSHOT", "TIME"].map((h) => (
                       <th key={h} style={{ padding: "0.8rem 0.5rem", textAlign: "left", color: "var(--neon-cyan)", fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -552,6 +749,8 @@ export default function AdminDashboard() {
                   {paginated.map((r, i) => {
                     const dupN = isDupName(r.teamName);
                     const dupT = isDupTx(r.payment?.transactionId);
+                    const leaderName = getLeaderName(r);
+                    const leaderContact = getLeaderContact(r);
                     return (
                       <tr
                         key={r.id}
@@ -569,6 +768,12 @@ export default function AdminDashboard() {
                           {r.teamName?.toUpperCase() || "—"}
                           {dupN && <span style={{ color: "var(--danger-red)", fontSize: "0.7rem" }}> ⚠ DUP</span>}
                         </td>
+                        <td style={{ padding: "0.7rem 0.5rem", color: "var(--text-main)", fontWeight: "bold" }}>
+                          {leaderName !== "—" ? leaderName.toUpperCase() : "—"}
+                        </td>
+                        <td style={{ padding: "0.7rem 0.5rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          {leaderContact}
+                        </td>
                         <td style={{ padding: "0.7rem 0.5rem", color: "var(--text-muted)" }}>{r.collegeName?.toUpperCase() || "—"}</td>
                         <td style={{ padding: "0.7rem 0.5rem", color: "var(--neon-purple)" }}>{r.teamSize}</td>
                         <td style={{ padding: "0.7rem 0.5rem", color: dupT ? "var(--danger-red)" : "var(--neon-cyan)", fontFamily: "monospace" }}>
@@ -578,18 +783,55 @@ export default function AdminDashboard() {
                         <td style={{ padding: "0.7rem 0.5rem" }}>
                           <span style={{
                             padding: "2px 8px", fontSize: "0.75rem", fontWeight: "bold",
-                            background: r.status === "verified" ? "rgba(0,255,136,0.15)" : "rgba(255,255,0,0.1)",
-                            color: r.status === "verified" ? "#00FF88" : "#FFD700",
-                            border: `1px solid ${r.status === "verified" ? "#00FF88" : "#FFD700"}`
+                            background:
+                              r.status === "verified"
+                                ? "rgba(0,255,136,0.15)"
+                                : r.status === "rejected"
+                                  ? "rgba(255,42,42,0.15)"
+                                  : "rgba(255,255,0,0.1)",
+                            color:
+                              r.status === "verified"
+                                ? "#00FF88"
+                                : r.status === "rejected"
+                                  ? "#FF2A2A"
+                                  : "#FFD700",
+                            border: `1px solid ${
+                              r.status === "verified"
+                                ? "#00FF88"
+                                : r.status === "rejected"
+                                  ? "#FF2A2A"
+                                  : "#FFD700"
+                            }`
                           }}>
-                            {r.status === "verified" ? "✅ VERIFIED" : "⏳ PENDING"}
+                            {r.status === "verified"
+                              ? "✅ VERIFIED"
+                              : r.status === "rejected"
+                                ? "❌ REJECTED"
+                                : "⏳ PENDING"}
                           </span>
                         </td>
                         <td style={{ padding: "0.7rem 0.5rem" }}>
                           {r.payment?.screenshotUrl ? (
-                            <a href={r.payment.screenshotUrl} target="_blank" rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              style={{ color: "var(--neon-pink)", textDecoration: "underline" }}>VIEW</a>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openScreenshotPreview(
+                                  r.payment.screenshotUrl,
+                                  `${r.teamName?.toUpperCase() || "REGISTRATION"} SCREENSHOT`
+                                );
+                              }}
+                              style={{
+                                background: "transparent",
+                                border: "1px solid var(--neon-pink)",
+                                color: "var(--neon-pink)",
+                                padding: "2px 8px",
+                                cursor: "pointer",
+                                fontFamily: "monospace",
+                                fontSize: "0.75rem",
+                              }}
+                            >
+                              PREVIEW
+                            </button>
                           ) : "—"}
                         </td>
                         <td style={{ padding: "0.7rem 0.5rem", color: "var(--text-muted)", fontSize: "0.8rem", whiteSpace: "nowrap" }}>{fmtDate(r.createdAt)}</td>
@@ -597,7 +839,7 @@ export default function AdminDashboard() {
                     );
                   })}
                   {paginated.length === 0 && (
-                    <tr><td colSpan={8} style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>NO RESULTS FOUND</td></tr>
+                    <tr><td colSpan={10} style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>NO RESULTS FOUND</td></tr>
                   )}
                 </tbody>
               </table>
@@ -686,39 +928,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
-        {/* ── Final Submissions Grid ── */}
-        <div className="cyber-card" style={{ padding: "1.2rem", marginTop: "2rem" }}>
-          <h3 style={{ color: "var(--neon-pink)", marginBottom: "0.8rem" }}>[ FINAL SUBMISSIONS ]</h3>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "monospace", fontSize: "0.85rem" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                  {["TEAM", "GITHUB", "PPT", "TIME"].map((h) => (
-                    <th key={h} style={{ textAlign: "left", padding: "0.5rem", color: "var(--neon-cyan)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {submissions.map((s) => (
-                  <tr key={s.teamId} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                    <td style={{ padding: "0.5rem" }}>{(s.teamName || s.teamId).toUpperCase()}</td>
-                    <td style={{ padding: "0.5rem" }}>
-                      {s.githubUrl ? <a href={s.githubUrl} target="_blank" rel="noreferrer" style={{ color: "var(--neon-cyan)" }}>OPEN</a> : "—"}
-                    </td>
-                    <td style={{ padding: "0.5rem" }}>
-                      {s.pptUrl ? <a href={s.pptUrl} target="_blank" rel="noreferrer" style={{ color: "var(--neon-pink)" }}>DOWNLOAD</a> : "—"}
-                    </td>
-                    <td style={{ padding: "0.5rem", color: "var(--text-muted)" }}>{fmtDate(s.submittedAt)}</td>
-                  </tr>
-                ))}
-                {!submissions.length && (
-                  <tr><td colSpan={4} style={{ padding: "1rem", color: "var(--text-muted)" }}>NO SUBMISSIONS YET</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
 
       {/* ═══ TEAM DETAIL MODAL ═══ */}
@@ -760,29 +969,132 @@ export default function AdminDashboard() {
                 disabled={updateBusy}
                 style={{
                   padding: "0.3rem 1rem", border: "1px solid",
-                  borderColor: selectedTeam.status === "verified" ? "#00FF88" : "#FFD700",
-                  background: selectedTeam.status === "verified" ? "rgba(0,255,136,0.15)" : "rgba(255,255,0,0.1)",
-                  color: selectedTeam.status === "verified" ? "#00FF88" : "#FFD700",
+                  borderColor:
+                    selectedTeam.status === "verified"
+                      ? "#00FF88"
+                      : selectedTeam.status === "rejected"
+                        ? "#FF2A2A"
+                        : "#FFD700",
+                  background:
+                    selectedTeam.status === "verified"
+                      ? "rgba(0,255,136,0.15)"
+                      : selectedTeam.status === "rejected"
+                        ? "rgba(255,42,42,0.15)"
+                        : "rgba(255,255,0,0.1)",
+                  color:
+                    selectedTeam.status === "verified"
+                      ? "#00FF88"
+                      : selectedTeam.status === "rejected"
+                        ? "#FF2A2A"
+                        : "#FFD700",
                   cursor: updateBusy ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "0.8rem",
                   opacity: updateBusy ? 0.6 : 1
                 }}
               >
-                {selectedTeam.status === "verified" ? "✅ VERIFIED" : "⏳ PENDING"} (TOGGLE)
+                {selectedTeam.status === "verified"
+                  ? "✅ VERIFIED"
+                  : selectedTeam.status === "rejected"
+                    ? "❌ REJECTED"
+                    : "⏳ PENDING"} (TOGGLE)
               </button>
             </div>
 
             {/* Team Info */}
             <div style={{ marginBottom: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
               <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>TEAM SIZE:</span> {selectedTeam.teamSize}</p>
+              <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>TEAM LEADER:</span> {selectedLeaderName}</p>
+              <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>LEADER CONTACT:</span> {selectedLeaderContact}</p>
               <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>SUBMITTED:</span> {fmtDate(selectedTeam.createdAt)}</p>
               <p style={{ marginBottom: "0.5rem" }}>
                 <span style={{ color: "var(--neon-cyan)" }}>TX ID:</span>{" "}
                 <span style={{ color: "var(--neon-pink)", fontFamily: "monospace" }}>{selectedTeam.payment?.transactionId || "N/A"}</span>
               </p>
+              {selectedTeam.registrationType === "hackathon" && (
+                <div style={{ marginTop: "0.8rem", borderTop: "1px dashed var(--border-color)", paddingTop: "0.8rem" }}>
+                  <p style={{ marginBottom: "0.45rem", color: "var(--neon-cyan)", fontWeight: "bold" }}>
+                    TEAM ACCESS CREDENTIALS
+                  </p>
+                  {selectedAccessCredentials ? (
+                    <>
+                      <p style={{ marginBottom: "0.35rem" }}>
+                        <span style={{ color: "var(--text-muted)" }}>TEAM ID:</span>{" "}
+                        <span style={{ color: "var(--neon-pink)", fontFamily: "monospace" }}>{selectedAccessCredentials.teamId || "N/A"}</span>
+                      </p>
+                      <p style={{ marginBottom: "0.35rem" }}>
+                        <span style={{ color: "var(--text-muted)" }}>PASSWORD:</span>{" "}
+                        <span style={{ color: "var(--neon-pink)", fontFamily: "monospace" }}>
+                          {selectedAccessCredentials.password || "NOT STORED (REGENERATE TO ISSUE NEW PASSWORD)"}
+                        </span>
+                      </p>
+                      {selectedAccessCredentials.passwordVersion > 0 && (
+                        <p style={{ marginBottom: "0.35rem" }}>
+                          <span style={{ color: "var(--text-muted)" }}>PASSWORD VERSION:</span>{" "}
+                          <span style={{ color: "var(--text-main)", fontFamily: "monospace" }}>{selectedAccessCredentials.passwordVersion}</span>
+                        </p>
+                      )}
+                      <p style={{ marginBottom: "0.35rem" }}>
+                        <span style={{ color: "var(--text-muted)" }}>LEADER EMAIL:</span>{" "}
+                        <span style={{ color: "var(--text-main)", fontFamily: "monospace" }}>{selectedAccessCredentials.leaderEmail || "N/A"}</span>
+                      </p>
+                      {selectedTeam.status === "verified" && (
+                        <button
+                          onClick={handleRegenerateCredentials}
+                          disabled={updateBusy}
+                          className="btn"
+                          style={{ marginTop: "0.35rem", marginBottom: "0.55rem", padding: "0.25rem 0.8rem", fontSize: "0.72rem" }}
+                        >
+                          {updateBusy ? "PROCESSING..." : "REGENERATE_CREDENTIALS()"}
+                        </button>
+                      )}
+                      {credentialMailto && (
+                        <a
+                          href={credentialMailto}
+                          style={{ color: "var(--neon-cyan)", textDecoration: "underline", fontSize: "0.82rem" }}
+                        >
+                          OPEN EMAIL DRAFT
+                        </a>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.82rem", marginBottom: "0.45rem" }}>
+                        Credentials are auto-generated when payment is marked VERIFIED.
+                      </p>
+                      {selectedTeam.status === "verified" && (
+                        <button
+                          onClick={handleRegenerateCredentials}
+                          disabled={updateBusy}
+                          className="btn"
+                          style={{ padding: "0.25rem 0.8rem", fontSize: "0.72rem" }}
+                        >
+                          {updateBusy ? "PROCESSING..." : "ISSUE_CREDENTIALS()"}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
               {selectedTeam.payment?.screenshotUrl && (
-                <p><span style={{ color: "var(--neon-cyan)" }}>SCREENSHOT:</span>{" "}
-                  <a href={selectedTeam.payment.screenshotUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--neon-pink)", textDecoration: "underline" }}>VIEW IMAGE</a>
-                </p>
+                <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+                  <span style={{ color: "var(--neon-cyan)" }}>SCREENSHOT:</span>
+                  <button
+                    onClick={() => openScreenshotPreview(
+                      selectedTeam.payment.screenshotUrl,
+                      `${selectedTeam.teamName?.toUpperCase() || "REGISTRATION"} SCREENSHOT`
+                    )}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--neon-pink)",
+                      color: "var(--neon-pink)",
+                      padding: "2px 8px",
+                      cursor: "pointer",
+                      fontFamily: "monospace",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    PREVIEW IMAGE
+                  </button>
+                </div>
               )}
             </div>
 
@@ -835,6 +1147,62 @@ export default function AdminDashboard() {
                   UPDATE_ERROR: {actionError}
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewScreenshot.url && (
+        <div
+          onClick={closeScreenshotPreview}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.92)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 400,
+            padding: "1rem",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="cyber-card"
+            style={{
+              width: "min(95vw, 980px)",
+              maxHeight: "90vh",
+              padding: "1rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.8rem",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ color: "var(--neon-cyan)", fontFamily: "var(--font-heading)", fontSize: "1rem", margin: 0 }}>
+                {previewScreenshot.label}
+              </h3>
+              <button
+                onClick={closeScreenshotPreview}
+                style={{
+                  background: "none",
+                  border: "2px solid var(--danger-red)",
+                  color: "var(--danger-red)",
+                  padding: "0.2rem 0.7rem",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "0.9rem",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ overflow: "auto", maxHeight: "80vh", border: "1px solid var(--border-color)" }}>
+              <img
+                src={previewScreenshot.url}
+                alt="Payment screenshot preview"
+                style={{ display: "block", width: "100%", height: "auto", objectFit: "contain" }}
+              />
             </div>
           </div>
         </div>

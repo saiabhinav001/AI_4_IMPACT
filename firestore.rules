@@ -11,22 +11,13 @@ service cloud.firestore {
     }
 
     function userExists(uid) {
-      return exists(/databases/$(database)/documents/users/$(uid));
+      return signedIn() && exists(/databases/$(database)/documents/users/$(uid));
     }
 
     function myRole() {
       return signedIn() && userExists(request.auth.uid)
         ? userSnapshot(request.auth.uid).data.role
         : null;
-    }
-
-    function isAdmin() {
-      return signedIn()
-        && (request.auth.token.admin == true || myRole() == "ADMIN");
-    }
-
-    function isTeamLead() {
-      return signedIn() && myRole() == "TEAM_LEAD";
     }
 
     function configDoc() {
@@ -55,7 +46,16 @@ service cloud.firestore {
         && request.time > configDoc().data.submissionDeadline;
     }
 
-    // Public read of global hackathon config (phase, locks, timeline) for dashboards / future landing widgets.
+    function isAdmin() {
+      return signedIn()
+        && (request.auth.token.admin == true || myRole() == "ADMIN");
+    }
+
+    function isTeamLead() {
+      return signedIn() && myRole() == "TEAM_LEAD";
+    }
+
+    // Team flow collections imported from companion repo.
     match /hackathon_config/{docId} {
       allow read: if docId == "global" || isAdmin();
       allow create, update, delete: if isAdmin();
@@ -105,22 +105,52 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Workshop rows are created by server (Admin SDK) for public form; authenticated users may register via client later.
-    match /workshop_registrations/{id} {
-      allow create: if signedIn()
-        && request.resource.data.keys().hasAll(["college", "phone", "payment", "status"])
-        && request.resource.data.payment is map;
-      allow read: if isAdmin()
-        || (signedIn()
-          && resource.data.uid != ""
-          && resource.data.uid == request.auth.uid);
-      allow update, delete: if isAdmin();
+    match /workshop_registrations/{docId} {
+      allow read, write: if isAdmin();
     }
 
-    // Legacy hackathon form (still written by Admin API; optional direct client create if enabled later).
+    match /hackathon_registrations/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /participants/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /transactions/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /analytics/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Dedicated team access and future hackathon workflow collections are server-only.
+    match /team_access_accounts/{docId} {
+      allow read, write: if false;
+    }
+
+    match /team_access_index/{docId} {
+      allow read, write: if false;
+    }
+
+    match /problem_statements/{docId} {
+      allow read, write: if false;
+    }
+
+    match /team_problem_selection/{docId} {
+      allow read, write: if false;
+    }
+
+    match /submissions/{docId} {
+      allow read, write: if false;
+    }
+
+    // Legacy compatibility collection retained as admin-only.
     match /registrations/{docId} {
-      allow create: if false;
-      allow read, update, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     match /{document=**} {

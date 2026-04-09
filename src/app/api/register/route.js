@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { FieldValue } from "firebase-admin/firestore";
-import { adminDb } from "../../../../lib/admin";
+import { NextResponse } from "next/server";
+import { POST as registerHackathon } from "./hackathon/route";
+import { cleanupTempScreenshot } from "./_utils/screenshotCleanup";
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
@@ -11,9 +11,9 @@ if (!globalThis.__registerRateLimitStore) {
 }
 
 function getClientIp(request) {
-  const forwarded = request.headers.get('x-forwarded-for') || '';
-  const firstIp = forwarded.split(',')[0].trim();
-  return firstIp || 'unknown';
+  const forwarded = request.headers.get("x-forwarded-for") || "";
+  const firstIp = forwarded.split(",")[0].trim();
+  return firstIp || "unknown";
 }
 
 function hitRateLimit(key) {
@@ -34,183 +34,84 @@ function hitRateLimit(key) {
   return false;
 }
 
-function sanitizeText(value) {
-  return String(value || '')
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
-    .trim();
+function asTrimmedString(value) {
+  return String(value ?? "").trim();
 }
 
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function isValidPhone(phone) {
-  return /^\+?[0-9\-\s]{8,18}$/.test(phone);
-}
+export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
     const clientIp = getClientIp(request);
     if (hitRateLimit(`register:${clientIp}`)) {
       return NextResponse.json(
-        { success: false, error: 'Too many registration attempts. Please retry in a minute.' },
+        { success: false, error: "Too many registration attempts. Please retry in a minute." },
         { status: 429 }
       );
     }
 
     const body = await request.json();
 
-    const { teamName, collegeName, teamSize, participants, payment } = body;
-    const parsedTeamSize = Number(teamSize);
+    const teamName = asTrimmedString(body?.teamName);
+    const collegeName = asTrimmedString(body?.collegeName);
+    const teamSize = Number(body?.teamSize);
+    const participants = Array.isArray(body?.participants) ? body.participants : [];
+    const transactionId = asTrimmedString(body?.payment?.transactionId);
+    const screenshotUrl = asTrimmedString(body?.payment?.screenshotUrl);
 
-    // Basic validation
-    if (!teamName || !collegeName || !teamSize || !participants || !payment) {
+    if (!teamName || !collegeName || !participants.length || !transactionId || !screenshotUrl) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: "Missing required fields." },
         { status: 400 }
       );
     }
 
-    if (![3, 4].includes(parsedTeamSize)) {
-      return NextResponse.json(
-        { success: false, error: 'Team size must be 3 or 4' },
-        { status: 400 }
-      );
-    }
-
-    if (!Array.isArray(participants) || participants.length !== parsedTeamSize) {
-      return NextResponse.json(
-        { success: false, error: `Expected ${parsedTeamSize} participants, got ${participants?.length || 0}` },
-        { status: 400 }
-      );
-    }
-
-    const cleanTeamName = sanitizeText(teamName);
-    const cleanCollegeName = sanitizeText(collegeName);
-    const cleanPayment = {
-      transactionId: sanitizeText(payment.transactionId || ''),
-      screenshotUrl: sanitizeText(payment.screenshotUrl || ''),
-      status: sanitizeText(payment.status || ''),
-      paymentId: sanitizeText(payment.paymentId || ''),
-      orderId: sanitizeText(payment.orderId || ''),
-      amount: Number(payment.amount || 0),
+    const proxyBody = {
+      team_name: teamName,
+      college: collegeName,
+      team_size: teamSize,
+      members: participants.map((participant) => ({
+        name: asTrimmedString(participant?.name),
+        email: asTrimmedString(participant?.email).toLowerCase(),
+        phone: asTrimmedString(participant?.phone),
+      })),
+      upi_transaction_id: transactionId,
+      screenshot_url: screenshotUrl,
     };
 
-    if (!cleanTeamName || !cleanCollegeName) {
+    const proxyRequest = new Request(request.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(proxyBody),
+    });
+
+    const phase1Response = await registerHackathon(proxyRequest);
+    const responseBody = await phase1Response.json();
+
+    if (!phase1Response.ok) {
+      const errorMessage = String(responseBody?.error || "").toLowerCase();
+      if (errorMessage.includes("already registered")) {
+        await cleanupTempScreenshot(screenshotUrl);
+      }
+
       return NextResponse.json(
-        { success: false, error: 'Team and college name are required' },
-        { status: 400 }
+        {
+          success: false,
+          error: responseBody?.error || "Registration failed. Please try again.",
+        },
+        { status: phase1Response.status }
       );
     }
 
-    const hasUploadProof = Boolean(cleanPayment.transactionId && cleanPayment.screenshotUrl);
-    const hasRazorpayProof =
-      cleanPayment.status === 'SUCCESS' &&
-      Boolean(cleanPayment.paymentId && cleanPayment.orderId && cleanPayment.amount > 0);
-
-    if (!hasUploadProof && !hasRazorpayProof) {
-      return NextResponse.json(
-        { success: false, error: 'Valid payment proof is required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate each participant has required fields
-    const cleanParticipants = [];
-    for (let i = 0; i < participants.length; i++) {
-      const p = participants[i];
-      if (!p.name || !p.roll || !p.email || !p.phone) {
-        return NextResponse.json(
-          { success: false, error: `Participant ${i + 1} is missing required fields` },
-          { status: 400 }
-        );
-      }
-
-      const cleanParticipant = {
-        name: sanitizeText(p.name),
-        roll: sanitizeText(p.roll),
-        email: sanitizeText(p.email).toLowerCase(),
-        phone: sanitizeText(p.phone),
-      };
-
-      if (!isValidEmail(cleanParticipant.email)) {
-        return NextResponse.json(
-          { success: false, error: `Participant ${i + 1} email is invalid` },
-          { status: 400 }
-        );
-      }
-
-      if (!isValidPhone(cleanParticipant.phone)) {
-        return NextResponse.json(
-          { success: false, error: `Participant ${i + 1} phone is invalid` },
-          { status: 400 }
-        );
-      }
-
-      cleanParticipants.push(cleanParticipant);
-    }
-
-    const members = cleanParticipants.map((participant, idx) => ({
-      name: participant.name,
-      roll: participant.roll,
-      email: participant.email,
-      phone: participant.phone,
-      college: cleanCollegeName,
-      uid: "",
-      isLead: idx === 0,
-    }));
-
-    const legacyDocRef = adminDb.collection("registrations").doc();
-    const teamDocRef = adminDb.collection("teams").doc();
-
-    await Promise.all([
-      legacyDocRef.set({
-        teamName: cleanTeamName,
-        collegeName: cleanCollegeName,
-        teamSize: parsedTeamSize,
-        participants: cleanParticipants,
-        payment: cleanPayment,
-        createdAt: FieldValue.serverTimestamp(),
-        status: 'pending',
-        notes: '',
-      }),
-      teamDocRef.set({
-        teamName: cleanTeamName,
-        leadUid: "",
-        memberUids: [],
-        members,
-        payment: {
-          screenshotUrl: cleanPayment.screenshotUrl || "",
-          reference: cleanPayment.transactionId || cleanPayment.paymentId || "",
-          status: "PENDING",
-        },
-        psSelection: {
-          selected: false,
-          problemStatementId: "",
-          selectedAt: null,
-          selectedBy: "",
-          locked: false,
-        },
-        submission: {
-          submitted: false,
-          githubUrl: "",
-          pptUrl: "",
-          submittedAt: null,
-          submittedBy: "",
-          locked: false,
-        },
-        source: "legacy_public_form",
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      }),
-    ]);
-
-    return NextResponse.json({ success: true, id: teamDocRef.id });
-
+    return NextResponse.json({
+      success: true,
+      id: responseBody.team_id,
+      team_id: responseBody.team_id,
+    });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Registration compatibility route failed:", error);
     return NextResponse.json(
-      { success: false, error: 'Registration failed. Please try again.' },
+      { success: false, error: "Registration failed. Please try again." },
       { status: 500 }
     );
   }

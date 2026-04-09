@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 const SESSION_COOKIE = "admin_session";
 
 const ADMIN_EMAILS = (
-  process.env.ADMIN_EMAILS ||
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
+  globalThis?.process?.env?.ADMIN_EMAILS ||
+  globalThis?.process?.env?.NEXT_PUBLIC_ADMIN_EMAILS ||
   ""
 )
   .split(",")
@@ -16,7 +16,7 @@ function isAllowedAdminEmail(email) {
 }
 
 async function verifyAdminToken(idToken) {
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const apiKey = globalThis?.process?.env?.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!apiKey || !idToken) return false;
 
   try {
@@ -44,7 +44,8 @@ export async function middleware(request) {
   const isAdminSession = await verifyAdminToken(token);
 
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login") && !isAdminSession) {
-    const loginUrl = new URL("/admin/login", request.url);
+    const loginUrl = new URL("/auth", request.url);
+    loginUrl.searchParams.set("reason", "admin-only");
     const response = NextResponse.redirect(loginUrl);
     response.cookies.set({ name: SESSION_COOKIE, value: "", path: "/", maxAge: 0 });
     return response;
@@ -52,6 +53,12 @@ export async function middleware(request) {
 
   if (pathname.startsWith("/admin/login") && isAdminSession) {
     return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  if (pathname.startsWith("/admin/login") && !isAdminSession) {
+    const loginUrl = new URL("/auth", request.url);
+    loginUrl.searchParams.set("reason", "admin-only");
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
