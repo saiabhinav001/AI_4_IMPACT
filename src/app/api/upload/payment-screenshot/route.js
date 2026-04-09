@@ -5,10 +5,20 @@ import { adminStorage } from "../../../../../firebaseAdmin";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png"]);
+const ALLOWED_REGISTRATION_TYPES = new Set(["workshop", "hackathon"]);
 
 function extensionFromMimeType(mimeType) {
   if (mimeType === "image/png") return "png";
   if (mimeType === "image/jpeg" || mimeType === "image/jpg") return "jpg";
+  return null;
+}
+
+function normalizeRegistrationType(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (ALLOWED_REGISTRATION_TYPES.has(normalized)) {
+    return normalized;
+  }
+
   return null;
 }
 
@@ -18,6 +28,19 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") || formData.get("image");
+    const registrationType = normalizeRegistrationType(
+      formData.get("registration_type") || formData.get("registrationType")
+    );
+
+    if (!registrationType) {
+      return NextResponse.json(
+        {
+          error:
+            "registration_type is required and must be either workshop or hackathon.",
+        },
+        { status: 400 }
+      );
+    }
 
     if (!file || typeof file.arrayBuffer !== "function") {
       return NextResponse.json(
@@ -49,7 +72,7 @@ export async function POST(request) {
       );
     }
 
-    const objectPath = `payments/temp_${randomUUID()}.${extension}`;
+    const objectPath = `payments/${registrationType}/temp_${randomUUID()}.${extension}`;
     const downloadToken = randomUUID();
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -70,6 +93,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
+      registration_type: registrationType,
       screenshot_url,
     });
   } catch (error) {

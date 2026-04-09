@@ -15,6 +15,20 @@ function isAllowedAdminEmail(email) {
   return ADMIN_EMAILS.includes((email || "").trim().toLowerCase());
 }
 
+function hasAdminClaim(lookupUser) {
+  const rawClaims = lookupUser?.customAttributes;
+  if (!rawClaims || typeof rawClaims !== "string") {
+    return false;
+  }
+
+  try {
+    const claims = JSON.parse(rawClaims);
+    return claims?.admin === true;
+  } catch {
+    return false;
+  }
+}
+
 async function verifyAdminToken(idToken) {
   const apiKey = globalThis?.process?.env?.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!apiKey || !idToken) return false;
@@ -31,8 +45,11 @@ async function verifyAdminToken(idToken) {
 
     if (!res.ok) return false;
     const data = await res.json();
-    const email = data?.users?.[0]?.email;
-    return isAllowedAdminEmail(email);
+    const lookupUser = data?.users?.[0] || null;
+
+    if (!lookupUser) return false;
+
+    return hasAdminClaim(lookupUser) || isAllowedAdminEmail(lookupUser.email);
   } catch {
     return false;
   }

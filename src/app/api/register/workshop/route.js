@@ -8,7 +8,10 @@ import {
   isValidHttpUrl,
   isValidPhone,
 } from "../_utils/validation";
-import { cleanupTempScreenshot } from "../_utils/screenshotCleanup";
+import {
+  cleanupTempScreenshot,
+  isTempScreenshotForRegistrationType,
+} from "../_utils/screenshotCleanup";
 
 export const runtime = "nodejs";
 
@@ -41,6 +44,12 @@ export async function POST(request) {
 
     if (!isValidHttpUrl(screenshotUrl)) {
       return badRequest("Invalid screenshot_url.");
+    }
+
+    if (!isTempScreenshotForRegistrationType(screenshotUrl, "workshop")) {
+      return badRequest(
+        "screenshot_url must be an uploaded workshop payment screenshot."
+      );
     }
 
     const existingParticipant = await adminDb
@@ -95,7 +104,7 @@ export async function POST(request) {
       registration_ref: workshopRef.id,
       upi_transaction_id: upiTransactionId,
       screenshot_url: screenshotUrl,
-      amount: 150,
+      amount: 60,
       status: "pending",
       verified_by: null,
       verified_at: null,

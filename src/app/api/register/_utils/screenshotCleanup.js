@@ -1,6 +1,16 @@
 import { adminStorage } from "../../../../../firebaseAdmin";
 
-function extractObjectPathFromFirebaseUrl(screenshotUrl) {
+const TEMP_PAYMENT_PREFIXES = [
+  "payments/temp_",
+  "payments/workshop/temp_",
+  "payments/hackathon/temp_",
+];
+
+function isTempPaymentPath(objectPath) {
+  return TEMP_PAYMENT_PREFIXES.some((prefix) => objectPath.startsWith(prefix));
+}
+
+export function extractObjectPathFromFirebaseUrl(screenshotUrl) {
   try {
     const parsed = new URL(screenshotUrl);
 
@@ -32,13 +42,25 @@ function extractObjectPathFromFirebaseUrl(screenshotUrl) {
   }
 }
 
+export function isTempScreenshotForRegistrationType(
+  screenshotUrl,
+  registrationType
+) {
+  const objectPath = extractObjectPathFromFirebaseUrl(screenshotUrl);
+  if (!objectPath) {
+    return false;
+  }
+
+  return objectPath.startsWith(`payments/${registrationType}/temp_`);
+}
+
 export async function cleanupTempScreenshot(screenshotUrl) {
   if (!screenshotUrl) {
     return;
   }
 
   const objectPath = extractObjectPathFromFirebaseUrl(screenshotUrl);
-  if (!objectPath || !objectPath.startsWith("payments/temp_")) {
+  if (!objectPath || !isTempPaymentPath(objectPath)) {
     return;
   }
 

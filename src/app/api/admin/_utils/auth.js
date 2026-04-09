@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { adminAuth } from "../../../../../firebaseAdmin";
 
+const ADMIN_EMAILS = (
+  globalThis?.process?.env?.ADMIN_EMAILS ||
+  globalThis?.process?.env?.NEXT_PUBLIC_ADMIN_EMAILS ||
+  ""
+)
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+function isAllowedAdminEmail(email) {
+  return ADMIN_EMAILS.includes((email || "").trim().toLowerCase());
+}
+
 function unauthorized(message) {
   return NextResponse.json({ error: message }, { status: 401 });
 }
@@ -20,7 +33,7 @@ export async function requireAdmin(request) {
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
 
-    if (decodedToken.admin !== true) {
+    if (decodedToken.admin !== true && !isAllowedAdminEmail(decodedToken.email)) {
       return {
         error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
       };
