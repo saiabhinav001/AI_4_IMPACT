@@ -3,15 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthChange, logoutAdmin } from "../../../lib/auth";
-import { db } from "../../../lib/firebase";
-import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+import { PHASE_LIST } from "../../../lib/constants/phases";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Legend
@@ -34,6 +26,8 @@ export default function AdminDashboard() {
   const [noteText, setNoteText] = useState("");
   const [updateBusy, setUpdateBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [phaseConfig, setPhaseConfig] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
   const router = useRouter();
 
   const toDateSafe = useCallback((value) => {
@@ -62,23 +56,61 @@ export default function AdminDashboard() {
     return () => unsub();
   }, [router]);
 
-  // ── Real-time Firestore listener ──
+  const normalizeTeam = useCallback((team) => {
+    const members = Array.isArray(team?.members) ? team.members : [];
+    return {
+      id: team.id,
+      teamName: team.teamName || "",
+      collegeName: members[0]?.college || "",
+      teamSize: members.length,
+      participants: members.map((m) => ({
+        name: m?.name || "",
+        roll: m?.roll || "",
+        email: m?.email || "",
+        phone: m?.phone || "",
+      })),
+      payment: {
+        transactionId: team?.payment?.reference || "",
+        screenshotUrl: team?.payment?.screenshotUrl || "",
+        status: (team?.payment?.status || "PENDING").toLowerCase(),
+      },
+      status: (team?.payment?.status || "PENDING").toLowerCase() === "verified" ? "verified" : "pending",
+      notes: team?.notes || "",
+      createdAt: team?.createdAt || null,
+      submission: team?.submission || {},
+    };
+  }, []);
+
+  const loadAdminData = useCallback(async () => {
+    try {
+      const [regsRes, phaseRes, submissionsRes] = await Promise.all([
+        fetch("/api/admin/registrations", { cache: "no-store" }),
+        fetch("/api/hackathon/phase", { cache: "no-store" }),
+        fetch("/api/admin/submissions", { cache: "no-store" }),
+      ]);
+      const regsData = await regsRes.json();
+      const phaseData = await phaseRes.json();
+      const submissionsData = await submissionsRes.json();
+
+      if (!regsRes.ok || !regsData?.success) {
+        throw new Error(regsData?.error || "Failed to load registrations.");
+      }
+
+      setRegistrations((regsData.teams || []).map(normalizeTeam));
+      setPhaseConfig(phaseData?.config || null);
+      setSubmissions(Array.isArray(submissionsData?.submissions) ? submissionsData.submissions : []);
+      setDataError("");
+    } catch (error) {
+      setDataError(error?.message || "Failed to sync dashboard data.");
+    }
+  }, [normalizeTeam]);
+
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "registrations"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setRegistrations(data);
-        setDataError("");
-      },
-      (error) => {
-        setDataError(error?.message || "Failed to sync dashboard data.");
-      }
-    );
-    return () => unsub();
-  }, [user]);
+    loadAdminData();
+    const timer = setInterval(loadAdminData, 10000);
+    return () => clearInterval(timer);
+  }, [user, loadAdminData]);
 
   // ── Filtering + Search ──
   const filtered = useMemo(() => {
@@ -210,8 +242,16 @@ export default function AdminDashboard() {
   }, [registrations, toDateSafe]);
 
   // ── Status / Notes update ──
-  const updateTeamField = async (id, field, value) => {
-    await updateDoc(doc(db, "registrations", id), { [field]: value });
+  const updateTeamField = async (id, payload) => {
+    const response = await fetch("/api/admin/registrations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: "team", id, ...payload }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data?.success) {
+      throw new Error(data?.error || "Update failed.");
+    }
   };
 
   useEffect(() => {
@@ -233,8 +273,11 @@ export default function AdminDashboard() {
     setUpdateBusy(true);
     setActionError("");
     try {
-      await updateTeamField(selectedTeam.id, "status", newStatus);
+      await updateTeamField(selectedTeam.id, {
+        status: newStatus === "verified" ? "VERIFIED" : "PENDING",
+      });
       setSelectedTeam((prev) => (prev ? { ...prev, status: newStatus } : prev));
+      loadAdminData();
     } catch (err) {
       setActionError(err?.message || "Failed to update status.");
     } finally {
@@ -248,15 +291,37 @@ export default function AdminDashboard() {
     setUpdateBusy(true);
     setActionError("");
     try {
-      await updateTeamField(selectedTeam.id, "notes", nextNotes);
+      await updateTeamField(selectedTeam.id, { notes: nextNotes });
       setSelectedTeam((prev) => (prev ? { ...prev, notes: nextNotes } : prev));
       setNoteText(nextNotes);
+      loadAdminData();
     } catch (err) {
       setActionError(err?.message || "Failed to save notes.");
     } finally {
       setUpdateBusy(false);
     }
-  }, [selectedTeam, noteText, updateBusy]);
+  }, [selectedTeam, noteText, updateBusy, loadAdminData]);
+
+  const handlePhaseUpdate = useCallback(async (updates) => {
+    try {
+      setUpdateBusy(true);
+      setActionError("");
+      const response = await fetch("/api/hackathon/phase", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to update phase config.");
+      }
+      setPhaseConfig(data.config);
+    } catch (err) {
+      setActionError(err?.message || "Failed to update phase config.");
+    } finally {
+      setUpdateBusy(false);
+    }
+  }, []);
 
   // ── Loading state ──
   if (loading) {
@@ -337,6 +402,39 @@ export default function AdminDashboard() {
               <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", letterSpacing: "1px" }}>{s.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* ── Master Control ── */}
+        <div className="cyber-card" style={{ padding: "1.2rem", marginBottom: "2rem" }}>
+          <h3 style={{ color: "var(--neon-cyan)", marginBottom: "0.8rem" }}>[ MASTER CONTROL ]</h3>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
+            <select
+              value={phaseConfig?.currentPhase || "REGISTRATION"}
+              onChange={(e) => handlePhaseUpdate({ currentPhase: e.target.value })}
+              style={{
+                padding: "0.6rem", background: "var(--bg-dark)", border: "1px solid var(--border-color)",
+                color: "var(--text-main)", fontFamily: "monospace"
+              }}
+            >
+              {PHASE_LIST.map((phase) => (
+                <option key={phase} value={phase}>{phase}</option>
+              ))}
+            </select>
+            <button
+              className="btn"
+              style={{ padding: "0.35rem 0.8rem", fontSize: "0.8rem" }}
+              onClick={() => handlePhaseUpdate({ psSelectionLocked: !phaseConfig?.psSelectionLocked })}
+            >
+              {phaseConfig?.psSelectionLocked ? "UNLOCK_PS()" : "LOCK_PS()"}
+            </button>
+            <button
+              className="btn"
+              style={{ padding: "0.35rem 0.8rem", fontSize: "0.8rem" }}
+              onClick={() => handlePhaseUpdate({ submissionLocked: !phaseConfig?.submissionLocked })}
+            >
+              {phaseConfig?.submissionLocked ? "UNLOCK_SUBMISSION()" : "LOCK_SUBMISSION()"}
+            </button>
+          </div>
         </div>
 
         {/* ── Duplicate alerts ── */}
@@ -588,6 +686,39 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Final Submissions Grid ── */}
+        <div className="cyber-card" style={{ padding: "1.2rem", marginTop: "2rem" }}>
+          <h3 style={{ color: "var(--neon-pink)", marginBottom: "0.8rem" }}>[ FINAL SUBMISSIONS ]</h3>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "monospace", fontSize: "0.85rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
+                  {["TEAM", "GITHUB", "PPT", "TIME"].map((h) => (
+                    <th key={h} style={{ textAlign: "left", padding: "0.5rem", color: "var(--neon-cyan)" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {submissions.map((s) => (
+                  <tr key={s.teamId} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                    <td style={{ padding: "0.5rem" }}>{(s.teamName || s.teamId).toUpperCase()}</td>
+                    <td style={{ padding: "0.5rem" }}>
+                      {s.githubUrl ? <a href={s.githubUrl} target="_blank" rel="noreferrer" style={{ color: "var(--neon-cyan)" }}>OPEN</a> : "—"}
+                    </td>
+                    <td style={{ padding: "0.5rem" }}>
+                      {s.pptUrl ? <a href={s.pptUrl} target="_blank" rel="noreferrer" style={{ color: "var(--neon-pink)" }}>DOWNLOAD</a> : "—"}
+                    </td>
+                    <td style={{ padding: "0.5rem", color: "var(--text-muted)" }}>{fmtDate(s.submittedAt)}</td>
+                  </tr>
+                ))}
+                {!submissions.length && (
+                  <tr><td colSpan={4} style={{ padding: "1rem", color: "var(--text-muted)" }}>NO SUBMISSIONS YET</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* ═══ TEAM DETAIL MODAL ═══ */}

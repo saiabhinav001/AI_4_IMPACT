@@ -2,69 +2,127 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Registrations collection
-    match /registrations/{docId} {
-      // Public registration allowed with strict schema checks.
-      allow create: if request.resource.data.keys().hasOnly([
-          "teamName",
-          "collegeName",
-          "teamSize",
-          "participants",
-          "payment",
-          "createdAt",
-          "status",
-          "notes"
-        ])
-        && request.resource.data.teamName is string
-        && request.resource.data.teamName.size() > 0
-        && request.resource.data.collegeName is string
-        && request.resource.data.collegeName.size() > 0
-        && request.resource.data.teamSize in [3, 4]
-        && request.resource.data.participants is list
-        && request.resource.data.participants.size() == request.resource.data.teamSize
-        && request.resource.data.payment is map
-        && request.resource.data.payment.keys().hasOnly([
-          "transactionId",
-          "screenshotUrl",
-          "status",
-          "paymentId",
-          "orderId",
-          "amount"
-        ])
-        && (!('transactionId' in request.resource.data.payment) || request.resource.data.payment.transactionId is string)
-        && (!('screenshotUrl' in request.resource.data.payment) || request.resource.data.payment.screenshotUrl is string)
-        && (!('status' in request.resource.data.payment) || request.resource.data.payment.status is string)
-        && (!('paymentId' in request.resource.data.payment) || request.resource.data.payment.paymentId is string)
-        && (!('orderId' in request.resource.data.payment) || request.resource.data.payment.orderId is string)
-        && (!('amount' in request.resource.data.payment) || request.resource.data.payment.amount is number)
-        && (
-          (
-            ('transactionId' in request.resource.data.payment)
-            && request.resource.data.payment.transactionId.size() > 0
-            && ('screenshotUrl' in request.resource.data.payment)
-            && request.resource.data.payment.screenshotUrl.size() > 0
-          )
-          ||
-          (
-            ('status' in request.resource.data.payment)
-            && request.resource.data.payment.status == "SUCCESS"
-            && ('paymentId' in request.resource.data.payment)
-            && request.resource.data.payment.paymentId.size() > 0
-            && ('orderId' in request.resource.data.payment)
-            && request.resource.data.payment.orderId.size() > 0
-            && ('amount' in request.resource.data.payment)
-            && request.resource.data.payment.amount > 0
-          )
-        )
-        && request.resource.data.status == "pending"
-        && request.resource.data.notes is string;
-
-      // Only authenticated admins with a custom claim can READ, UPDATE, DELETE
-      allow read, update, delete: if request.auth != null
-        && request.auth.token.admin == true;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // Block all other collections by default
+    function userSnapshot(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function userExists(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function myRole() {
+      return signedIn() && userExists(request.auth.uid)
+        ? userSnapshot(request.auth.uid).data.role
+        : null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && (request.auth.token.admin == true || myRole() == "ADMIN");
+    }
+
+    function isTeamLead() {
+      return signedIn() && myRole() == "TEAM_LEAD";
+    }
+
+    function configDoc() {
+      return get(/databases/$(database)/documents/hackathon_config/global);
+    }
+
+    function configExists() {
+      return exists(/databases/$(database)/documents/hackathon_config/global);
+    }
+
+    function currentPhase() {
+      return configExists() ? configDoc().data.currentPhase : null;
+    }
+
+    function psSelectionLocked() {
+      return configExists() && configDoc().data.psSelectionLocked == true;
+    }
+
+    function submissionLocked() {
+      return configExists() && configDoc().data.submissionLocked == true;
+    }
+
+    function submissionDeadlinePassed() {
+      return configExists()
+        && configDoc().data.submissionDeadline != null
+        && request.time > configDoc().data.submissionDeadline;
+    }
+
+    // Public read of global hackathon config (phase, locks, timeline) for dashboards / future landing widgets.
+    match /hackathon_config/{docId} {
+      allow read: if docId == "global" || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    match /teams/{teamId} {
+      allow read: if isAdmin()
+        || (
+          signedIn()
+          && (
+            resource.data.leadUid == request.auth.uid
+            || ("memberUids" in resource.data && request.auth.uid in resource.data.memberUids)
+          )
+        );
+
+      allow create: if isTeamLead();
+
+      allow update: if isAdmin()
+        || (
+          isTeamLead()
+          && resource.data.leadUid == request.auth.uid
+          && (
+            (
+              currentPhase() == "PS_SELECTION"
+              && !psSelectionLocked()
+              && !(resource.data.psSelection.locked == true)
+              && request.resource.data.psSelection.locked == true
+              && request.resource.data.psSelection.selected == true
+            )
+            || (
+              currentPhase() == "SUBMISSION"
+              && !submissionLocked()
+              && !submissionDeadlinePassed()
+              && !(resource.data.submission.locked == true)
+              && request.resource.data.submission.locked == true
+              && request.resource.data.submission.submitted == true
+            )
+          )
+        );
+
+      allow delete: if isAdmin();
+    }
+
+    // Workshop rows are created by server (Admin SDK) for public form; authenticated users may register via client later.
+    match /workshop_registrations/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(["college", "phone", "payment", "status"])
+        && request.resource.data.payment is map;
+      allow read: if isAdmin()
+        || (signedIn()
+          && resource.data.uid != ""
+          && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // Legacy hackathon form (still written by Admin API; optional direct client create if enabled later).
+    match /registrations/{docId} {
+      allow create: if false;
+      allow read, update, delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

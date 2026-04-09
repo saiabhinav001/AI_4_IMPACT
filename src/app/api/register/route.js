@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '../../../../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { FieldValue } from "firebase-admin/firestore";
+import { adminDb } from "../../../../lib/admin";
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
@@ -150,19 +150,62 @@ export async function POST(request) {
       cleanParticipants.push(cleanParticipant);
     }
 
-    // Write to Firestore
-    const docRef = await addDoc(collection(db, "registrations"), {
-      teamName: cleanTeamName,
-      collegeName: cleanCollegeName,
-      teamSize: parsedTeamSize,
-      participants: cleanParticipants,
-      payment: cleanPayment,
-      createdAt: serverTimestamp(),
-      status: 'pending',
-      notes: '',
-    });
+    const members = cleanParticipants.map((participant, idx) => ({
+      name: participant.name,
+      roll: participant.roll,
+      email: participant.email,
+      phone: participant.phone,
+      college: cleanCollegeName,
+      uid: "",
+      isLead: idx === 0,
+    }));
 
-    return NextResponse.json({ success: true, id: docRef.id });
+    const legacyDocRef = adminDb.collection("registrations").doc();
+    const teamDocRef = adminDb.collection("teams").doc();
+
+    await Promise.all([
+      legacyDocRef.set({
+        teamName: cleanTeamName,
+        collegeName: cleanCollegeName,
+        teamSize: parsedTeamSize,
+        participants: cleanParticipants,
+        payment: cleanPayment,
+        createdAt: FieldValue.serverTimestamp(),
+        status: 'pending',
+        notes: '',
+      }),
+      teamDocRef.set({
+        teamName: cleanTeamName,
+        leadUid: "",
+        memberUids: [],
+        members,
+        payment: {
+          screenshotUrl: cleanPayment.screenshotUrl || "",
+          reference: cleanPayment.transactionId || cleanPayment.paymentId || "",
+          status: "PENDING",
+        },
+        psSelection: {
+          selected: false,
+          problemStatementId: "",
+          selectedAt: null,
+          selectedBy: "",
+          locked: false,
+        },
+        submission: {
+          submitted: false,
+          githubUrl: "",
+          pptUrl: "",
+          submittedAt: null,
+          submittedBy: "",
+          locked: false,
+        },
+        source: "legacy_public_form",
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }),
+    ]);
+
+    return NextResponse.json({ success: true, id: teamDocRef.id });
 
   } catch (error) {
     console.error("Registration error:", error);

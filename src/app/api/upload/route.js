@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { randomUUID } from "crypto";
+import { adminStorage } from "../../../../lib/admin";
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
@@ -43,14 +45,6 @@ export async function POST(request) {
       );
     }
 
-    const imgbbApiKey = process.env.IMGBB_API_KEY;
-    if (!imgbbApiKey) {
-      return NextResponse.json(
-        { success: false, error: 'Upload service is not configured' },
-        { status: 500 }
-      );
-    }
-
     const formData = await request.formData();
     const file = formData.get("image");
 
@@ -72,34 +66,23 @@ export async function POST(request) {
       );
     }
 
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const objectPath = `payments/${Date.now()}-${randomUUID()}.${ext}`;
+    const blob = adminStorage.file(objectPath);
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const base64String = buffer.toString('base64');
 
-    const bodyParams = new URLSearchParams();
-    bodyParams.append("image", base64String);
+    await blob.save(buffer, {
+      resumable: false,
+      metadata: { contentType: file.type },
+    });
 
-    const imgbbReq = await fetch(
-      `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: bodyParams.toString()
-      }
-    );
+    const [signedUrl] = await blob.getSignedUrl({
+      action: "read",
+      expires: "2100-01-01",
+    });
 
-    const imgbbRes = await imgbbReq.json();
-
-    if (imgbbRes.success) {
-      return NextResponse.json({ success: true, url: imgbbRes.data.url });
-    }
-
-    return NextResponse.json(
-      { success: false, error: "Upload failed" },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: true, url: signedUrl, path: objectPath });
 
   } catch (error) {
     return NextResponse.json(
