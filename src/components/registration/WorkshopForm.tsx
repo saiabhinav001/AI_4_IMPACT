@@ -247,6 +247,7 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
       batch.update(analyticsRef, {
         total_workshop: increment(1),
         [`colleges.${values.college.trim()}`]: increment(1),
+        [`colleges_workshop.${values.college.trim()}`]: increment(1),
         updated_at: serverTimestamp(),
       });
 

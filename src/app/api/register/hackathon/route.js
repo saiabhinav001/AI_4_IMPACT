@@ -169,6 +169,8 @@ export async function POST(request) {
       FieldValue.increment(1),
       new FieldPath("colleges", college),
       FieldValue.increment(1),
+      new FieldPath("colleges_hackathon", college),
+      FieldValue.increment(1),
       "updated_at",
       FieldValue.serverTimestamp()
     );

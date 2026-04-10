@@ -358,6 +358,7 @@ export default function HackathonForm({ qrSrc }: HackathonFormProps) {
         total_hackathon: increment(1),
         [values.teamSize === 3 ? "team_size_3" : "team_size_4"]: increment(1),
         [`colleges.${values.college.trim()}`]: increment(1),
+        [`colleges_hackathon.${values.college.trim()}`]: increment(1),
         updated_at: serverTimestamp(),
       });
 

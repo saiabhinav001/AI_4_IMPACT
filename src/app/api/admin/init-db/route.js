@@ -30,6 +30,8 @@ export async function POST(request) {
       team_size_3: 0,
       team_size_4: 0,
       colleges: {},
+      colleges_hackathon: {},
+      colleges_workshop: {},
       updated_at: FieldValue.serverTimestamp(),
     });
 

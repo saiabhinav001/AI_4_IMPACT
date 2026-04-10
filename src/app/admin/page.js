@@ -11,6 +11,11 @@ import {
 
 const CHART_COLORS = ["#00FFFF", "#FF00FF", "#B026FF", "#FF2A2A", "#00FF88"];
 const PAGE_SIZE = 15;
+const TRACK_OPTIONS = [
+  { value: "hackathon", label: "HACKATHON" },
+  { value: "workshop", label: "WORKSHOP" },
+  { value: "all", label: "ALL TRACKS" },
+];
 const EMAIL_STATE_META = {
   NOT_READY: {
     label: "NOT READY",
@@ -236,6 +241,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [registrations, setRegistrations] = useState([]);
   const [dataError, setDataError] = useState("");
+  const [filterTrack, setFilterTrack] = useState("hackathon");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSize, setFilterSize] = useState("all");
   const [filterCollege, setFilterCollege] = useState("all");
@@ -358,9 +364,29 @@ export default function AdminDashboard() {
     };
   }, [user, fetchRegistrations]);
 
+  const registrationsForTrack = useMemo(() => {
+    if (filterTrack === "all") {
+      return registrations;
+    }
+
+    return registrations.filter((registration) => registration.registrationType === filterTrack);
+  }, [registrations, filterTrack]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+
+    if (filterTrack === "workshop" && filterSize !== "all" && filterSize !== "1") {
+      setFilterSize("all");
+    }
+
+    if (filterTrack === "hackathon" && filterSize === "1") {
+      setFilterSize("all");
+    }
+  }, [filterTrack, filterSize]);
+
   // ── Filtering + Search ──
   const filtered = useMemo(() => {
-    return registrations.filter((r) => {
+    return registrationsForTrack.filter((r) => {
       const leader = getLeaderParticipant(r);
       const emailState = normalizeEmailDeliveryState(r?.emailDelivery?.state);
       const emailBucket = classifyEmailStateBucket(emailState);
@@ -383,7 +409,7 @@ export default function AdminDashboard() {
         (filterEmailState === "not-ready" && emailBucket === "not-ready");
       return matchSearch && matchSize && matchCollege && matchEmailState;
     });
-  }, [registrations, searchTerm, filterSize, filterCollege, filterEmailState]);
+  }, [registrationsForTrack, searchTerm, filterSize, filterCollege, filterEmailState]);
 
   const bulkSendCandidateIds = useMemo(() => {
     return filtered
@@ -404,12 +430,13 @@ export default function AdminDashboard() {
 
   // ── Stats ──
   const stats = useMemo(() => {
-    const totalRegs = registrations.length;
-    const totalParticipants = registrations.reduce((s, r) => s + (r.participants?.length || 0), 0);
-    const teamsOf3 = registrations.filter((r) => r.teamSize === 3).length;
-    const teamsOf4 = registrations.filter((r) => r.teamSize === 4).length;
-    const colleges = new Set(registrations.map((r) => r.collegeName?.toUpperCase())).size;
-    const unsentCredentialEmails = registrations.filter((registration) => {
+    const totalRegs = registrationsForTrack.length;
+    const totalParticipants = registrationsForTrack.reduce((s, r) => s + (r.participants?.length || 0), 0);
+    const teamsOf1 = registrationsForTrack.filter((r) => r.teamSize === 1).length;
+    const teamsOf3 = registrationsForTrack.filter((r) => r.teamSize === 3).length;
+    const teamsOf4 = registrationsForTrack.filter((r) => r.teamSize === 4).length;
+    const colleges = new Set(registrationsForTrack.map((r) => r.collegeName?.toUpperCase())).size;
+    const unsentCredentialEmails = registrationsForTrack.filter((registration) => {
       if (registration.registrationType !== "hackathon") return false;
       const state = normalizeEmailDeliveryState(registration?.emailDelivery?.state);
       return ["UNSENT", "ERROR", "RETRY"].includes(state);
@@ -418,17 +445,18 @@ export default function AdminDashboard() {
     return {
       totalRegs,
       totalParticipants,
+      teamsOf1,
       teamsOf3,
       teamsOf4,
       colleges,
       unsentCredentialEmails,
     };
-  }, [registrations]);
+  }, [registrationsForTrack]);
 
   // ── Duplicate Detection ──
   const duplicates = useMemo(() => {
     const nameCount = {}, txCount = {};
-    registrations.forEach((r) => {
+    registrationsForTrack.forEach((r) => {
       const n = r.teamName?.toLowerCase();
       const t = r.payment?.transactionId?.toLowerCase();
       if (n) nameCount[n] = (nameCount[n] || 0) + 1;
@@ -437,13 +465,13 @@ export default function AdminDashboard() {
     const dupNames = new Set(Object.keys(nameCount).filter((k) => nameCount[k] > 1));
     const dupTx = new Set(Object.keys(txCount).filter((k) => txCount[k] > 1));
     return { dupNames, dupTx };
-  }, [registrations]);
+  }, [registrationsForTrack]);
 
   // ── Analytics Data ──
   const analyticsData = useMemo(() => {
     // Registrations over time
     const dateMap = {};
-    registrations.forEach((r) => {
+    registrationsForTrack.forEach((r) => {
       const d = toDateSafe(r.createdAt);
       if (!d) return;
       const isoKey = d.toISOString().slice(0, 10);
@@ -458,7 +486,7 @@ export default function AdminDashboard() {
 
     // Top colleges
     const collegeMap = {};
-    registrations.forEach((r) => {
+    registrationsForTrack.forEach((r) => {
       const c = r.collegeName?.toUpperCase() || "UNKNOWN";
       collegeMap[c] = (collegeMap[c] || 0) + 1;
     });
@@ -468,23 +496,58 @@ export default function AdminDashboard() {
       .map(([college, count]) => ({ college: college.length > 15 ? college.slice(0, 15) + "…" : college, count }));
 
     // Team size distribution
-    const sizeDist = [
-      { name: "Size 3", value: stats.teamsOf3 },
-      { name: "Size 4", value: stats.teamsOf4 },
-    ];
+    const sizeDist = [];
+    if (filterTrack === "workshop") {
+      sizeDist.push({ name: "Individual", value: stats.teamsOf1 });
+    } else if (filterTrack === "hackathon") {
+      sizeDist.push(
+        { name: "Size 3", value: stats.teamsOf3 },
+        { name: "Size 4", value: stats.teamsOf4 }
+      );
+    } else {
+      sizeDist.push(
+        { name: "Individual", value: stats.teamsOf1 },
+        { name: "Size 3", value: stats.teamsOf3 },
+        { name: "Size 4", value: stats.teamsOf4 }
+      );
+    }
 
     return { timeline, topColleges, sizeDist };
-  }, [registrations, stats, toDateSafe]);
+  }, [registrationsForTrack, stats, toDateSafe, filterTrack]);
 
   // ── Unique colleges list ──
   const collegeList = useMemo(() => {
-    return [...new Set(registrations.map((r) => r.collegeName).filter(Boolean))].sort();
-  }, [registrations]);
+    return [...new Set(registrationsForTrack.map((r) => r.collegeName).filter(Boolean))].sort();
+  }, [registrationsForTrack]);
+
+  const sizeOptions = useMemo(() => {
+    if (filterTrack === "workshop") {
+      return [
+        { value: "all", label: "ALL ENTRIES" },
+        { value: "1", label: "INDIVIDUAL" },
+      ];
+    }
+
+    if (filterTrack === "hackathon") {
+      return [
+        { value: "all", label: "ALL SIZES" },
+        { value: "3", label: "SIZE 3" },
+        { value: "4", label: "SIZE 4" },
+      ];
+    }
+
+    return [
+      { value: "all", label: "ALL SIZES" },
+      { value: "1", label: "SIZE 1" },
+      { value: "3", label: "SIZE 3" },
+      { value: "4", label: "SIZE 4" },
+    ];
+  }, [filterTrack]);
 
   // ── CSV Export ──
   const exportCSV = useCallback(() => {
     const headers = [
-      "Team Name", "College", "Team Size", "Status", "Transaction ID",
+      "Track", "Team Name", "Leader", "Contact", "College", "Team Size", "Status", "Transaction ID",
       "Screenshot URL", "Submission Time", "Notes",
       "P1 Name", "P1 Roll", "P1 Email", "P1 Phone",
       "P2 Name", "P2 Roll", "P2 Email", "P2 Phone",
@@ -492,13 +555,19 @@ export default function AdminDashboard() {
       "P4 Name", "P4 Roll", "P4 Email", "P4 Phone",
     ];
 
-    const rows = registrations.map((r) => {
+    const rows = filtered.map((r) => {
       const dateObj = toDateSafe(r.createdAt);
       const date = dateObj ? dateObj.toISOString() : "N/A";
       const leaderName = getLeaderName(r);
       const leaderContact = getLeaderContact(r);
       const row = [
-        r.teamName, leaderName, leaderContact, r.collegeName, r.teamSize, r.status || "pending",
+        String(r.registrationType || "").toUpperCase(),
+        r.teamName,
+        leaderName,
+        leaderContact,
+        r.collegeName,
+        r.teamSize,
+        r.status || "pending",
         r.payment?.transactionId || "", r.payment?.screenshotUrl || "",
         date, r.notes || "",
       ];
@@ -517,10 +586,10 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `registrations_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `registrations_${filterTrack}_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [registrations, toDateSafe]);
+  }, [filtered, toDateSafe, filterTrack]);
 
   const openScreenshotPreview = useCallback((url, label = "PAYMENT SCREENSHOT") => {
     if (!url) return;
@@ -1015,15 +1084,37 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        <p style={{
+          color: "var(--neon-cyan)",
+          fontFamily: "monospace",
+          fontSize: "0.82rem",
+          letterSpacing: "0.08em",
+          marginBottom: "1rem",
+        }}>
+          ACTIVE TRACK VIEW: {String(filterTrack || "all").toUpperCase()}
+        </p>
+
         {/* ── Stats Cards ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
           {[
             { label: "TOTAL REGISTRATIONS", value: stats.totalRegs, color: "var(--neon-cyan)" },
             { label: "TOTAL PARTICIPANTS", value: stats.totalParticipants, color: "var(--neon-pink)" },
-            { label: "TEAMS OF 3", value: stats.teamsOf3, color: "var(--neon-cyan)" },
-            { label: "TEAMS OF 4", value: stats.teamsOf4, color: "var(--neon-purple)" },
+            ...(filterTrack === "workshop"
+              ? [{ label: "INDIVIDUAL ENTRIES", value: stats.teamsOf1, color: "var(--neon-purple)" }]
+              : filterTrack === "hackathon"
+                ? [
+                    { label: "TEAMS OF 3", value: stats.teamsOf3, color: "var(--neon-cyan)" },
+                    { label: "TEAMS OF 4", value: stats.teamsOf4, color: "var(--neon-purple)" },
+                  ]
+                : [
+                    { label: "SIZE 1 ENTRIES", value: stats.teamsOf1, color: "var(--neon-purple)" },
+                    { label: "TEAMS OF 3", value: stats.teamsOf3, color: "var(--neon-cyan)" },
+                    { label: "TEAMS OF 4", value: stats.teamsOf4, color: "var(--neon-purple)" },
+                  ]),
             { label: "UNIQUE COLLEGES", value: stats.colleges, color: "var(--danger-red)" },
-            { label: "UNSENT CREDENTIAL EMAILS", value: stats.unsentCredentialEmails, color: "#FFD700" },
+            ...(filterTrack === "workshop"
+              ? []
+              : [{ label: "UNSENT CREDENTIAL EMAILS", value: stats.unsentCredentialEmails, color: "#FFD700" }]),
           ].map((s) => (
             <div key={s.label} className="cyber-card" style={{ padding: "1.5rem", textAlign: "center" }}>
               <p style={{ fontSize: "2.5rem", fontFamily: "var(--font-heading)", color: s.color, marginBottom: "0.3rem" }}>{s.value}</p>
@@ -1080,6 +1171,21 @@ export default function AdminDashboard() {
           <>
             {/* ── Filters ── */}
             <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+              <select
+                value={filterTrack}
+                onChange={(e) => {
+                  setFilterTrack(e.target.value);
+                }}
+                style={{
+                  padding: "0.7rem 1rem", background: "var(--bg-dark)",
+                  border: "2px solid var(--neon-pink)", color: "var(--text-main)",
+                  fontFamily: "monospace", cursor: "pointer"
+                }}
+              >
+                {TRACK_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
               <input
                 type="text"
                 placeholder="SEARCH TEAM / LEADER / CONTACT / COLLEGE / TX ID..."
@@ -1106,9 +1212,9 @@ export default function AdminDashboard() {
                   fontFamily: "monospace", cursor: "pointer"
                 }}
               >
-                <option value="all">ALL SIZES</option>
-                <option value="3">SIZE 3</option>
-                <option value="4">SIZE 4</option>
+                {sizeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
               <select
                 value={filterCollege}
@@ -1197,7 +1303,7 @@ export default function AdminDashboard() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "monospace", fontSize: "0.85rem" }}>
                 <thead>
                   <tr style={{ borderBottom: "2px solid var(--neon-cyan)" }}>
-                    {["#", "TEAM", "LEADER", "CONTACT", "COLLEGE", "SIZE", "TX ID", "STATUS", "EMAIL", "ACTION", "SCREENSHOT", "TIME"].map((h) => (
+                    {["#", "TEAM", "TRACK", "LEADER", "CONTACT", "COLLEGE", "SIZE", "TX ID", "STATUS", "EMAIL", "ACTION", "SCREENSHOT", "TIME"].map((h) => (
                       <th key={h} style={{ padding: "0.8rem 0.5rem", textAlign: "left", color: "var(--neon-cyan)", fontWeight: "bold", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -1229,6 +1335,30 @@ export default function AdminDashboard() {
                         <td style={{ padding: "0.7rem 0.5rem", color: dupN ? "var(--danger-red)" : "var(--text-main)", fontWeight: "bold" }}>
                           {r.teamName?.toUpperCase() || "—"}
                           {dupN && <span style={{ color: "var(--danger-red)", fontSize: "0.7rem" }}> ⚠ DUP</span>}
+                        </td>
+                        <td style={{ padding: "0.7rem 0.5rem" }}>
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              fontSize: "0.72rem",
+                              fontWeight: "bold",
+                              background:
+                                r.registrationType === "hackathon"
+                                  ? "rgba(34,211,238,0.18)"
+                                  : "rgba(180,38,255,0.2)",
+                              color:
+                                r.registrationType === "hackathon"
+                                  ? "#22D3EE"
+                                  : "#D8ACFF",
+                              border:
+                                r.registrationType === "hackathon"
+                                  ? "1px solid #22D3EE"
+                                  : "1px solid #D8ACFF",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {String(r.registrationType || "unknown").toUpperCase()}
+                          </span>
                         </td>
                         <td style={{ padding: "0.7rem 0.5rem", color: "var(--text-main)", fontWeight: "bold" }}>
                           {leaderName !== "—" ? leaderName.toUpperCase() : "—"}
@@ -1335,7 +1465,7 @@ export default function AdminDashboard() {
                     );
                   })}
                   {paginated.length === 0 && (
-                    <tr><td colSpan={12} style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>NO RESULTS FOUND</td></tr>
+                    <tr><td colSpan={13} style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>NO RESULTS FOUND</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1376,7 +1506,7 @@ export default function AdminDashboard() {
             {/* Registrations Over Time */}
             <div className="cyber-card" style={{ padding: "1.5rem", gridColumn: "1 / -1" }}>
               <h3 style={{ fontSize: "1.2rem", marginBottom: "1rem", borderBottom: "1px solid var(--text-muted)", paddingBottom: "0.5rem" }}>
-                📈 REGISTRATIONS OVER TIME
+                📈 REGISTRATIONS OVER TIME ({String(filterTrack || "all").toUpperCase()})
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={analyticsData.timeline}>
@@ -1392,7 +1522,7 @@ export default function AdminDashboard() {
             {/* Top Colleges */}
             <div className="cyber-card" style={{ padding: "1.5rem" }}>
               <h3 style={{ fontSize: "1.2rem", marginBottom: "1rem", borderBottom: "1px solid var(--text-muted)", paddingBottom: "0.5rem" }}>
-                🏫 TOP COLLEGES
+                🏫 TOP COLLEGES ({String(filterTrack || "all").toUpperCase()})
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={analyticsData.topColleges} layout="vertical">
@@ -1408,7 +1538,7 @@ export default function AdminDashboard() {
             {/* Team Size Distribution */}
             <div className="cyber-card" style={{ padding: "1.5rem" }}>
               <h3 style={{ fontSize: "1.2rem", marginBottom: "1rem", borderBottom: "1px solid var(--text-muted)", paddingBottom: "0.5rem" }}>
-                👥 TEAM SIZE DISTRIBUTION
+                👥 ENTRY SIZE DISTRIBUTION
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -1497,6 +1627,7 @@ export default function AdminDashboard() {
 
             {/* Team Info */}
             <div style={{ marginBottom: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
+              <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>REGISTRATION TYPE:</span> {String(selectedTeam.registrationType || "unknown").toUpperCase()}</p>
               <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>TEAM SIZE:</span> {selectedTeam.teamSize}</p>
               <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>TEAM LEADER:</span> {selectedLeaderName}</p>
               <p style={{ marginBottom: "0.5rem" }}><span style={{ color: "var(--neon-cyan)" }}>LEADER CONTACT:</span> {selectedLeaderContact}</p>

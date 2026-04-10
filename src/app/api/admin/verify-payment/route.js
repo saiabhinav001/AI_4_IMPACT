@@ -69,6 +69,51 @@ function hasStoredCredentials(accessCredentials) {
   return Boolean(asTrimmedString(accessCredentials?.team_id));
 }
 
+function isScreenshotPathCompatibleWithType(screenshotUrl, registrationType) {
+  const normalizedType = asTrimmedString(registrationType).toLowerCase();
+  if (!screenshotUrl || !normalizedType) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(screenshotUrl);
+    if (parsed.hostname !== "firebasestorage.googleapis.com") {
+      return true;
+    }
+
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    const objectIndex = segments.indexOf("o");
+    if (objectIndex === -1 || objectIndex + 1 >= segments.length) {
+      return true;
+    }
+
+    const objectPath = decodeURIComponent(segments.slice(objectIndex + 1).join("/"));
+    if (!objectPath) {
+      return true;
+    }
+
+    // Keep legacy temp uploads valid while enforcing separated workshop/hackathon buckets.
+    if (objectPath.startsWith("payments/temp_")) {
+      return true;
+    }
+
+    if (objectPath.startsWith(`payments/${normalizedType}/`)) {
+      return true;
+    }
+
+    if (
+      objectPath.startsWith("payments/workshop/") ||
+      objectPath.startsWith("payments/hackathon/")
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 function readExistingTeamAccess(registrationData) {
   const rawAccess = registrationData?.access_credentials || {};
   const teamId = asTrimmedString(
@@ -252,6 +297,12 @@ export async function POST(request) {
     const transactionData = transactionDoc.data();
     const registrationType = transactionData?.registration_type;
     const registrationRefId = transactionData?.registration_ref;
+
+    if (!isScreenshotPathCompatibleWithType(transactionData?.screenshot_url, registrationType)) {
+      return badRequest(
+        "Transaction screenshot path does not match registration_type. Keep workshop and hackathon uploads separate."
+      );
+    }
 
     let registrationCollection = null;
     if (registrationType === "workshop") {
