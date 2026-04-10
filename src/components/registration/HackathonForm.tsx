@@ -22,6 +22,21 @@ import SubmitButton from "./SubmitButton";
 
 const phoneRegex = /^\d{10}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const YEAR_OPTIONS = ["1st year", "2nd year", "3rd year", "4th year"] as const;
+const BRANCH_OPTIONS = [
+  "CSE",
+  "AIDS",
+  "IOT",
+  "CSM",
+  "IT",
+  "BIO",
+  "CHEM",
+  "MECH",
+  "ECE",
+  "EVL",
+  "EEE",
+  "CIVIL",
+] as const;
 
 const memberSchema = z.object({
   name: z.string().trim(),
@@ -91,7 +106,15 @@ const hackathonSchema = z
       if (!member.department.trim()) {
         context.addIssue({
           code: "custom",
-          message: "Department is required.",
+          message: "Branch is required.",
+          path: ["members", index, "department"],
+        });
+      } else if (
+        !BRANCH_OPTIONS.includes(member.department.trim() as (typeof BRANCH_OPTIONS)[number])
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Select a valid branch.",
           path: ["members", index, "department"],
         });
       }
@@ -99,7 +122,15 @@ const hackathonSchema = z
       if (!member.yearOfStudy.trim()) {
         context.addIssue({
           code: "custom",
-          message: "Year of studying is required.",
+          message: "Year is required.",
+          path: ["members", index, "yearOfStudy"],
+        });
+      } else if (
+        !YEAR_OPTIONS.includes(member.yearOfStudy.trim() as (typeof YEAR_OPTIONS)[number])
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Select a valid year.",
           path: ["members", index, "yearOfStudy"],
         });
       }
@@ -282,6 +313,11 @@ export default function HackathonForm({ qrSrc }: HackathonFormProps) {
       name: member.name.trim(),
       email: member.email.trim().toLowerCase(),
       phone: member.phone.trim(),
+      roll_number: member.rollNumber.trim(),
+      branch: member.department.trim(),
+      department: member.department.trim(),
+      year_of_study: member.yearOfStudy.trim(),
+      yearOfStudy: member.yearOfStudy.trim(),
     }));
 
     const memberEmails = membersData.map((m) => m.email);
@@ -403,7 +439,14 @@ export default function HackathonForm({ qrSrc }: HackathonFormProps) {
     });
 
     if (size === 3) {
-      clearErrors(["members.3.name", "members.3.email", "members.3.phone"]);
+      clearErrors([
+        "members.3.name",
+        "members.3.email",
+        "members.3.phone",
+        "members.3.rollNumber",
+        "members.3.department",
+        "members.3.yearOfStudy",
+      ]);
     }
 
     setSubmitError("");
@@ -589,28 +632,42 @@ export default function HackathonForm({ qrSrc }: HackathonFormProps) {
                   </div>
                   <div>
                     <label className="mb-[7px] block font-[var(--font-dm-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(237,232,245,0.45)]">
-                      Department
+                      Branch
                     </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. CSE"
-                      className="w-full rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 placeholder:text-[rgba(237,232,245,0.25)] hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
+                    <select
+                      className="w-full appearance-none rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
                       {...register(`members.${index}.department` as const)}
-                    />
+                    >
+                      <option value="" className="bg-[#1A1031] text-[#EDE8F5]">
+                        Select branch
+                      </option>
+                      {BRANCH_OPTIONS.map((branch) => (
+                        <option key={branch} value={branch} className="bg-[#1A1031] text-[#EDE8F5]">
+                          {branch}
+                        </option>
+                      ))}
+                    </select>
                     <AnimatedFieldError message={errors.members?.[index]?.department?.message} />
                   </div>
                 </div>
 
                 <div className="mb-3">
                   <label className="mb-[7px] block font-[var(--font-dm-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(237,232,245,0.45)]">
-                    Year of Studying
+                    Year
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 1st Year"
-                    className="w-full rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 placeholder:text-[rgba(237,232,245,0.25)] hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
+                  <select
+                    className="w-full appearance-none rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
                     {...register(`members.${index}.yearOfStudy` as const)}
-                  />
+                  >
+                    <option value="" className="bg-[#1A1031] text-[#EDE8F5]">
+                      Select year
+                    </option>
+                    {YEAR_OPTIONS.map((year) => (
+                      <option key={year} value={year} className="bg-[#1A1031] text-[#EDE8F5]">
+                        {year}
+                      </option>
+                    ))}
+                  </select>
                   <AnimatedFieldError message={errors.members?.[index]?.yearOfStudy?.message} />
                 </div>
               </div>
@@ -696,28 +753,42 @@ export default function HackathonForm({ qrSrc }: HackathonFormProps) {
                   </div>
                   <div>
                     <label className="mb-[7px] block font-[var(--font-dm-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(237,232,245,0.45)]">
-                      Department
+                      Branch
                     </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. CSE"
-                      className="w-full rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 placeholder:text-[rgba(237,232,245,0.25)] hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
+                    <select
+                      className="w-full appearance-none rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
                       {...register("members.3.department")}
-                    />
+                    >
+                      <option value="" className="bg-[#1A1031] text-[#EDE8F5]">
+                        Select branch
+                      </option>
+                      {BRANCH_OPTIONS.map((branch) => (
+                        <option key={branch} value={branch} className="bg-[#1A1031] text-[#EDE8F5]">
+                          {branch}
+                        </option>
+                      ))}
+                    </select>
                     <AnimatedFieldError message={errors.members?.[3]?.department?.message} />
                   </div>
                 </div>
 
                 <div>
                   <label className="mb-[7px] block font-[var(--font-dm-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(237,232,245,0.45)]">
-                    Year of Studying
+                    Year
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 1st Year"
-                    className="w-full rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 placeholder:text-[rgba(237,232,245,0.25)] hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
+                  <select
+                    className="w-full appearance-none rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
                     {...register("members.3.yearOfStudy")}
-                  />
+                  >
+                    <option value="" className="bg-[#1A1031] text-[#EDE8F5]">
+                      Select year
+                    </option>
+                    {YEAR_OPTIONS.map((year) => (
+                      <option key={year} value={year} className="bg-[#1A1031] text-[#EDE8F5]">
+                        {year}
+                      </option>
+                    ))}
+                  </select>
                   <AnimatedFieldError message={errors.members?.[3]?.yearOfStudy?.message} />
                 </div>
               </div>

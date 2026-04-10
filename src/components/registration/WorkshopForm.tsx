@@ -20,6 +20,22 @@ import { db, storage } from "../../../lib/firebase";
 import PaymentSection from "./PaymentSection";
 import SubmitButton from "./SubmitButton";
 
+const YEAR_OPTIONS = ["1st year", "2nd year", "3rd year", "4th year"] as const;
+const BRANCH_OPTIONS = [
+  "CSE",
+  "AIDS",
+  "IOT",
+  "CSM",
+  "IT",
+  "BIO",
+  "CHEM",
+  "MECH",
+  "ECE",
+  "EVL",
+  "EEE",
+  "CIVIL",
+] as const;
+
 const workshopSchema = z.object({
   fullName: z.string().trim().min(1, "Full Name is required."),
   email: z
@@ -33,8 +49,22 @@ const workshopSchema = z.object({
     .regex(/^\d{10}$/, "Phone must be exactly 10 digits."),
   college: z.string().trim().min(1, "College / University is required."),
   rollNumber: z.string().trim().min(1, "Roll Number is required."),
-  department: z.string().trim().min(1, "Department is required."),
-  yearOfStudy: z.string().trim().min(1, "Year of Studying is required."),
+  department: z
+    .string()
+    .trim()
+    .min(1, "Branch is required.")
+    .refine(
+      (value) => BRANCH_OPTIONS.includes(value as (typeof BRANCH_OPTIONS)[number]),
+      "Select a valid branch."
+    ),
+  yearOfStudy: z
+    .string()
+    .trim()
+    .min(1, "Year is required.")
+    .refine(
+      (value) => YEAR_OPTIONS.includes(value as (typeof YEAR_OPTIONS)[number]),
+      "Select a valid year."
+    ),
   transactionId: z.string().trim().min(1, "Transaction ID is required."),
 });
 
@@ -216,6 +246,11 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
         name: values.fullName.trim(),
         email: values.email.trim().toLowerCase(),
         phone: values.phone.trim(),
+        roll_number: values.rollNumber.trim(),
+        branch: values.department.trim(),
+        department: values.department.trim(),
+        year_of_study: values.yearOfStudy.trim(),
+        yearOfStudy: values.yearOfStudy.trim(),
         registration_type: "workshop",
         registration_ref: workshopRef.id,
         created_at: serverTimestamp(),
@@ -226,6 +261,11 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
         participant_id: participantRef.id,
         transaction_id: transactionRef.id,
         college: values.college.trim(),
+        roll_number: values.rollNumber.trim(),
+        branch: values.department.trim(),
+        department: values.department.trim(),
+        year_of_study: values.yearOfStudy.trim(),
+        yearOfStudy: values.yearOfStudy.trim(),
         payment_verified: false,
         created_at: serverTimestamp(),
       });
@@ -357,28 +397,42 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
 
           <div>
             <label className="mb-[7px] block font-[var(--font-dm-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(237,232,245,0.45)]">
-              Department
+              Branch
             </label>
-            <input
-              type="text"
-              placeholder="e.g. CSE"
-              className="w-full rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 placeholder:text-[rgba(237,232,245,0.25)] hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
+            <select
+              className="w-full appearance-none rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
               {...register("department")}
-            />
+            >
+              <option value="" className="bg-[#1A1031] text-[#EDE8F5]">
+                Select branch
+              </option>
+              {BRANCH_OPTIONS.map((branch) => (
+                <option key={branch} value={branch} className="bg-[#1A1031] text-[#EDE8F5]">
+                  {branch}
+                </option>
+              ))}
+            </select>
             <AnimatedFieldError message={errors.department?.message} />
           </div>
         </div>
 
         <div className="mb-8">
           <label className="mb-[7px] block font-[var(--font-dm-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(237,232,245,0.45)]">
-            Year of Studying
+            Year
           </label>
-          <input
-            type="text"
-            placeholder="e.g. 1st Year"
-            className="w-full rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 placeholder:text-[rgba(237,232,245,0.25)] hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
+          <select
+            className="w-full appearance-none rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
             {...register("yearOfStudy")}
-          />
+          >
+            <option value="" className="bg-[#1A1031] text-[#EDE8F5]">
+              Select year
+            </option>
+            {YEAR_OPTIONS.map((year) => (
+              <option key={year} value={year} className="bg-[#1A1031] text-[#EDE8F5]">
+                {year}
+              </option>
+            ))}
+          </select>
           <AnimatedFieldError message={errors.yearOfStudy?.message} />
         </div>
       </div>
