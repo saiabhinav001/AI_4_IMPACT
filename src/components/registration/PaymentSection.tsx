@@ -111,10 +111,14 @@ export default function PaymentSection({
         </label>
         <input
           type="text"
-          placeholder="UPI transaction reference"
+          placeholder="Enter exact UPI transaction ID"
           className="w-full rounded-xl border border-[rgba(141,54,213,0.2)] bg-[rgba(141,54,213,0.06)] px-4 py-[13px] font-[var(--font-dm-sans)] text-sm text-[#EDE8F5] outline-none transition-all duration-300 placeholder:text-[rgba(237,232,245,0.25)] hover:border-[rgba(141,54,213,0.4)] hover:bg-[rgba(141,54,213,0.09)] focus:border-[#8D36D5] focus:bg-[rgba(141,54,213,0.12)] focus:shadow-[0_0_0_3px_rgba(141,54,213,0.15),inset_0_0_0_1px_rgba(141,54,213,0.1)]"
           {...transactionInputProps}
         />
+        <p className="mt-2 text-[11px] leading-relaxed text-[rgba(237,232,245,0.62)]">
+          Enter the same transaction ID shown in your payment app. This helps us verify your
+          registration quickly.
+        </p>
         <AnimatedFieldError message={transactionError} />
       </div>
 
@@ -122,6 +126,10 @@ export default function PaymentSection({
         <label className="mb-[7px] block font-[var(--font-dm-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(237,232,245,0.45)]">
           Payment Screenshot
         </label>
+        <p className="mb-2 text-[11px] leading-relaxed text-[rgba(237,232,245,0.62)]">
+          Upload a clear screenshot with transaction ID, paid amount, and payment status visible
+          for faster verification.
+        </p>
         <FileUpload
           fileName={fileName}
           disabled={uploadInProgress}

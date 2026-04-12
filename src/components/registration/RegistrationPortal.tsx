@@ -101,6 +101,43 @@ export default function RegistrationPortal({
               </p>
               <p className="font-medium text-white">Learn. Build. Impact.</p>
             </div>
+
+            <div className="mt-5 rounded-[18px] border border-[rgba(141,54,213,0.28)] bg-[rgba(141,54,213,0.08)] p-4 text-white/90 backdrop-blur-sm">
+              <p className="font-[var(--font-syne)] text-[12px] font-bold uppercase tracking-[0.08em] text-[#EDE8F5]">
+                Need Help With Registration?
+              </p>
+              <p className="mt-1 text-[12px] leading-relaxed text-[rgba(237,232,245,0.75)]">
+                For any registration or payment query, please contact our student coordination team.
+              </p>
+
+              <ul className="mt-3 grid gap-2 text-[12px] sm:grid-cols-2">
+                <li>
+                  <a className="text-[#EDE8F5] hover:text-white" href="tel:+916303487822">
+                    Akhilesh Reddy - 63034 87822
+                  </a>
+                </li>
+                <li>
+                  <a className="text-[#EDE8F5] hover:text-white" href="tel:+916281011433">
+                    Teja - 62810 11433
+                  </a>
+                </li>
+                <li>
+                  <a className="text-[#EDE8F5] hover:text-white" href="tel:+919866191349">
+                    Neha Reddy - 98661 91349
+                  </a>
+                </li>
+                <li>
+                  <a className="text-[#EDE8F5] hover:text-white" href="tel:+916302898414">
+                    Harinya Reddy - 63028 98414
+                  </a>
+                </li>
+                <li className="sm:col-span-2">
+                  <a className="text-[#EDE8F5] hover:text-white" href="tel:+918498898884">
+                    KVDS Pragna - 84988 98884
+                  </a>
+                </li>
+              </ul>
+            </div>
           </header>
 
           <div
