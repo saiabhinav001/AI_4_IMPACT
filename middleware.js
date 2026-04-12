@@ -60,6 +60,18 @@ export async function middleware(request) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const isAdminSession = await verifyAdminToken(token);
 
+  if (pathname.startsWith("/admin-v2")) {
+    if (!isAdminSession) {
+      const loginUrl = new URL("/auth", request.url);
+      loginUrl.searchParams.set("reason", "admin-only");
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.set({ name: SESSION_COOKIE, value: "", path: "/", maxAge: 0 });
+      return response;
+    }
+
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login") && !isAdminSession) {
     const loginUrl = new URL("/auth", request.url);
     loginUrl.searchParams.set("reason", "admin-only");
@@ -82,5 +94,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/admin-v2/:path*"],
 };
