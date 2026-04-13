@@ -7,6 +7,12 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "deploy:hosting:static": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
+    "apphosting:backends:list": "npx firebase-tools apphosting:backends:list --project ai4impact-cc315",
+    "apphosting:backend:get": "npx firebase-tools apphosting:backends:get ai4impact-backend --project ai4impact-cc315",
+    "apphosting:deploy:source": "powershell -ExecutionPolicy Bypass -File ./deploy-apphosting.ps1 -ProjectId ai4impact-cc315 -BackendId ai4impact-backend -SourceDeploy -Force",
+    "apphosting:rollout:main": "powershell -ExecutionPolicy Bypass -File ./deploy-apphosting.ps1 -ProjectId ai4impact-cc315 -BackendId ai4impact-backend -GitBranch main -Force",
+    "health:runtime": "node scripts/check-runtime-endpoints.mjs",
     "db:clear-test-data": "node scripts/clear-test-data.cjs",
     "audit:storage-refs": "node scripts/audit-storage-references.mjs"
   },

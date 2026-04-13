@@ -83,38 +83,64 @@ const runningInGoogleCloud =
   Boolean(process.env.GOOGLE_CLOUD_PROJECT) ||
   Boolean(process.env.GCLOUD_PROJECT);
 
+const adminInitErrors = [];
+
 if (!serviceAccount && !runningInGoogleCloud) {
-  throw new Error(
+  adminInitErrors.push(
     "Missing Firebase Admin credentials. Set FIREBASE_ADMIN_* (or FIREBASE_*) env vars, or provide ai4impact-serviceAcc.json."
   );
 }
 
 if (!storageBucket) {
-  throw new Error("Missing Firebase Storage Bucket in environment variables.");
+  adminInitErrors.push("Missing Firebase Storage Bucket in environment variables.");
 }
 
-let adminApp;
+const adminInitErrorMessage = adminInitErrors.join(" ").trim();
 
-try {
-  adminApp = getApp();
-} catch {
-  const appOptions = {
-    storageBucket,
-  };
-
-  if (serviceAccount) {
-    appOptions.credential = cert(serviceAccount);
-  }
-
-  if (!getApps().length) {
-    adminApp = initializeApp(appOptions);
-  } else {
-    adminApp = getApps()[0];
-  }
+function createMissingAdminProxy(resourceName) {
+  return new Proxy(
+    {},
+    {
+      get() {
+        throw new Error(
+          `${adminInitErrorMessage} Attempted to access ${resourceName} before Firebase Admin initialization.`
+        );
+      },
+    }
+  );
 }
 
-const adminAuth = getAuth(adminApp);
-const adminDb = getFirestore(adminApp);
-const adminStorage = getStorage(adminApp).bucket(storageBucket);
+let adminApp = null;
+let adminAuth;
+let adminDb;
+let adminStorage;
+
+if (!adminInitErrorMessage) {
+  try {
+    adminApp = getApp();
+  } catch {
+    const appOptions = {
+      storageBucket,
+    };
+
+    if (serviceAccount) {
+      appOptions.credential = cert(serviceAccount);
+    }
+
+    if (!getApps().length) {
+      adminApp = initializeApp(appOptions);
+    } else {
+      adminApp = getApps()[0];
+    }
+  }
+
+  adminAuth = getAuth(adminApp);
+  adminDb = getFirestore(adminApp);
+  adminStorage = getStorage(adminApp).bucket(storageBucket);
+} else {
+  adminAuth = createMissingAdminProxy("adminAuth");
+  adminDb = createMissingAdminProxy("adminDb");
+  adminStorage = createMissingAdminProxy("adminStorage");
+}
 
 export { adminAuth, adminDb, adminStorage, FieldPath, FieldValue, Timestamp };

@@ -1,0 +1,8 @@
+# Firebase App Hosting runtime configuration for Next.js App Router.
+# Keep this conservative for initial cutover while registrations are active.
+runConfig:
+  minInstances: 1
+  maxInstances: 20
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
