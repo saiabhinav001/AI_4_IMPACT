@@ -52,7 +52,7 @@ async function signInWithCustomToken({ apiKey, customToken }) {
 }
 
 async function runAuthenticatedProbe({ baseUrl, idToken }) {
-  const missingTransactionId = "__probe_missing_tx__";
+  const missingTransactionId = "probe-missing-tx-404";
 
   const testCases = [
     {
