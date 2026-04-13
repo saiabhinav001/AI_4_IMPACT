@@ -3,6 +3,18 @@
     "site": "ai4impact",
     "public": "out",
     "cleanUrls": true,
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "https://ai4impact-backend--ai4impact-cc315.us-central1.hosted.app/",
+        "type": 302
+      },
+      {
+        "source": "/:path*",
+        "destination": "https://ai4impact-backend--ai4impact-cc315.us-central1.hosted.app/:path*",
+        "type": 302
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
