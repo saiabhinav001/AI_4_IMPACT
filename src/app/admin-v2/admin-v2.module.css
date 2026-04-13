@@ -1893,27 +1893,9 @@
   }
 
   .table {
-    width: 100%;
-    min-width: 0;
+    width: max(100%, 1600px);
+    min-width: 1600px;
     table-layout: fixed;
-  }
-
-  .table col.colEmail,
-  .table col.colAction,
-  .table col.colScreenshot,
-  .table col.colSubmitted {
-    display: none;
-  }
-
-  .table th:nth-child(10),
-  .table td:nth-child(10),
-  .table th:nth-child(11),
-  .table td:nth-child(11),
-  .table th:nth-child(13),
-  .table td:nth-child(13),
-  .table th:nth-child(14),
-  .table td:nth-child(14) {
-    display: none;
   }
 
   .colIndex {
@@ -1968,13 +1950,27 @@
 }
 
 @media (max-width: 1200px) and (min-width: 981px) {
-  .table col.colContact {
-    display: none;
+  .stickyControls {
+    position: static;
+    top: auto;
   }
 
-  .table th:nth-child(5),
-  .table td:nth-child(5) {
-    display: none;
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .resultsMeta {
+    grid-template-columns: 1fr auto;
+  }
+
+  .resultsMetaActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .table {
+    width: max(100%, 1540px);
+    min-width: 1540px;
   }
 
   .colTeam {
@@ -2016,7 +2012,8 @@
   }
 
   .table {
-    min-width: 0;
+    width: max(100%, 1600px);
+    min-width: 1600px;
   }
 }
 
@@ -2053,11 +2050,70 @@
   }
 
   .table {
-    min-width: 0;
+    min-width: 1540px;
   }
 }
 
 @media (max-width: 980px) {
+  .topBar {
+    position: static;
+    flex-wrap: wrap;
+  }
+
+  .topBarRight {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .topBarActionButtons {
+    width: 100%;
+  }
+
+  .topBarActionButtons > button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .operatorChip {
+    flex: 1 1 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stickyControls {
+    position: static;
+    top: auto;
+  }
+
+  .viewTabs {
+    width: 100%;
+  }
+
+  .viewTab {
+    flex: 1;
+    text-align: center;
+  }
+
+  .filterTopRow {
+    align-items: stretch;
+  }
+
+  .trackToggle {
+    width: 100%;
+  }
+
+  .resultsMeta {
+    grid-template-columns: 1fr;
+  }
+
+  .resultsMetaActions {
+    justify-content: flex-start;
+  }
+
   .tableWrap {
     overflow-x: visible;
   }
@@ -2081,7 +2137,7 @@
 
   .table tbody tr {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 8px 10px;
     margin: 0 0 10px;
     padding: 10px;
@@ -2125,10 +2181,9 @@
 
   .table tbody td {
     display: grid;
-    grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
-    align-items: center;
-    column-gap: 8px;
-    row-gap: 4px;
+    grid-template-columns: 1fr;
+    align-items: start;
+    row-gap: 3px;
     padding: 0;
     min-width: 0;
     border-bottom: 0;
@@ -2140,7 +2195,7 @@
   .table tbody td::before {
     content: attr(data-label);
     grid-column: 1;
-    grid-row: 1 / -1;
+    grid-row: auto;
     color: #a1a1aa;
     font-size: 0.6rem;
     font-weight: 650;
@@ -2150,10 +2205,10 @@
   }
 
   .table tbody td > * {
-    grid-column: 2;
+    grid-column: 1;
     min-width: 0;
-    justify-self: end;
-    text-align: right;
+    justify-self: start;
+    text-align: left;
   }
 
   .table tbody td.cellTeam > *,
@@ -2161,16 +2216,6 @@
   .table tbody td.cellTransaction > * {
     justify-self: start;
     text-align: left;
-  }
-
-  .table tbody td:nth-child(2),
-  .table tbody td:nth-child(8),
-  .table tbody td:nth-child(14) {
-    grid-column: 1 / -1;
-  }
-
-  .table tbody td:nth-child(2) {
-    align-items: start;
   }
 
   .table tbody td.cellTeam {
@@ -2194,10 +2239,17 @@
 
   .table tbody td.cellCenter > * {
     margin: 0;
+    justify-self: start;
+    text-align: left;
   }
 
   .table tbody td.cellDate > * {
+    text-align: left;
     font-variant-numeric: tabular-nums;
+  }
+
+  .table tbody td.cellIndex .cellText {
+    text-align: left;
   }
 }
 
@@ -2237,7 +2289,8 @@
   }
 
   .stickyControls {
-    top: 12px;
+    position: static;
+    top: auto;
   }
 
   .viewTabs {
@@ -2317,6 +2370,6 @@
   }
 
   .table tbody td {
-    grid-template-columns: minmax(84px, auto) minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 }
