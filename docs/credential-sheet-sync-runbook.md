@@ -24,9 +24,15 @@ Set these on App Hosting backend before enabling:
 
 - `CREDENTIAL_SHEET_SYNC_ENABLED=true`
 - `GOOGLE_SHEETS_SPREADSHEET_ID=<spreadsheet_id>`
-- `GOOGLE_SHEETS_WORKSHEET=CredentialEvents`
-- `GOOGLE_SHEETS_CLIENT_EMAIL=<service_account_email>`
-- `GOOGLE_SHEETS_PRIVATE_KEY=<private_key_with_newlines>`
+- `GOOGLE_SHEETS_WORKSHEET=Sheet1`
+
+Credentials for Google Sheets auth can be provided either as:
+
+- `GOOGLE_SHEETS_CLIENT_EMAIL` + `GOOGLE_SHEETS_PRIVATE_KEY`
+
+or fallback to existing backend Firebase Admin credentials:
+
+- `FIREBASE_ADMIN_CLIENT_EMAIL` + `FIREBASE_ADMIN_PRIVATE_KEY`
 
 Optional tuning:
 
@@ -38,26 +44,38 @@ Optional tuning:
 - `CREDENTIAL_SHEET_SYNC_RETRY_BASE_SECONDS=30`
 - `CREDENTIAL_SHEET_SYNC_RETRY_MAX_SECONDS=3600`
 
-## Sheet schema (A:R)
+## Sheet schema (A:Z)
 
-1. sequence
+1. sequence_no
 2. event_id
 3. event_type
-4. created_at_iso
+4. event_created_at
 5. transaction_id
 6. registration_ref
 7. registration_type
-8. team_id
-9. password_version
-10. password_issued
-11. temporary_password
-12. leader_name
-13. leader_email
-14. leader_phone
-15. issued_by_admin_uid
-16. source
-17. request_id
-18. sheet_sync_status
+8. college_name
+9. team_size
+10. team_id
+11. credential_version
+12. password_issued
+13. temporary_password
+14. leader_name
+15. leader_email
+16. leader_phone
+17. issued_by_admin_uid
+18. issued_by_admin_email
+19. source
+20. request_id
+21. sheet_sync_status
+22. sheet_synced_at
+23. mail_status
+24. mail_sent_at
+25. mail_error
+26. notes
+
+Header management:
+
+- Sync worker auto-writes canonical headers to row 1 (`A1:Z1`) if missing or mismatched.
 
 ## Rollout steps
 

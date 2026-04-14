@@ -403,6 +403,10 @@ export async function POST(request) {
     batch.update(registrationRef, registrationUpdates);
 
     if (action === "verify" && registrationType === "hackathon" && accessCredentials) {
+      const memberCount = Array.isArray(registrationData?.member_ids)
+        ? registrationData.member_ids.length
+        : 0;
+
       credentialSheetEventRef = createCredentialSheetExportEventRef();
       batch.set(
         credentialSheetEventRef,
@@ -412,8 +416,14 @@ export async function POST(request) {
           registrationRef: registrationRefId,
           registrationType,
           issuedByAdminUid: authResult.decodedToken.uid,
+          issuedByAdminEmail: authResult.decodedToken.email || "",
           credential: accessCredentials,
+          registration: {
+            college_name: registrationData?.college || "",
+            team_size: registrationData?.team_size || memberCount || null,
+          },
           source: "api/admin/verify-payment",
+          notes: "Credentials issued during payment verification.",
         })
       );
     }

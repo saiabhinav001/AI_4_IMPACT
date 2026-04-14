@@ -44,6 +44,36 @@ const RETRY_MAX_SECONDS = Number.parseInt(
   10
 );
 
+const SHEET_COLUMN_END = "Z";
+const SHEET_HEADERS = [
+  "sequence_no",
+  "event_id",
+  "event_type",
+  "event_created_at",
+  "transaction_id",
+  "registration_ref",
+  "registration_type",
+  "college_name",
+  "team_size",
+  "team_id",
+  "credential_version",
+  "password_issued",
+  "temporary_password",
+  "leader_name",
+  "leader_email",
+  "leader_phone",
+  "issued_by_admin_uid",
+  "issued_by_admin_email",
+  "source",
+  "request_id",
+  "sheet_sync_status",
+  "sheet_synced_at",
+  "mail_status",
+  "mail_sent_at",
+  "mail_error",
+  "notes",
+];
+
 let sheetsClientPromise = null;
 
 function asTrimmedString(value) {
@@ -200,6 +230,21 @@ function parseTimestampMillis(value) {
   return Number.isNaN(millis) ? NaN : millis;
 }
 
+function toIsoString(value) {
+  if (!value) return "";
+
+  if (typeof value?.toDate === "function") {
+    return value.toDate().toISOString();
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
+}
+
+function toSheetRange(worksheetName, startRow, endRow = startRow) {
+  return `${worksheetName}!A${startRow}:${SHEET_COLUMN_END}${endRow}`;
+}
+
 function shouldAttemptSync(eventData, { force = false } = {}) {
   const status = asTrimmedString(eventData?.sheet_sync?.status || "PENDING").toUpperCase();
 
@@ -264,8 +309,56 @@ async function getSheetsClient() {
   return sheetsClientPromise;
 }
 
-function buildSheetRow(eventId, eventData, sequence) {
+async function ensureSheetHeader({ sheets, spreadsheetId, worksheetName, timeoutMs }) {
+  const headerRange = toSheetRange(worksheetName, 1);
+
+  const response = await withTimeout(
+    sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: headerRange,
+    }),
+    timeoutMs,
+    "Google Sheets header read"
+  );
+
+  const currentHeader = Array.isArray(response?.data?.values?.[0])
+    ? response.data.values[0].map((value) => asTrimmedString(value))
+    : [];
+
+  const headerMatches =
+    currentHeader.length === SHEET_HEADERS.length &&
+    SHEET_HEADERS.every((column, index) => currentHeader[index] === column);
+
+  if (headerMatches) {
+    return;
+  }
+
+  await withTimeout(
+    sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: headerRange,
+      valueInputOption: "RAW",
+      requestBody: {
+        majorDimension: "ROWS",
+        values: [SHEET_HEADERS],
+      },
+    }),
+    timeoutMs,
+    "Google Sheets header write"
+  );
+}
+
+function buildSheetRow(eventId, eventData, sequence, options = {}) {
   const credential = eventData?.credential || {};
+  const registration = eventData?.registration || {};
+  const mailDelivery = eventData?.mail_delivery || {};
+
+  const sheetSyncStatus = asTrimmedString(options?.sheetSyncStatus || "PENDING") || "PENDING";
+  const sheetSyncedAt = asTrimmedString(options?.sheetSyncedAt || "");
+  const mailStatus = asTrimmedString(mailDelivery?.status || "PENDING") || "PENDING";
+  const mailSentAt = toIsoString(mailDelivery?.sent_at || mailDelivery?.sent_at_iso);
+  const mailError = asTrimmedString(mailDelivery?.last_error || "");
+  const notes = asTrimmedString(eventData?.notes || "");
 
   return [
     sequence,
@@ -275,6 +368,8 @@ function buildSheetRow(eventId, eventData, sequence) {
     asTrimmedString(eventData?.transaction_id || ""),
     asTrimmedString(eventData?.registration_ref || ""),
     asTrimmedString(eventData?.registration_type || ""),
+    asTrimmedString(registration?.college_name || ""),
+    asTrimmedString(registration?.team_size || ""),
     asTrimmedString(credential?.team_id || ""),
     asTrimmedString(credential?.password_version || ""),
     credential?.password_issued === true ? "true" : "false",
@@ -283,9 +378,15 @@ function buildSheetRow(eventId, eventData, sequence) {
     asTrimmedString(credential?.leader_email || ""),
     asTrimmedString(credential?.leader_phone || ""),
     asTrimmedString(eventData?.issued_by_admin_uid || ""),
+    asTrimmedString(eventData?.issued_by_admin_email || ""),
     asTrimmedString(eventData?.source || ""),
     asTrimmedString(eventData?.request_id || ""),
-    asTrimmedString(eventData?.sheet_sync?.status || "PENDING"),
+    sheetSyncStatus,
+    sheetSyncedAt,
+    mailStatus,
+    mailSentAt,
+    mailError,
+    notes,
   ].map(sanitizeSheetCell);
 }
 
@@ -338,7 +439,7 @@ async function allocateSequenceIfMissing(eventRef, eventData) {
   });
 }
 
-async function markSyncSuccess({ eventRef, sequence, worksheetName, updatedRange }) {
+async function markSyncSuccess({ eventRef, sequence, worksheetName, updatedRange, syncedAtIso }) {
   await eventRef.update({
     "sheet_sync.status": "SYNCED",
     "sheet_sync.sequence": sequence,
@@ -348,7 +449,7 @@ async function markSyncSuccess({ eventRef, sequence, worksheetName, updatedRange
     "sheet_sync.next_retry_at": FieldValue.delete(),
     "sheet_sync.attempt_count": FieldValue.increment(1),
     "sheet_sync.synced_at": FieldValue.serverTimestamp(),
-    "sheet_sync.synced_at_iso": new Date().toISOString(),
+    "sheet_sync.synced_at_iso": asTrimmedString(syncedAtIso || new Date().toISOString()),
     updated_at: FieldValue.serverTimestamp(),
   });
 }
@@ -384,10 +485,21 @@ async function writeEventToSheet({ eventId, eventRef, eventData, timeoutMs }) {
   const worksheetName = getWorksheetName(eventData);
   const rowNumber =
     Math.max(1, Number.isFinite(SHEET_HEADER_ROWS) ? SHEET_HEADER_ROWS : 1) + sequence;
-  const targetRange = `${worksheetName}!A${rowNumber}:R${rowNumber}`;
-  const rowValues = buildSheetRow(eventId, eventData, sequence);
+  const targetRange = toSheetRange(worksheetName, rowNumber);
+  const syncedAtIso = new Date().toISOString();
+  const rowValues = buildSheetRow(eventId, eventData, sequence, {
+    sheetSyncStatus: "SYNCED",
+    sheetSyncedAt: syncedAtIso,
+  });
 
   const sheets = await getSheetsClient();
+
+  await ensureSheetHeader({
+    sheets,
+    spreadsheetId,
+    worksheetName,
+    timeoutMs,
+  });
 
   const response = await withTimeout(
     sheets.spreadsheets.values.update({
@@ -412,6 +524,7 @@ async function writeEventToSheet({ eventId, eventRef, eventData, timeoutMs }) {
     sequence,
     worksheetName,
     updatedRange,
+    syncedAtIso,
   });
 
   return {
@@ -432,10 +545,14 @@ export function buildCredentialSheetExportEvent({
   registrationRef,
   registrationType = "hackathon",
   issuedByAdminUid,
+  issuedByAdminEmail,
   credential,
+  registration,
   source,
+  notes,
 }) {
   const normalizedCredential = credential || {};
+  const normalizedRegistration = registration || {};
 
   return {
     event_type: asTrimmedString(eventType || ""),
@@ -445,9 +562,15 @@ export function buildCredentialSheetExportEvent({
     registration_ref: asTrimmedString(registrationRef || ""),
     registration_type: asTrimmedString(registrationType || "hackathon"),
     issued_by_admin_uid: asTrimmedString(issuedByAdminUid || ""),
+    issued_by_admin_email: asTrimmedString(issuedByAdminEmail || "").toLowerCase(),
+    notes: asTrimmedString(notes || ""),
     created_at: FieldValue.serverTimestamp(),
     created_at_iso: new Date().toISOString(),
     updated_at: FieldValue.serverTimestamp(),
+    registration: {
+      college_name: asTrimmedString(normalizedRegistration.college_name || ""),
+      team_size: toNonNegativeInteger(normalizedRegistration.team_size, 0) || null,
+    },
     credential: {
       team_id: asTrimmedString(normalizedCredential.team_id || "").toLowerCase(),
       password_version: toNonNegativeInteger(normalizedCredential.password_version, 0),
