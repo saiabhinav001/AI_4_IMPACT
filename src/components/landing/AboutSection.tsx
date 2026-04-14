@@ -68,7 +68,7 @@ export default function AboutSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="mb-16 lg:mb-24"
         >
           <div className="flex items-center gap-4 mb-6">
@@ -90,22 +90,25 @@ export default function AboutSection() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: idx * 0.1 }}
+              transition={{ duration: 0.8, delay: idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="lg:col-span-6 group relative"
             >
               <div className="absolute -inset-[1px] rounded-[2rem] bg-gradient-to-br from-[#8D36D5]/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
               <div className="relative h-full overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.03] p-6 sm:p-12 backdrop-blur-sm transition-all duration-500 group-hover:bg-white/[0.05]">
-                <div className="flex justify-between items-start mb-8">
+                {/* HUD Scan Effect */}
+                <div className="scanning-ray opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                <div className="flex justify-between items-start mb-8 relative z-10">
                   <span className="text-[10px] font-black tracking-[0.3em] text-[#8D36D5]">{pillar.tag}</span>
                   <span className="text-4xl font-black text-white/10 group-hover:text-[#8D36D5]/20 transition-colors">/{pillar.index}</span>
                 </div>
-                <h3 className="text-3xl font-black uppercase tracking-tight text-white mb-6 group-hover:animate-glitch">
+                <h3 className="text-3xl font-black uppercase tracking-tight text-white mb-6 group-hover:animate-glitch relative z-10">
                   {pillar.title}
                 </h3>
-                <p className="text-lg text-zinc-400 leading-relaxed font-medium">
+                <p className="text-lg text-zinc-400 leading-relaxed font-medium relative z-10">
                   {pillar.text}
                 </p>
-                <div className="mt-10 h-[1px] w-12 bg-white/10 group-hover:w-full group-hover:bg-[#8D36D5]/50 transition-all duration-1000" />
+                <div className="mt-10 h-[1px] w-12 bg-white/10 group-hover:w-full group-hover:bg-[#8D36D5]/50 transition-all duration-1000 relative z-10" />
               </div>
             </motion.div>
           ))}
@@ -117,23 +120,27 @@ export default function AboutSection() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 + (i * 0.1) }}
+              transition={{ duration: 0.5, delay: 0.3 + (i * 0.1), ease: [0.16, 1, 0.3, 1] }}
               className="lg:col-span-4 group relative"
             >
-              <div className="relative h-full rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-all hover:bg-white/[0.04] sm:p-8">
-                <div className="flex items-center gap-3 mb-4">
+              <div className="relative h-full overflow-hidden rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-all hover:bg-white/[0.04] sm:p-8">
+                {/* HUD Scan Effect */}
+                <div className="scanning-ray opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                <div className="flex items-center gap-3 mb-4 relative z-10">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#8D36D5] animate-pulse" />
                   <span className="text-[9px] font-bold tracking-[0.4em] text-zinc-500 uppercase">{cap.icon}</span>
                 </div>
-                <h4 className="text-xl font-black uppercase tracking-wide text-white mb-3">
+                <h4 className="text-xl font-black uppercase tracking-wide text-white mb-3 relative z-10">
                   {cap.label}
                 </h4>
-                <p className="text-sm text-zinc-500 leading-relaxed">
+                <p className="text-sm text-zinc-500 leading-relaxed relative z-10">
                   {cap.desc}
                 </p>
-                {/* Technical Corner Accents */}
-                <div className="absolute top-4 right-4 h-2 w-2 border-t border-r border-white/10" />
-                <div className="absolute bottom-4 left-4 h-2 w-2 border-b border-l border-white/10" />
+                
+                {/* Technical HUD Accents */}
+                <div className="absolute top-4 right-4 h-2 w-2 border-t border-r border-white/10 z-10" />
+                <div className="absolute bottom-4 left-4 h-2 w-2 border-b border-l border-white/10 z-10" />
               </div>
             </motion.div>
           ))}
@@ -143,6 +150,7 @@ export default function AboutSection() {
         <motion.div 
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.5 }}
           className="mt-20 flex items-center justify-between border-t border-white/5 pt-8 text-[10px] font-black tracking-[0.5em] text-zinc-600 uppercase"
         >
           <span>MISSION_READY // 2026</span>

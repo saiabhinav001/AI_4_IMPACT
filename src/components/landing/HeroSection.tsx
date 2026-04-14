@@ -57,6 +57,12 @@ export default function HeroSection() {
 
   return (
     <section id="hero" className="relative grid min-h-screen items-center gap-8 pt-24 pb-4 md:grid-cols-2 md:gap-12 lg:pt-32 scroll-mt-32">
+      {/* Precision HUD Background Layer */}
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(141,54,213,0.05)_0%,transparent_70%)]" />
+      </div>
+
       {/* Dynamic Background Glows with Parallax */}
       <motion.div 
         animate={{ x: mousePos.x, y: mousePos.y }}
@@ -102,7 +108,7 @@ export default function HeroSection() {
         >
           <a
             href="/auth"
-            className="group relative overflow-hidden rounded-2xl bg-white px-10 py-5 text-sm font-black tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95"
+            className="group relative overflow-hidden rounded-2xl bg-white px-10 py-5 text-sm font-black tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)]"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
             REGISTER NOW
@@ -126,6 +132,7 @@ export default function HeroSection() {
         >
           <div className="absolute -inset-2 rounded-[3.5rem] bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 blur-3xl transition duration-1000 group-hover:opacity-100" />
           <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-black/40 p-10 backdrop-blur-3xl sm:p-16">
+            <div className="scanning-ray opacity-0 group-hover:opacity-100 transition-opacity" />
             <Image
               src="/hazard.svg"
               alt="Decorative hazard stripe"
@@ -139,21 +146,14 @@ export default function HeroSection() {
                 alt="AI4 Impact logo"
                 width={420}
                 height={420}
-                className="h-auto w-full transition-all duration-700 group-hover:scale-105"
+                className="h-auto w-full transition-all duration-700 group-hover:scale-110"
                 style={{ 
                   filter: "drop-shadow(0 0 50px rgba(141, 54, 213, 0.4))",
-                  transform: "translateZ(50px)" 
+                  transform: "translateZ(60px)" 
                 }}
                 priority
               />
             </div>
-
-            {/* Scanning Line Animation */}
-            <motion.div 
-              animate={{ top: ["0%", "100%", "0%"] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              className="absolute left-0 right-0 h-[2px] bg-cyan-500/20 blur-[1px] z-20 pointer-events-none"
-            />
           </div>
           
           <div className="absolute -bottom-8 -left-4 rounded-2xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-cyan-400 backdrop-blur-xl shadow-2xl border-l-4 border-l-cyan-500 sm:-left-8 sm:px-6 sm:py-3 sm:text-[10px]">

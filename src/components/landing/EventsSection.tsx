@@ -21,6 +21,26 @@ const events = [
 ];
 
 export default function EventsSection() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
+
   return (
     <section id="events" className="pt-10 pb-20 relative scroll-mt-32">
       <motion.div
@@ -39,29 +59,28 @@ export default function EventsSection() {
         </h2>
       </motion.div>
 
-      <div className="grid gap-12">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="grid gap-12"
+      >
         {events.map((event, idx) => (
           <motion.article
             key={event.title}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: idx * 0.2, ease: [0.16, 1, 0.3, 1] }}
+            variants={itemVariants}
             className="group relative"
           >
             {/* Holographic Corner Brackets */}
-            <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5]/40 transition-all group-hover:border-[#8D36D5]" />
-            <div className="absolute -right-2 -bottom-2 h-8 w-8 border-r-2 border-b-2 border-[#8D36D5]/40 transition-all group-hover:border-[#8D36D5]" />
+            <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5]/40 transition-all duration-500 group-hover:border-[#8D36D5] group-hover:h-12 group-hover:w-12" />
+            <div className="absolute -right-2 -bottom-2 h-8 w-8 border-r-2 border-b-2 border-[#8D36D5]/40 transition-all duration-500 group-hover:border-[#8D36D5] group-hover:h-12 group-hover:w-12" />
             
             <div className="relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.01] p-6 backdrop-blur-3xl transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-white/10 sm:p-8">
               {/* Scanning Ray */}
-              <motion.div 
-                animate={{ left: ["-100%", "200%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="absolute top-0 bottom-0 w-32 bg-gradient-to-r from-transparent via-[#8D36D5]/10 to-transparent skew-x-12 pointer-events-none"
-              />
+              <div className="scanning-ray opacity-0 group-hover:opacity-100 transition-opacity" />
 
-              <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+              <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8D36D5]/10 text-[#8D36D5] border border-[#8D36D5]/20">
@@ -99,7 +118,7 @@ export default function EventsSection() {
             </div>
           </motion.article>
         ))}
-      </div>
+      </motion.div>
       
       {/* Decorative Sidebar Decal */}
       <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden xl:block pointer-events-none">

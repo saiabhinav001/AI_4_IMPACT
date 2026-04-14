@@ -86,8 +86,8 @@ export default function LandingNavbar() {
                       {isActive && (
                         <motion.div
                           layoutId="nav-pill"
-                          className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 border border-[#8D36D5]/30"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 border border-[#8D36D5]/30 shadow-[0_4px_15px_rgba(141,54,213,0.3)]"
+                          transition={{ type: "spring", bounce: 0.15, duration: 0.6 }}
                         />
                       )}
                       <span className="relative z-10">{item.label}</span>

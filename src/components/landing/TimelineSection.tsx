@@ -62,31 +62,43 @@ export default function TimelineSection() {
     title: item.label,
     // Aceternity maps 'content' to the right side content container
     content: (
-      <div className="group relative w-full overflow-hidden rounded-2xl border border-[#8D36D5]/40 bg-[linear-gradient(120deg,rgba(70,6,122,0.35),rgba(141,54,213,0.16))] p-[1px] shadow-[0_0_24px_rgba(141,54,213,0.15)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(141,54,213,0.4)] md:max-w-xl">
-        <div className="relative z-10 flex h-full flex-col rounded-2xl bg-black/70 p-6 backdrop-blur-md lg:p-8">
-          <h3 className="text-xl font-bold uppercase tracking-[0.08em] text-white transition-colors duration-300 group-hover:text-[#c084fc] sm:text-2xl">
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-[#8D36D5]/40 bg-white/[0.02] p-[1px] shadow-[0_0_24px_rgba(141,54,213,0.1)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(141,54,213,0.3)] md:max-w-xl">
+        <div className="relative z-10 flex h-full flex-col rounded-2xl bg-black/40 p-6 backdrop-blur-md lg:p-8">
+          <div className="scanning-ray opacity-0 group-hover:opacity-100 transition-opacity" />
+          <h3 className="relative z-10 text-xl font-black uppercase tracking-[0.08em] text-white transition-colors duration-300 group-hover:text-[#c084fc] sm:text-2xl">
             {item.title}
           </h3>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-300 sm:text-base">
+          <p className="relative z-10 mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
             {item.detail}
           </p>
+          <div className="mt-6 flex items-center gap-2 relative z-10">
+            <div className="h-1 w-1 rounded-full bg-[#8D36D5]" />
+            <span className="text-[10px] font-bold tracking-[0.2em] text-[#8D36D5]/60 uppercase">OPERATIONAL_DATA_LOADED</span>
+          </div>
         </div>
       </div>
     ),
   }));
 
   return (
-    <section id="timeline" className="bg-black py-16 lg:py-20">
-      <div className="mb-8 lg:mb-10">
-        <h2 className="bg-[linear-gradient(90deg,#46067A,#8D36D5)] bg-clip-text text-4xl font-black uppercase tracking-tight text-transparent sm:text-5xl">
-          Strategic Timeline <span className="text-zinc-500">_02</span>
+    <section id="timeline" className="bg-black py-16 lg:py-20 scroll-mt-32">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="mb-8 lg:mb-10"
+      >
+        <h2 className="text-5xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl">
+          THE <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent italic">TIMELINE</span>
         </h2>
-      </div>
+      </motion.div>
 
-      <div className="rounded-[2rem] border border-white/10 bg-black/70 p-4 backdrop-blur-xl sm:p-6 lg:p-8">
-        <div className="mb-6">
-          <span className="rounded-full bg-[linear-gradient(90deg,#46067A,#8D36D5)] px-4 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-            AI4IMPACT Event Flow
+      <div className="rounded-[2.5rem] border border-white/5 bg-white/[0.01] p-4 backdrop-blur-3xl sm:p-6 lg:p-12">
+        <div className="mb-10 flex items-center gap-4">
+          <div className="h-[1px] w-12 bg-[#8D36D5]" />
+          <span className="text-[10px] font-black tracking-[0.5em] text-[#8D36D5] uppercase">
+            TEMPORAL_SEQUENCE_STREAM
           </span>
         </div>
 

@@ -12,11 +12,11 @@ export default function SponsorsSection() {
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="mb-10 text-center md:text-left"
       >
-        <h2 className="bg-gradient-to-r from-white to-fuchsia-300 bg-clip-text text-4xl font-black uppercase tracking-tight text-transparent sm:text-5xl">
-          Partners <span className="text-zinc-500">_05</span>
+        <h2 className="text-5xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl">
+          THE <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent italic">PARTNERS</span>
         </h2>
       </motion.div>
 

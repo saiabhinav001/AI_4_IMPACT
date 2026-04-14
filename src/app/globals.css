@@ -15,6 +15,7 @@
     --border-color: #FFFFFF;
     --text-main: #FFFFFF;
     --text-muted: #A1A1AA;
+    --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
@@ -97,6 +98,23 @@ h6,
 
 .animate-glitch {
   animation: glitch-text 0.2s infinite;
+}
+
+@keyframes scan-move {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: translateY(1000%); opacity: 0; }
+}
+
+.scanning-ray {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, #8D36D5/20, transparent);
+  pointer-events: none;
+  animation: scan-move 8s linear infinite;
 }
 
 .noise-overlay {
