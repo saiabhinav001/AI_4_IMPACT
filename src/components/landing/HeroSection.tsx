@@ -60,11 +60,11 @@ export default function HeroSection() {
       {/* Dynamic Background Glows with Parallax */}
       <motion.div 
         animate={{ x: mousePos.x, y: mousePos.y }}
-        className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-fuchsia-600/10 blur-[120px]" 
+        className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-[#8D36D5]/10 blur-[120px]" 
       />
       <motion.div 
         animate={{ x: -mousePos.x, y: -mousePos.y }}
-        className="pointer-events-none absolute right-20 bottom-20 h-72 w-72 rounded-full bg-cyan-600/10 blur-[120px]" 
+        className="pointer-events-none absolute right-20 bottom-20 h-72 w-72 rounded-full bg-[#46067A]/10 blur-[120px]" 
       />
 
       <motion.div
@@ -74,7 +74,7 @@ export default function HeroSection() {
         className="relative z-10"
       >
         <motion.div variants={itemVariants} className="flex items-center gap-4 mb-6">
-          <p className="inline-flex rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-4 py-1.5 text-[10px] font-bold tracking-[0.4em] text-fuchsia-300 backdrop-blur-sm">
+          <p className="inline-flex rounded-full border border-[#8D36D5]/30 bg-[#8D36D5]/10 px-4 py-1.5 text-[10px] font-bold tracking-[0.4em] text-[#8D36D5] backdrop-blur-sm">
             HACKATHON 2026
           </p>
           <div className="h-[1px] w-12 bg-white/10" />
@@ -85,12 +85,12 @@ export default function HeroSection() {
           className="relative text-6xl font-black uppercase leading-[0.85] tracking-tighter sm:text-7xl lg:text-9xl group"
         >
           <span className="block text-white transition-all group-hover:animate-glitch">AI4</span>
-          <span className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent group-hover:animate-glitch">IMPACT</span>
+          <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent group-hover:animate-glitch">IMPACT</span>
         </motion.h1>
 
         <motion.p 
           variants={itemVariants}
-          className="mt-10 max-w-xl text-lg text-zinc-400 leading-relaxed sm:text-xl border-l-2 border-fuchsia-500/30 pl-6"
+          className="mt-10 max-w-xl text-lg text-zinc-400 leading-relaxed sm:text-xl border-l-2 border-[#8D36D5]/30 pl-6"
         >
           Build practical AI solutions for real-world social impact with mentors, domain experts, and
           creators from across engineering, design, and policy.
@@ -104,11 +104,11 @@ export default function HeroSection() {
             href="/auth"
             className="group relative overflow-hidden rounded-2xl bg-white px-10 py-5 text-xs font-black tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500 to-purple-600 opacity-0 transition-opacity group-hover:opacity-10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
             INITIALIZE_REGISTRATION
           </a>
           <div className="flex flex-col">
-            <p className="text-[10px] font-black tracking-[0.5em] text-fuchsia-500 uppercase">TIMELINE_STATUS</p>
+            <p className="text-[10px] font-black tracking-[0.5em] text-[#8D36D5] uppercase">TIMELINE_STATUS</p>
             <p className="text-sm font-bold tracking-widest text-white mt-1">JUNE 24 - JUNE 26, 2026</p>
           </div>
         </motion.div>
@@ -124,7 +124,7 @@ export default function HeroSection() {
           style={{ rotateX, rotateY }}
           className="relative preserve-3d transition-transform duration-200"
         >
-          <div className="absolute -inset-2 rounded-[3.5rem] bg-gradient-to-r from-fuchsia-500/20 to-cyan-500/20 blur-3xl transition duration-1000 group-hover:opacity-100" />
+          <div className="absolute -inset-2 rounded-[3.5rem] bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 blur-3xl transition duration-1000 group-hover:opacity-100" />
           <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-black/40 p-10 backdrop-blur-3xl sm:p-16">
             <Image
               src="/hazard.svg"
@@ -141,7 +141,7 @@ export default function HeroSection() {
                 height={420}
                 className="h-auto w-full transition-all duration-700 group-hover:scale-105"
                 style={{ 
-                  filter: "drop-shadow(0 0 50px rgba(139, 92, 246, 0.4))",
+                  filter: "drop-shadow(0 0 50px rgba(141, 54, 213, 0.4))",
                   transform: "translateZ(50px)" 
                 }}
                 priority
@@ -159,7 +159,7 @@ export default function HeroSection() {
           <div className="absolute -bottom-8 -left-8 rounded-2xl border border-white/10 bg-black/80 px-6 py-3 text-[10px] font-black tracking-[0.4em] text-cyan-400 backdrop-blur-xl shadow-2xl border-l-4 border-l-cyan-500">
             SYSTEM_PROTOCOL_v0.9.1
           </div>
-          <div className="absolute -top-6 -right-6 rounded-2xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-fuchsia-400 backdrop-blur-xl opacity-50">
+          <div className="absolute -top-6 -right-6 rounded-2xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-[#8D36D5] backdrop-blur-xl opacity-50">
             LOC_LAT: 17.3850 N / LOC_LONG: 78.4867 E
           </div>
         </motion.div>

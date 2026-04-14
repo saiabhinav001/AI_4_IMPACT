@@ -10,9 +10,10 @@
     --font-dm-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     --bg-dark: #050505;
     --bg-light: #F4F4F5;
-    --neon-pink: #FF00FF;
+    --neon-pink: #8D36D5;
     --neon-cyan: #00FFFF;
-    --neon-purple: #B026FF;
+    --neon-purple: #46067A;
+    --purple-gradient: linear-gradient(to right, #8D36D5, #46067A);
     --danger-red: #FF2A2A;
     --border-color: #FFFFFF;
     --text-main: #FFFFFF;
