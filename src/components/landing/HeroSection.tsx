@@ -82,7 +82,7 @@ export default function HeroSection() {
         
         <motion.h1 
           variants={itemVariants}
-          className="relative text-6xl font-black uppercase leading-[0.85] tracking-tighter sm:text-7xl lg:text-9xl group"
+          className="relative text-5xl font-black uppercase leading-[0.85] tracking-tighter sm:text-7xl lg:text-9xl group"
         >
           <span className="block text-white transition-all group-hover:animate-glitch">AI4</span>
           <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent group-hover:animate-glitch">IMPACT</span>
@@ -90,7 +90,7 @@ export default function HeroSection() {
 
         <motion.p 
           variants={itemVariants}
-          className="mt-10 max-w-xl text-lg text-zinc-400 leading-relaxed sm:text-xl border-l-2 border-[#8D36D5]/30 pl-6"
+          className="mt-6 max-w-xl text-base text-zinc-400 leading-relaxed sm:text-xl border-l-2 border-[#8D36D5]/30 pl-6 lg:mt-10"
         >
           Build practical AI solutions for real-world social impact with mentors, domain experts, and
           creators from across engineering, design, and policy.
@@ -156,11 +156,11 @@ export default function HeroSection() {
             />
           </div>
           
-          <div className="absolute -bottom-8 -left-8 rounded-2xl border border-white/10 bg-black/80 px-6 py-3 text-[10px] font-black tracking-[0.4em] text-cyan-400 backdrop-blur-xl shadow-2xl border-l-4 border-l-cyan-500">
+          <div className="absolute -bottom-8 -left-4 rounded-2xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-cyan-400 backdrop-blur-xl shadow-2xl border-l-4 border-l-cyan-500 sm:-left-8 sm:px-6 sm:py-3 sm:text-[10px]">
             SYSTEM_PROTOCOL_v0.9.1
           </div>
-          <div className="absolute -top-6 -right-6 rounded-2xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-[#8D36D5] backdrop-blur-xl opacity-50">
-            LOC_LAT: 17.3850 N / LOC_LONG: 78.4867 E
+          <div className="absolute -top-6 -right-4 rounded-2xl border border-white/10 bg-black/80 px-3 py-1.5 text-[7px] font-black tracking-[0.4em] text-[#8D36D5] backdrop-blur-xl opacity-50 sm:-right-6 sm:px-4 sm:py-2 sm:text-[8px]">
+            LAT: 17.3850 N / LONG: 78.4867 E
           </div>
         </motion.div>
       </motion.div>

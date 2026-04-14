@@ -75,7 +75,7 @@ export default function AboutSection() {
             <div className="h-px w-12 bg-[#8D36D5]" />
             <span className="text-[10px] font-black tracking-[0.5em] text-[#8D36D5] uppercase">STRATEGIC_OVERVIEW</span>
           </div>
-          <h2 className="text-6xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl leading-[0.85]">
+          <h2 className="text-5xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl leading-[0.85]">
             THE <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent italic">WHY</span>
           </h2>
         </motion.div>
@@ -94,7 +94,7 @@ export default function AboutSection() {
               className="lg:col-span-6 group relative"
             >
               <div className="absolute -inset-[1px] rounded-[2rem] bg-gradient-to-br from-[#8D36D5]/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
-              <div className="relative h-full overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.03] p-8 sm:p-12 backdrop-blur-sm transition-all duration-500 group-hover:bg-white/[0.05]">
+              <div className="relative h-full overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.03] p-6 sm:p-12 backdrop-blur-sm transition-all duration-500 group-hover:bg-white/[0.05]">
                 <div className="flex justify-between items-start mb-8">
                   <span className="text-[10px] font-black tracking-[0.3em] text-[#8D36D5]">{pillar.tag}</span>
                   <span className="text-4xl font-black text-white/10 group-hover:text-[#8D36D5]/20 transition-colors">/{pillar.index}</span>
@@ -120,7 +120,7 @@ export default function AboutSection() {
               transition={{ duration: 0.5, delay: 0.3 + (i * 0.1) }}
               className="lg:col-span-4 group relative"
             >
-              <div className="relative h-full rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-8 transition-all hover:bg-white/[0.04]">
+              <div className="relative h-full rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-all hover:bg-white/[0.04] sm:p-8">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#8D36D5] animate-pulse" />
                   <span className="text-[9px] font-bold tracking-[0.4em] text-zinc-500 uppercase">{cap.icon}</span>

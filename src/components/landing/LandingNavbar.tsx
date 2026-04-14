@@ -65,10 +65,10 @@ export default function LandingNavbar() {
           
           <div className="relative flex items-center justify-between">
             {/* Logo */}
-            <a href="#hero" className="group flex items-center gap-3 text-lg font-black uppercase tracking-[0.3em] text-white sm:text-2xl">
+            <a href="#hero" className="group flex items-center gap-2 text-base font-black uppercase tracking-[0.2em] text-white sm:text-2xl sm:gap-3 sm:tracking-[0.3em]">
               <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent transition-all group-hover:scale-105">AI4</span>
-              <span className="hidden sm:inline">IMPACT</span>
-              <div className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="inline">IMPACT</span>
+              <div className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse hidden sm:block" />
             </a>
 
             {/* Desktop Nav */}

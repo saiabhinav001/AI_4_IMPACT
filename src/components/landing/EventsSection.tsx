@@ -53,7 +53,7 @@ export default function EventsSection() {
             <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5]/40 transition-all group-hover:border-[#8D36D5]" />
             <div className="absolute -right-2 -bottom-2 h-8 w-8 border-r-2 border-b-2 border-[#8D36D5]/40 transition-all group-hover:border-[#8D36D5]" />
             
-            <div className="relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.01] p-8 backdrop-blur-3xl transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-white/10">
+            <div className="relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.01] p-6 backdrop-blur-3xl transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-white/10 sm:p-8">
               {/* Scanning Ray */}
               <motion.div 
                 animate={{ left: ["-100%", "200%"] }}
