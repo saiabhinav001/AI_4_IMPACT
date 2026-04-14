@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
+import { MagneticWrapper } from "../ui/magnetic-wrapper";
+import { TextReveal } from "../ui/text-reveal";
+import { GlowTypewriter } from "../ui/glow-typewriter";
 
 export default function HeroSection() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -56,7 +59,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section id="hero" className="relative grid min-h-screen items-center gap-8 pt-24 pb-4 md:grid-cols-2 md:gap-12 lg:pt-32 scroll-mt-32">
+    <section id="hero" className="relative flex min-h-screen flex-col items-center justify-center pt-32 pb-12 sm:grid sm:grid-cols-2 sm:gap-12 sm:pt-32 scroll-mt-32 overflow-hidden">
       {/* Precision HUD Background Layer */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
@@ -77,70 +80,85 @@ export default function HeroSection() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10"
+        className="relative z-10 flex flex-col items-center text-center sm:block sm:text-left"
       >
-        <motion.div variants={itemVariants} className="flex items-center gap-4 mb-6">
-          <p className="inline-flex rounded-full border border-[#8D36D5]/30 bg-[#8D36D5]/10 px-4 py-1.5 text-[10px] font-bold tracking-[0.4em] text-[#8D36D5] backdrop-blur-sm">
-            HACKATHON 2026
-          </p>
-          <div className="h-[1px] w-12 bg-white/10" />
-        </motion.div>
+        <div className="mb-8 hidden h-[1px] w-24 bg-gradient-to-r from-[#8D36D5] to-transparent sm:block" />
         
-        <motion.h1 
-          variants={itemVariants}
-          className="relative text-5xl font-black uppercase leading-[0.85] tracking-tighter sm:text-7xl lg:text-9xl group"
-        >
-          <span className="block text-white transition-all group-hover:animate-glitch">AI4</span>
-          <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent group-hover:animate-glitch">IMPACT</span>
-        </motion.h1>
+        {/* Mobile Badge - Small floating indicator */}
+        <motion.div variants={itemVariants} className="mb-6 flex items-center gap-3 sm:hidden">
+          <div className="h-2 w-2 rounded-full bg-[#8D36D5] animate-pulse" />
+          <span className="text-[10px] font-black tracking-[0.4em] text-[#8D36D5] uppercase">HACKATHON // 2026</span>
+        </motion.div>
 
-        <motion.p 
-          variants={itemVariants}
-          className="mt-6 max-w-xl text-base text-zinc-400 leading-relaxed sm:text-xl border-l-2 border-[#8D36D5]/30 pl-6 lg:mt-10"
-        >
-          Build practical AI solutions for real-world social impact with mentors, domain experts, and
-          creators from across engineering, design, and policy.
-        </motion.p>
+        <div className="relative">
+          <div className="hidden sm:block">
+            <TextReveal 
+              text="AI4 IMPACT" 
+              className="text-7xl font-black uppercase leading-[0.8] tracking-tighter lg:text-9xl text-white"
+            />
+          </div>
+          <div className="sm:hidden">
+            <GlowTypewriter 
+              text="AI4 IMPACT" 
+              className="text-5xl font-black uppercase leading-[0.8] tracking-tighter text-white"
+              glowColor="#8D36D5"
+            />
+          </div>
+        </div>
 
         <motion.div 
           variants={itemVariants}
-          className="mt-12 flex flex-wrap items-center gap-8"
+          className="mt-10 max-w-xl border-l-2 border-[#8D36D5]/30 pl-6 lg:mt-12 sm:border-l-2 sm:pl-6 sm:mt-10 mx-auto sm:mx-0"
         >
-          <a
-            href="/auth"
-            className="group relative overflow-hidden rounded-2xl bg-white px-10 py-5 text-sm font-black tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)]"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
-            REGISTER NOW
-          </a>
-          <div className="flex flex-col">
-            <p className="text-[10px] font-black tracking-[0.5em] text-[#8D36D5] uppercase">TIMELINE_STATUS</p>
-            <p className="text-base font-bold tracking-widest text-white mt-1">JUNE 24 - JUNE 26, 2026</p>
+          <TextReveal 
+            text="Build practical AI solutions for real-world social impact with mentors, domain experts, and creators."
+            className="text-lg text-zinc-400 leading-relaxed sm:text-xl font-medium"
+          />
+        </motion.div>
+
+        <motion.div 
+          variants={itemVariants}
+          className="mt-14 flex flex-col items-center justify-center gap-6 sm:items-start"
+        >
+          <MagneticWrapper>
+            <motion.a
+              href="/auth"
+              animate={{ 
+                boxShadow: ["0 0 20px rgba(141,54,213,0.3)", "0 0 40px rgba(141,54,213,0.5)", "0 0 20px rgba(141,54,213,0.3)"],
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="group relative overflow-hidden rounded-2xl bg-white px-12 py-6 text-sm font-black tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
+              REGISTER NOW
+            </motion.a>
+          </MagneticWrapper>
+          
+          <div className="flex items-center gap-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#8D36D5] animate-pulse" />
+            <p className="text-xs font-bold tracking-[0.2em] text-zinc-500 uppercase">APRIL 15 - APRIL 18, 2026</p>
           </div>
         </motion.div>
       </motion.div>
 
+      {/* Main Visual - Command Center Card on Mobile */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        className="relative group lg:ml-auto perspective-1000"
+        className="relative group mt-16 sm:mt-0 sm:ml-auto perspective-1000 w-full max-w-sm sm:max-w-none px-6 sm:px-0"
       >
         <motion.div
           style={{ rotateX, rotateY }}
-          className="relative preserve-3d transition-transform duration-200"
+          className="relative preserve-3d hardware-accelerated transition-transform duration-200"
         >
-          <div className="absolute -inset-2 rounded-[3.5rem] bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 blur-3xl transition duration-1000 group-hover:opacity-100" />
-          <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-black/40 p-10 backdrop-blur-3xl sm:p-16">
+          {/* Mobile Background Wash Effect */}
+          <div className="absolute -inset-4 rounded-[3.5rem] bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 blur-3xl sm:hidden" />
+          
+          <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-black/40 p-8 backdrop-blur-3xl sm:rounded-[3rem] sm:p-16">
             <div className="scanning-ray opacity-0 group-hover:opacity-100 transition-opacity" />
-            <Image
-              src="/hazard.svg"
-              alt="Decorative hazard stripe"
-              width={160}
-              height={160}
-              className="pointer-events-none absolute -right-12 -top-12 opacity-10 blur-[2px] grayscale invert"
-            />
-            <div className="relative mx-auto flex max-w-sm items-center justify-center p-4">
+            
+            <div className="relative mx-auto flex max-w-[240px] items-center justify-center p-4 sm:max-w-sm">
               <Image
                 src="/logo-w.svg"
                 alt="AI4 Impact logo"
@@ -154,13 +172,20 @@ export default function HeroSection() {
                 priority
               />
             </div>
+            
+            {/* Mobile Decorative Labels */}
+            <div className="mt-8 flex flex-col items-center gap-2 sm:hidden">
+              <div className="h-px w-8 bg-white/10" />
+              <p className="text-[7px] font-black tracking-[0.5em] text-zinc-500 uppercase">LAT: 17.3850 N / LONG: 78.4867 E</p>
+            </div>
           </div>
           
-          <div className="absolute -bottom-8 -left-4 rounded-2xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-cyan-400 backdrop-blur-xl shadow-2xl border-l-4 border-l-cyan-500 sm:-left-8 sm:px-6 sm:py-3 sm:text-[10px]">
+          {/* Technical Accent Badges - Hidden on very small screens for cleanliness */}
+          <div className="absolute -bottom-6 -left-2 hidden rounded-xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-cyan-400 backdrop-blur-xl shadow-2xl border-l-4 border-l-cyan-500 sm:block sm:-bottom-8 sm:-left-4 sm:text-[10px]">
             SYSTEM_PROTOCOL_v0.9.1
           </div>
-          <div className="absolute -top-6 -right-4 rounded-2xl border border-white/10 bg-black/80 px-3 py-1.5 text-[7px] font-black tracking-[0.4em] text-[#8D36D5] backdrop-blur-xl opacity-50 sm:-right-6 sm:px-4 sm:py-2 sm:text-[8px]">
-            LAT: 17.3850 N / LONG: 78.4867 E
+          <div className="absolute -top-4 -right-2 hidden rounded-xl border border-white/10 bg-black/80 px-3 py-1.5 text-[7px] font-black tracking-[0.4em] text-[#8D36D5] backdrop-blur-xl opacity-50 sm:block sm:-top-6 sm:-right-4 sm:text-[8px]">
+            ACTIVE_INTERFACE
           </div>
         </motion.div>
       </motion.div>

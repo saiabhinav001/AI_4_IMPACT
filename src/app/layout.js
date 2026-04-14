@@ -1,5 +1,6 @@
 import "./globals.css";
 import SmoothScroll from "../components/SmoothScroll";
+import { CustomHUDScrollbar } from "../components/ui/custom-hud-scrollbar";
 import { Inter, Outfit } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });

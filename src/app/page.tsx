@@ -5,12 +5,19 @@ import HighlightsSection from "../components/landing/HighlightsSection";
 import LandingNavbar from "../components/landing/LandingNavbar";
 import SponsorsSection from "../components/landing/SponsorsSection";
 import TimelineSection from "../components/landing/TimelineSection";
+import { InteractiveBackground } from "../components/ui/interactive-background";
+import { KineticHUD } from "../components/ui/kinetic-hud";
+import { NeuralBackground } from "../components/ui/neural-background";
 
 export default function HomePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020205] text-white">
+      <InteractiveBackground />
       <div className="noise-overlay" />
-      {/* Dynamic Background */}
+      <NeuralBackground />
+      <KineticHUD />
+      
+      {/* Dynamic Background Glows */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute -left-[10%] -top-[10%] h-[50vw] w-[50vw] rounded-full bg-fuchsia-900/10 blur-[120px]" />
         <div className="absolute -right-[10%] top-[20%] h-[40vw] w-[40vw] rounded-full bg-cyan-900/10 blur-[120px]" />

@@ -29,6 +29,22 @@ html {
     background-color: var(--bg-dark);
 }
 
+/* Scrollbar Management */
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 body {
     background-color: var(--bg-dark);
     color: var(--text-main);
@@ -133,6 +149,12 @@ h6,
 
 .preserve-3d {
   transform-style: preserve-3d;
+}
+
+.hardware-accelerated {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Navbar */

@@ -118,15 +118,7 @@ export default function TimelineSection() {
           <div className="relative z-10 flex h-full flex-col rounded-2xl p-6 lg:p-8">
             <div className={`scanning-ray ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"}`} />
             
-            <div className="flex items-center gap-3 mb-4">
-              {isActive && (
-                <span className="flex items-center gap-1.5 rounded-full bg-cyan-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-cyan-400 border border-cyan-500/20">
-                  <span className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse" />
-                  LIVE_SESSION
-                </span>
-              )}
-              <span className="text-[10px] font-bold tracking-[0.2em] text-[#8D36D5]/60 uppercase">0x_0{idx + 1}</span>
-            </div>
+            <div className="mb-4" />
 
             <h3 className={`relative z-10 text-xl font-black uppercase tracking-[0.08em] transition-colors duration-300 sm:text-2xl ${
               isActive ? "text-cyan-400" : "text-white group-hover:text-[#c084fc]"
@@ -155,22 +147,11 @@ export default function TimelineSection() {
           <h2 className="text-5xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl">
             THE <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent italic">TIMELINE</span>
           </h2>
-          <div className="hidden md:flex flex-col items-end">
-            <span className="text-[10px] font-black tracking-[0.3em] text-cyan-500/50">OPERATIONAL_STATUS</span>
-            <span className="text-sm font-bold text-white tracking-widest">
-              {activeIndex !== -1 ? "MISSION_ACTIVE" : "STANDBY_MODE"}
-            </span>
-          </div>
         </div>
       </motion.div>
 
       <div className="py-6 sm:py-8 lg:py-10 px-6 sm:px-8 lg:px-12">
-        <div className="mb-14 flex items-center gap-4">
-          <div className="h-[1px] w-12 bg-[#8D36D5]" />
-          <span className="text-[10px] font-black tracking-[0.5em] text-[#8D36D5] uppercase">
-            TEMPORAL_SEQUENCE_STREAM
-          </span>
-        </div>
+        <div className="mb-14 h-[1px] w-12 bg-[#8D36D5]" />
 
         <Timeline 
           data={data} 

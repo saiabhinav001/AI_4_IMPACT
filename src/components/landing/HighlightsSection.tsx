@@ -53,19 +53,10 @@ export default function HighlightsSection() {
           <path d="M1600,340 L1540,400" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
         </svg>
 
-        <p className="relative z-10 text-xs font-bold tracking-[0.4em] text-[#c084fc] uppercase">Grand Prize Pool</p>
         <h3 className="relative z-10 mt-4 text-center text-4xl font-black tracking-tighter text-white sm:text-6xl lg:text-[6.5rem]">
           Rs. 1,00,000<span className="text-[#a855f7]">+</span>
         </h3>
         
-        <div className="relative z-10 mt-10 flex w-full max-w-4xl items-center gap-4 hidden sm:flex">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/20" />
-          <p className="text-[10px] font-bold tracking-[0.5em] text-zinc-400">EXCLUDING INCUBATION OPPORTUNITIES</p>
-          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/20" />
-        </div>
-        <p className="relative z-10 mt-8 text-center text-[9px] font-bold tracking-[0.3em] text-zinc-400 sm:hidden">
-          EXCLUDING INCUBATION OPPORTUNITIES
-        </p>
       </motion.article>
     </section>
   );

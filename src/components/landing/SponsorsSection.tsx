@@ -72,12 +72,6 @@ export default function SponsorsSection() {
           </div>
           
           <div>
-            <div className="mb-3 flex items-center justify-center gap-3 md:justify-start">
-              <span className="h-px w-8 bg-[#c084fc]" />
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#c084fc]">
-                Title AI Sponsor
-              </p>
-            </div>
             <h3 className="mb-4 text-3xl font-black tracking-tighter text-white sm:text-4xl group-hover:animate-glitch">
               Kavion.ai
             </h3>
