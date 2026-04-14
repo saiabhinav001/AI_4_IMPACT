@@ -37,7 +37,7 @@ export default function AboutSection() {
     <section 
       id="about" 
       ref={containerRef} 
-      className="relative py-32 overflow-hidden rounded-[4rem] mx-4 sm:mx-8 my-12"
+      className="relative py-32 overflow-hidden scroll-mt-32"
       style={{ 
         background: 'linear-gradient(135deg, #46067A 0%, #8D36D5 100%)',
         boxShadow: '0 0 100px rgba(141, 54, 213, 0.2)'

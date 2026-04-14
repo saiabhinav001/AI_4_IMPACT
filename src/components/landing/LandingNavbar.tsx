@@ -98,7 +98,7 @@ export default function LandingNavbar() {
               <li className="ml-6">
                 <a
                   href="#register"
-                  className="relative group overflow-hidden rounded-xl bg-white px-8 py-3 text-sm font-black uppercase tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                  className="relative group overflow-hidden rounded-xl bg-white px-6 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] whitespace-nowrap"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
                   REGISTER NOW
