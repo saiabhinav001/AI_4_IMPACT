@@ -143,7 +143,7 @@ export default function TimelineSection() {
   });
 
   return (
-    <section id="timeline" className="py-16 lg:py-24 scroll-mt-32">
+    <section id="timeline" className="py-8 lg:py-12 scroll-mt-32">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -164,7 +164,7 @@ export default function TimelineSection() {
         </div>
       </motion.div>
 
-      <div className="py-12 sm:py-16 lg:py-24 px-6 sm:px-8 lg:px-12">
+      <div className="py-6 sm:py-8 lg:py-10 px-6 sm:px-8 lg:px-12">
         <div className="mb-14 flex items-center gap-4">
           <div className="h-[1px] w-12 bg-[#8D36D5]" />
           <span className="text-[10px] font-black tracking-[0.5em] text-[#8D36D5] uppercase">
