@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 1892 1655" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <defs>
+        <linearGradient id="boxGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:rgb(70,6,122);stop-opacity:0.7;"/>
+            <stop offset="100%" style="stop-color:rgb(141,54,213);stop-opacity:0.4;"/>
+        </linearGradient>
+    </defs>
+    <g transform="matrix(1,0,0,1,-942.512664,-5905.873356)">
+        <g transform="matrix(1,0,0,1,0,-0.535433)">
+            <g transform="matrix(1.184032,0,0,1.025098,477.389539,-210.383046)">
+                <path d="M393.397,6197.042L594.411,5967.031L1985.839,5968.753L1990.563,7350.631L1794.159,7580.704M1794.276,7580.897L392.83,7574.356L394.224,6198.099" style="fill:url(#boxGradient);stroke:rgb(168,85,247);stroke-opacity:0.75;stroke-width:10px;"/>
+            </g>
+        </g>
+    </g>
+</svg>
