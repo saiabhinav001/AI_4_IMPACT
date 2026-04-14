@@ -667,7 +667,7 @@ async function createSetupLinkWithRecovery({
   }
 }
 
-async function readCurrentDeliveryState({ rawDelivery, transaction }) {
+async function readCurrentDeliveryState({ rawDelivery, transaction = null }) {
   const queueDocId = asTrimmedString(rawDelivery?.queue_doc_id);
   const queueCollection = asTrimmedString(rawDelivery?.collection) || EMAIL_QUEUE_COLLECTION;
 
@@ -686,7 +686,9 @@ async function readCurrentDeliveryState({ rawDelivery, transaction }) {
   }
 
   const queueRef = adminDb.collection(queueCollection).doc(queueDocId);
-  const queueDoc = await transaction.get(queueRef);
+  const queueDoc = transaction
+    ? await transaction.get(queueRef)
+    : await queueRef.get();
 
   if (!queueDoc.exists) {
     return {
@@ -848,6 +850,15 @@ export async function queueCredentialEmail({
       .doc(queueContext.registrationRefId);
     const registrationDoc = await registrationRef.get();
     let registrationIdentity = parseCredentialIdentity(registrationDoc.data());
+
+    const preflightDelivery = await readCurrentDeliveryState({
+      rawDelivery: registrationIdentity.rawAccess?.email_delivery || {},
+    });
+    preflightDelivery.recipient = registrationIdentity.leaderEmail;
+    evaluateQueueDecision({
+      currentDelivery: preflightDelivery,
+      force,
+    });
 
     const loginUrl = buildLoginUrl(requestOrigin);
     const setupLinkResult = await createSetupLinkWithRecovery({
