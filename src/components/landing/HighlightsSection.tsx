@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function HighlightsSection() {
   return (
-    <section id="highlights" className="py-20">
+    <section id="highlights" className="py-12 lg:py-16">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -23,11 +23,11 @@ export default function HighlightsSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="group relative flex min-h-[350px] w-full flex-col items-center justify-center p-10 md:min-h-[450px] md:p-20"
+        className="group relative flex min-h-[250px] w-full flex-col items-center justify-center p-8 md:min-h-[320px] md:p-12"
       >
         <svg
           className="absolute inset-0 h-full w-full drop-shadow-[0_0_15px_rgba(141,54,213,0.2)] transition-all duration-500 group-hover:drop-shadow-[0_0_25px_rgba(141,54,213,0.5)]"
-          viewBox="0 0 1600 800"
+          viewBox="0 0 1600 500"
           preserveAspectRatio="none"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -43,14 +43,14 @@ export default function HighlightsSection() {
             </linearGradient>
           </defs>
           <path
-            d="M0,120 L120,0 L1600,0 L1600,680 L1480,800 L0,800 Z"
+            d="M0,80 L80,0 L1600,0 L1600,420 L1520,500 L0,500 Z"
             fill="url(#sci-fi-gradient)"
             stroke="url(#border-gradient)"
             strokeWidth="3"
             className="transition-all duration-500 group-hover:stroke-[#a855f7]"
           />
-          <path d="M0,120 L120,0" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
-          <path d="M1600,680 L1480,800" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
+          <path d="M0,80 L80,0" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
+          <path d="M1600,420 L1520,500" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
         </svg>
 
         <p className="relative z-10 text-xs font-bold tracking-[0.4em] text-[#c084fc] uppercase">Grand Prize Pool</p>

@@ -11,7 +11,7 @@ const regularSponsors = [
 
 export default function SponsorsSection() {
   return (
-    <section id="sponsors" className="py-20">
+    <section id="sponsors" className="py-12 lg:py-16">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -30,12 +30,12 @@ export default function SponsorsSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
-        className="group relative mx-auto mb-12 flex min-h-[220px] w-full max-w-7xl flex-col justify-center p-8 md:p-12"
+        className="group relative mx-auto mb-12 flex min-h-[160px] w-full max-w-7xl flex-col justify-center p-6 md:p-10"
       >
         {/* Themed Chamfered SVG Background */}
         <svg
           className="absolute inset-0 h-full w-full drop-shadow-[0_0_15px_rgba(141,54,213,0.15)] transition-all duration-500 group-hover:drop-shadow-[0_0_25px_rgba(141,54,213,0.4)]"
-          viewBox="0 0 1600 400"
+          viewBox="0 0 1600 300"
           preserveAspectRatio="none"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -51,14 +51,14 @@ export default function SponsorsSection() {
             </linearGradient>
           </defs>
           <path
-            d="M0,60 L60,0 L1600,0 L1600,340 L1540,400 L0,400 Z"
+            d="M0,45 L45,0 L1600,0 L1600,255 L1555,300 L0,300 Z"
             fill="url(#sponsor-bg-gradient)"
             stroke="url(#sponsor-border-gradient)"
             strokeWidth="3"
             className="transition-all duration-500 group-hover:stroke-[#a855f7]"
           />
-          <path d="M0,60 L60,0" stroke="#c084fc" strokeWidth="6" className="opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
-          <path d="M1600,340 L1540,400" stroke="#c084fc" strokeWidth="6" className="opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
+          <path d="M0,45 L45,0" stroke="#c084fc" strokeWidth="6" className="opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
+          <path d="M1600,255 L1555,300" stroke="#c084fc" strokeWidth="6" className="opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
         </svg>
 
         {/* Content */}
