@@ -76,6 +76,16 @@ const SHEET_HEADERS = [
 
 let sheetsClientPromise = null;
 
+const MAIL_DELIVERY_STATES = new Set([
+  "NOT_READY",
+  "UNSENT",
+  "PENDING",
+  "PROCESSING",
+  "RETRY",
+  "SUCCESS",
+  "ERROR",
+]);
+
 function asTrimmedString(value) {
   return String(value || "").trim();
 }
@@ -83,6 +93,15 @@ function asTrimmedString(value) {
 function parseBoolean(value) {
   const normalized = asTrimmedString(value).toLowerCase();
   return ["1", "true", "yes", "y", "on"].includes(normalized);
+}
+
+function isRunningInGoogleCloud() {
+  return (
+    Boolean(ENV.K_SERVICE) ||
+    Boolean(ENV.FUNCTION_TARGET) ||
+    Boolean(ENV.GOOGLE_CLOUD_PROJECT) ||
+    Boolean(ENV.GCLOUD_PROJECT)
+  );
 }
 
 function normalizePrivateKey(value) {
@@ -264,6 +283,45 @@ function shouldAttemptSync(eventData, { force = false } = {}) {
   return Date.now() >= nextRetryAtMillis;
 }
 
+function normalizeMailDeliveryStatus(value) {
+  const normalized = asTrimmedString(value).toUpperCase();
+  return MAIL_DELIVERY_STATES.has(normalized) ? normalized : "PENDING";
+}
+
+function toTimestampValue(value) {
+  if (!value) return null;
+
+  if (typeof value?.toDate === "function") {
+    return value;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return Timestamp.fromDate(parsed);
+}
+
+function eventSortMillis(eventData) {
+  const createdIsoMillis = parseTimestampMillis(eventData?.created_at_iso);
+  if (Number.isFinite(createdIsoMillis)) {
+    return createdIsoMillis;
+  }
+
+  const createdAtMillis = parseTimestampMillis(eventData?.created_at);
+  if (Number.isFinite(createdAtMillis)) {
+    return createdAtMillis;
+  }
+
+  const updatedAtMillis = parseTimestampMillis(eventData?.updated_at);
+  if (Number.isFinite(updatedAtMillis)) {
+    return updatedAtMillis;
+  }
+
+  return 0;
+}
+
 function toSafeErrorMessage(error) {
   const message = asTrimmedString(error?.message || "Unknown Sheets sync failure.");
   return message.slice(0, 1500);
@@ -278,7 +336,9 @@ function isSheetSyncEnabled() {
 }
 
 function isSheetSyncConfigured() {
-  return Boolean(getSpreadsheetId() && readServiceAccountFromEnv());
+  return Boolean(
+    getSpreadsheetId() && (readServiceAccountFromEnv() || isRunningInGoogleCloud())
+  );
 }
 
 async function getSheetsClient() {
@@ -289,19 +349,24 @@ async function getSheetsClient() {
   sheetsClientPromise = (async () => {
     const serviceAccount = readServiceAccountFromEnv();
 
-    if (!serviceAccount) {
-      throw new Error(
-        "Missing Google Sheets service account credentials. Set GOOGLE_SHEETS_* env vars."
-      );
-    }
-
     const { google } = await import("googleapis");
 
-    const auth = new google.auth.JWT({
-      email: serviceAccount.clientEmail,
-      key: serviceAccount.privateKey,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
+    let auth;
+    if (serviceAccount) {
+      auth = new google.auth.JWT({
+        email: serviceAccount.clientEmail,
+        key: serviceAccount.privateKey,
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+      });
+    } else if (isRunningInGoogleCloud()) {
+      auth = new google.auth.GoogleAuth({
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+      });
+    } else {
+      throw new Error(
+        "Missing Google Sheets credentials. Set GOOGLE_SHEETS_* env vars locally or run in Google Cloud with ADC."
+      );
+    }
 
     return google.sheets({ version: "v4", auth });
   })();
@@ -592,6 +657,89 @@ export function buildCredentialSheetExportEvent({
       sent_at: null,
       last_error: null,
     },
+  };
+}
+
+export async function updateLatestCredentialEventMailDelivery({
+  transactionId,
+  status,
+  sentAt = null,
+  lastError = "",
+  syncSheet = true,
+  timeoutMs = DEFAULT_SYNC_TIMEOUT_MS,
+}) {
+  const normalizedTransactionId = asTrimmedString(transactionId);
+  if (!normalizedTransactionId) {
+    return {
+      updated: false,
+      reason: "missing-transaction-id",
+    };
+  }
+
+  const eventsSnapshot = await adminDb
+    .collection(CREDENTIAL_EXPORT_EVENTS_COLLECTION)
+    .where("transaction_id", "==", normalizedTransactionId)
+    .limit(50)
+    .get();
+
+  if (eventsSnapshot.empty) {
+    return {
+      updated: false,
+      reason: "event-not-found",
+    };
+  }
+
+  const latestDoc = [...eventsSnapshot.docs].sort(
+    (leftDoc, rightDoc) =>
+      eventSortMillis(rightDoc.data() || {}) - eventSortMillis(leftDoc.data() || {})
+  )[0];
+
+  const normalizedStatus = normalizeMailDeliveryStatus(status);
+  const normalizedError = asTrimmedString(lastError);
+  const updates = {
+    "mail_delivery.status": normalizedStatus,
+    updated_at: FieldValue.serverTimestamp(),
+  };
+
+  if (normalizedStatus === "SUCCESS") {
+    const sentAtValue = toTimestampValue(sentAt);
+    updates["mail_delivery.sent_at"] = sentAtValue || FieldValue.serverTimestamp();
+    updates["mail_delivery.last_error"] = FieldValue.delete();
+  } else {
+    if (normalizedError) {
+      updates["mail_delivery.last_error"] = normalizedError;
+    } else {
+      updates["mail_delivery.last_error"] = FieldValue.delete();
+    }
+
+    const sentAtValue = toTimestampValue(sentAt);
+    if (sentAtValue) {
+      updates["mail_delivery.sent_at"] = sentAtValue;
+    } else {
+      updates["mail_delivery.sent_at"] = FieldValue.delete();
+    }
+  }
+
+  await latestDoc.ref.update(updates);
+
+  let sheetSyncResult = {
+    success: false,
+    skipped: true,
+    reason: "sheet-sync-skipped",
+  };
+
+  if (syncSheet) {
+    sheetSyncResult = await attemptCredentialSheetExportSync({
+      eventId: latestDoc.id,
+      force: true,
+      timeoutMs,
+    });
+  }
+
+  return {
+    updated: true,
+    eventId: latestDoc.id,
+    sheetSync: sheetSyncResult,
   };
 }
 
