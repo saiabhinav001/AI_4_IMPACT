@@ -9,6 +9,7 @@ import TimelineSection from "../components/landing/TimelineSection";
 export default function HomePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020205] text-white">
+      <div className="noise-overlay" />
       {/* Dynamic Background */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute -left-[10%] -top-[10%] h-[50vw] w-[50vw] rounded-full bg-fuchsia-900/10 blur-[120px]" />

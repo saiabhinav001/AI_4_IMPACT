@@ -17,64 +17,44 @@ export default function HighlightsSection() {
         </h2>
       </motion.div>
 
-      <motion.article
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="group relative flex min-h-[350px] w-full flex-col items-center justify-center p-10 md:min-h-[450px] md:p-20"
-      >
-        {/* Cleaned up and Themed Inline SVG Background */}
-        <svg
-          className="absolute inset-0 h-full w-full drop-shadow-[0_0_15px_rgba(141,54,213,0.2)] transition-all duration-500 group-hover:drop-shadow-[0_0_25px_rgba(141,54,213,0.5)]"
-          viewBox="0 0 1600 800"
-          preserveAspectRatio="none"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+      <div className="grid gap-6 md:grid-cols-3">
+        <motion.article 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="group relative overflow-hidden rounded-[2.5rem] border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-600/20 to-blue-600/10 p-10 backdrop-blur-xl md:col-span-3 lg:p-14"
         >
-          <defs>
-            <linearGradient id="sci-fi-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#46067A" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#1b0f2d" stopOpacity="0.8" />
-            </linearGradient>
-            <linearGradient id="border-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8D36D5" />
-              <stop offset="100%" stopColor="#46067A" />
-            </linearGradient>
-          </defs>
-          
-          {/* Main Chamfered Box Path */}
-          <path
-            d="M0,120 L120,0 L1600,0 L1600,680 L1480,800 L0,800 Z"
-            fill="url(#sci-fi-gradient)"
-            stroke="url(#border-gradient)"
-            strokeWidth="3"
-            className="transition-all duration-500 group-hover:stroke-[#a855f7]"
-          />
-          
-          {/* Tech Accent Lines on the cut corners */}
-          <path d="M0,120 L120,0" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
-          <path d="M1600,680 L1480,800" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
-        </svg>
+          <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <p className="text-xs font-bold tracking-[0.4em] text-fuchsia-400 uppercase">Grand Prize Pool</p>
+          <h3 className="mt-4 text-5xl font-black tracking-tighter text-white sm:text-7xl lg:text-8xl">
+            Rs. 2,00,000<span className="text-fuchsia-500">+</span>
+          </h3>
+          <div className="mt-8 flex items-center gap-4">
+            <div className="h-px flex-1 bg-white/10" />
+            <p className="text-[10px] font-bold tracking-[0.5em] text-zinc-500">EXCLUDING INCUBATION OPPORTUNITIES</p>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+        </motion.article>
 
-        {/* Text Content */}
-        <p className="relative z-10 text-xs font-bold tracking-[0.4em] text-[#c084fc] uppercase">Grand Prize Pool</p>
-        
-        <h3 className="relative z-10 mt-4 text-center text-5xl font-black tracking-tighter text-white sm:text-7xl lg:text-[7rem]">
-          Rs. 1,00,000<span className="text-[#a855f7]">+</span>
-        </h3>
-        
-        <div className="relative z-10 mt-10 flex w-full max-w-4xl items-center gap-4 hidden sm:flex">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/20" />
-          <p className="text-[10px] font-bold tracking-[0.5em] text-zinc-400">EXCLUDING INCUBATION OPPORTUNITIES</p>
-          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/20" />
-        </div>
-        
-        {/* Mobile version of the subtitle (wraps better) */}
-        <p className="relative z-10 mt-8 text-center text-[9px] font-bold tracking-[0.3em] text-zinc-400 sm:hidden">
-          EXCLUDING INCUBATION OPPORTUNITIES
-        </p>
-      </motion.article>
+        {stats.map((stat, idx) => (
+          <motion.article
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: idx * 0.1 }}
+            className="group relative overflow-hidden rounded-[2rem] border border-white/5 bg-white/5 p-8 text-center backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:bg-white/10"
+          >
+            <p className="text-5xl font-black tracking-tighter text-cyan-400 sm:text-6xl">
+              {stat.value}
+            </p>
+            <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 transition-colors group-hover:text-zinc-300">
+              {stat.label}
+            </p>
+          </motion.article>
+        ))}
+      </div>
     </section>
   );
 }

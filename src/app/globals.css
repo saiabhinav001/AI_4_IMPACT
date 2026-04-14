@@ -3,22 +3,18 @@
 @tailwind utilities;
 
 :root {
-    --font-geist-sans: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --font-geist-mono: "Consolas", "Courier New", monospace;
-    --font-syne: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
-    --font-dm-mono: "Consolas", "Lucida Console", monospace;
-    --font-dm-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-heading: var(--font-outfit), sans-serif;
+    --font-body: var(--font-inter), sans-serif;
     --bg-dark: #050505;
     --bg-light: #F4F4F5;
-    --neon-pink: #FF00FF;
+    --neon-pink: #8D36D5;
     --neon-cyan: #00FFFF;
-    --neon-purple: #B026FF;
+    --neon-purple: #46067A;
+    --purple-gradient: linear-gradient(to right, #8D36D5, #46067A);
     --danger-red: #FF2A2A;
     --border-color: #FFFFFF;
     --text-main: #FFFFFF;
-    --text-muted: #BBBBBB;
-    --font-heading: 'Xirod', sans-serif;
-    --font-body: 'Carbon Plus', 'Inter', monospace;
+    --text-muted: #A1A1AA;
 }
 
 * {
@@ -36,12 +32,12 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     font-family: var(--font-body);
-    line-height: 1.5;
+    font-size: 16px;
+    line-height: 1.6;
     overflow-x: hidden;
-    text-transform: uppercase;
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
 }
 
@@ -89,6 +85,35 @@ h6,
     letter-spacing: -2px;
     color: var(--text-main);
     opacity: 0.8;
+}
+
+@keyframes glitch-text {
+  0% { transform: translate(0); text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff; }
+  25% { transform: translate(-2px, 1px); text-shadow: -2px 0 #00ffff, 2px 0 #ff00ff; }
+  50% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff; }
+  75% { transform: translate(-1px, -1px); text-shadow: -2px 0 #00ffff, 2px 0 #ff00ff; }
+  100% { transform: translate(0); text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff; }
+}
+
+.animate-glitch {
+  animation: glitch-text 0.2s infinite;
+}
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
 }
 
 /* Navbar */
