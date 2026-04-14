@@ -1,4 +1,5 @@
 import "./globals.css";
+import SmoothScroll from "../components/SmoothScroll";
 
 export const metadata = {
   title: "AI 4 Impact | CBIT",
@@ -18,8 +19,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+      <body suppressHydrationWarning className="antialiased selection:bg-fuchsia-500/30 selection:text-fuchsia-200">
+        <SmoothScroll>{children}</SmoothScroll>
+      </body>
     </html>
   );
 }

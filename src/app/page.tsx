@@ -8,22 +8,39 @@ import TimelineSection from "../components/landing/TimelineSection";
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#050508] text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 -top-24 h-[45vw] w-[45vw] rounded-full bg-violet-900/40 blur-3xl" />
-        <div className="absolute -right-24 bottom-0 h-[34vw] w-[34vw] rounded-full bg-blue-700/40 blur-3xl" />
-        <div className="absolute left-1/3 top-1/3 h-[28vw] w-[28vw] rounded-full bg-fuchsia-700/25 blur-3xl" />
+    <main className="relative min-h-screen overflow-hidden bg-[#020205] text-white">
+      {/* Dynamic Background */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute -left-[10%] -top-[10%] h-[50vw] w-[50vw] rounded-full bg-fuchsia-900/10 blur-[120px]" />
+        <div className="absolute -right-[10%] top-[20%] h-[40vw] w-[40vw] rounded-full bg-cyan-900/10 blur-[120px]" />
+        <div className="absolute left-[20%] bottom-[-10%] h-[40vw] w-[40vw] rounded-full bg-violet-900/10 blur-[120px]" />
+        <div 
+          className="absolute inset-0 opacity-[0.03]" 
+          style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+        />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-5 pb-16 pt-6 sm:px-8 md:gap-14 lg:px-12">
-        <LandingNavbar />
+      <LandingNavbar />
+
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <HeroSection />
-        <AboutSection />
-        <EventsSection />
-        <TimelineSection />
-        <HighlightsSection />
-        <SponsorsSection />
+        <div className="flex flex-col gap-24 py-24 sm:gap-32 sm:py-32">
+          <AboutSection />
+          <EventsSection />
+          <TimelineSection />
+          <HighlightsSection />
+          <SponsorsSection />
+        </div>
       </div>
+
+      {/* Retro Footer Decal */}
+      <footer className="relative z-10 py-10 border-t border-white/5 bg-black/50 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 text-center">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-600">
+            © 2026 AI4 IMPACT // ALL SYSTEMS OPERATIONAL
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
