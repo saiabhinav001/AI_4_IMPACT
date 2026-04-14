@@ -313,27 +313,59 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function appendQueryParam(urlText, key, value) {
+  const normalized = asTrimmedString(urlText);
+  if (!normalized) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    parsed.searchParams.set(key, value);
+    return parsed.toString();
+  } catch {
+    const hashIndex = normalized.indexOf("#");
+    const base = hashIndex >= 0 ? normalized.slice(0, hashIndex) : normalized;
+    const hash = hashIndex >= 0 ? normalized.slice(hashIndex) : "";
+    const separator = base.includes("?") ? "&" : "?";
+    return `${base}${separator}${encodeURIComponent(key)}=${encodeURIComponent(value)}${hash}`;
+  }
+}
+
 function buildLoginUrl(requestOrigin) {
   const explicitBase = asTrimmedString(
     ENV.NEXT_PUBLIC_APP_URL || ENV.APP_BASE_URL
   );
 
   if (explicitBase) {
-    return `${explicitBase.replace(/\/$/, "")}/auth`;
+    return appendQueryParam(
+      `${explicitBase.replace(/\/$/, "")}/auth`,
+      "intent",
+      "team-login"
+    );
   }
 
   const origin = asTrimmedString(requestOrigin);
   if (origin) {
-    return `${origin.replace(/\/$/, "")}/auth`;
+    return appendQueryParam(
+      `${origin.replace(/\/$/, "")}/auth`,
+      "intent",
+      "team-login"
+    );
   }
 
-  return "/auth";
+  return "/auth?intent=team-login";
+}
+
+function appendTeamResetFlow(urlText) {
+  return appendQueryParam(urlText, "flow", "team-password-reset");
 }
 
 async function generateSetupLink(email, loginUrl) {
-  const explicitContinueUrl = asTrimmedString(
-    ENV.TEAM_PASSWORD_SETUP_CONTINUE_URL
+  const explicitContinueUrl = appendTeamResetFlow(
+    asTrimmedString(ENV.TEAM_PASSWORD_SETUP_CONTINUE_URL)
   );
+  const defaultContinueUrl = appendTeamResetFlow(loginUrl);
 
   if (explicitContinueUrl) {
     try {
@@ -350,7 +382,7 @@ async function generateSetupLink(email, loginUrl) {
 
   try {
     return await adminAuth.generatePasswordResetLink(email, {
-      url: loginUrl,
+      url: defaultContinueUrl || loginUrl,
       handleCodeInApp: false,
     });
   } catch (error) {
@@ -759,6 +791,18 @@ function evaluateQueueDecision({ currentDelivery, force }) {
   }
 
   if (IN_FLIGHT_STATES.has(currentDelivery.state)) {
+    if (
+      force !== true &&
+      inFlightAgeMs !== null &&
+      Number.isFinite(inFlightAgeMs) &&
+      inFlightAgeMs >= staleMs
+    ) {
+      return {
+        reason: "STALE_IN_FLIGHT_AUTO_RETRY",
+        countAsRetry: true,
+      };
+    }
+
     if (force !== true) {
       const retryAfterSeconds =
         inFlightAgeMs === null

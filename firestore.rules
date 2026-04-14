@@ -46,6 +46,39 @@ service cloud.firestore {
         && request.time > configDoc().data.submissionDeadline;
     }
 
+    function eventControlsPath() {
+      return /databases/$(database)/documents/event_controls/global;
+    }
+
+    function eventControlsExists() {
+      return exists(eventControlsPath());
+    }
+
+    function eventControlsData() {
+      return get(eventControlsPath()).data;
+    }
+
+    function registrationWindowOpen(track) {
+      let controls = eventControlsExists() ? eventControlsData() : null;
+      let registration = controls == null ? null : controls.registration;
+      let window = track == "workshop"
+        ? (registration == null ? null : registration.workshop)
+        : (registration == null ? null : registration.hackathon);
+
+      return controls == null
+        || window == null
+        || (
+          (window.enabled == true || window.enabled == null)
+          && (window.openAt == null || request.time >= window.openAt)
+          && (window.closeAt == null || request.time < window.closeAt)
+        );
+    }
+
+    function registrationWindowOpenByType(registrationType) {
+      return (registrationType == "workshop" && registrationWindowOpen("workshop"))
+        || (registrationType == "hackathon" && registrationWindowOpen("hackathon"));
+    }
+
     function isAdmin() {
       return signedIn()
         && (request.auth.token.admin == true || myRole() == "ADMIN");
@@ -124,23 +157,23 @@ service cloud.firestore {
 
     match /workshop_registrations/{docId} {
       allow read, write: if isAdmin();
-      allow create: if true;
+      allow create: if registrationWindowOpen("workshop");
     }
 
     match /hackathon_registrations/{docId} {
       allow read, write: if isAdmin();
-      allow create: if true;
+      allow create: if registrationWindowOpen("hackathon");
     }
 
     match /participants/{docId} {
       allow read: if isAdmin() || true;
       allow write: if false;
-      allow create: if true;
+      allow create: if registrationWindowOpenByType(request.resource.data.registration_type);
     }
 
     match /transactions/{docId} {
       allow read, write: if isAdmin();
-      allow create: if true;
+      allow create: if registrationWindowOpenByType(request.resource.data.registration_type);
     }
 
     match /analytics/{docId} {

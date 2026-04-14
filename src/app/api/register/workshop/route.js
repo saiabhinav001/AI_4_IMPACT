@@ -13,6 +13,7 @@ import {
   cleanupTempScreenshot,
   isTempScreenshotForRegistrationType,
 } from "../_utils/screenshotCleanup";
+import { resolveRegistrationGate } from "../../../../../lib/server/registration-gate";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,17 @@ function badRequest(error) {
 
 export async function POST(request) {
   try {
+    const registrationGate = await resolveRegistrationGate(adminDb, "workshop");
+    if (!registrationGate.allowed) {
+      return NextResponse.json(
+        {
+          error: registrationGate.message,
+          registration_window: registrationGate.window,
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     const name = asTrimmedString(body?.name);

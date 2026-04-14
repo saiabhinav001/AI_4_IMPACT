@@ -13,6 +13,7 @@ import {
   cleanupTempScreenshot,
   isTempScreenshotForRegistrationType,
 } from "../_utils/screenshotCleanup";
+import { resolveRegistrationGate } from "../../../../../lib/server/registration-gate";
 
 export const runtime = "nodejs";
 
@@ -36,6 +37,17 @@ function normalizeTeamName(value) {
 
 export async function POST(request) {
   try {
+    const registrationGate = await resolveRegistrationGate(adminDb, "hackathon");
+    if (!registrationGate.allowed) {
+      return NextResponse.json(
+        {
+          error: registrationGate.message,
+          registration_window: registrationGate.window,
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     const teamName = asTrimmedString(body?.team_name);

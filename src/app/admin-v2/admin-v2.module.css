@@ -533,6 +533,15 @@
   color: #e4e4e7;
 }
 
+.actionLinkButton {
+  text-decoration: none;
+}
+
+.actionLinkButton:hover,
+.actionLinkButton:focus-visible {
+  text-decoration: none;
+}
+
 .workspace {
   display: grid;
   gap: 12px;
@@ -547,6 +556,325 @@
 .intelligenceStrip {
   display: grid;
   gap: 10px;
+}
+
+.eventControlsQuickCard {
+  border: 1px solid rgba(63, 63, 70, 0.88);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.76), rgba(12, 12, 15, 0.84));
+  box-shadow: var(--shadow-soft);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.eventControlsQuickHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.eventControlsQuickTitleWrap {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.eventControlsQuickTitle {
+  font-size: 1rem;
+  font-weight: 670;
+}
+
+.eventControlsQuickSubtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.eventControlsQuickActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.eventControlsQuickMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.eventControlsPanel {
+  border: 1px solid rgba(63, 63, 70, 0.88);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.76), rgba(12, 12, 15, 0.84));
+  box-shadow: var(--shadow-soft);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.eventControlsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.eventControlsTitleWrap {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.eventControlsKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #c4b5fd;
+  font-weight: 640;
+}
+
+.eventControlsTitle {
+  font-size: 1rem;
+  font-weight: 670;
+}
+
+.eventControlsSubtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.eventControlsPhase {
+  font-size: 0.72rem;
+  color: #ddd6fe;
+  font-weight: 620;
+}
+
+.eventControlsActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.eventControlsLoading {
+  font-size: 0.79rem;
+  color: var(--text-subtle);
+}
+
+.eventControlsMessage {
+  border: 1px solid rgba(54, 201, 145, 0.42);
+  border-radius: 9px;
+  background: rgba(54, 201, 145, 0.12);
+  color: #a7f3d0;
+  font-size: 0.79rem;
+  padding: 7px 8px;
+}
+
+.eventStatusRow {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.eventStatusPill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.statusOpen {
+  border-color: rgba(52, 211, 153, 0.44);
+  background: rgba(52, 211, 153, 0.16);
+  color: #86efac;
+}
+
+.statusClosed {
+  border-color: rgba(239, 68, 68, 0.46);
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
+
+.statusScheduled {
+  border-color: rgba(245, 158, 11, 0.44);
+  background: rgba(245, 158, 11, 0.14);
+  color: #fde68a;
+}
+
+.statusDisabled {
+  border-color: rgba(113, 113, 122, 0.5);
+  background: rgba(113, 113, 122, 0.16);
+  color: #d4d4d8;
+}
+
+.statusLive {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+}
+
+.eventStatusNow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.eventControlsStack {
+  display: grid;
+  gap: 9px;
+}
+
+.eventControlCard {
+  border: 1px solid rgba(63, 63, 70, 0.86);
+  border-radius: 11px;
+  background: rgba(12, 12, 15, 0.68);
+  padding: 10px;
+  display: grid;
+  gap: 9px;
+}
+
+.eventControlHead {
+  display: grid;
+  gap: 3px;
+}
+
+.eventControlTitle {
+  font-size: 0.84rem;
+  font-weight: 640;
+}
+
+.eventControlHint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.eventControlGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.eventDateField {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.eventInlineCheckbox {
+  border: 1px solid rgba(63, 63, 70, 0.82);
+  border-radius: 10px;
+  background: rgba(24, 24, 27, 0.66);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 10px;
+  font-size: 0.79rem;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.eventInlineCheckbox input {
+  accent-color: #a78bfa;
+}
+
+.eventControlsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 142;
+  background: rgba(4, 4, 6, 0.72);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+
+.eventControlsModal {
+  width: min(1240px, 100%);
+  max-height: min(92vh, 1020px);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.88), rgba(12, 12, 15, 0.93));
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-hard);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.eventControlsModalHeader {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eventControlsModalTitleWrap {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.eventControlsModalTitle {
+  font-size: clamp(1.02rem, 1.4vw, 1.24rem);
+  line-height: 1.24;
+  font-weight: 660;
+}
+
+.eventControlsModalSubtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.eventControlsModalMeta {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.eventControlsModalBody {
+  overflow: auto;
+  padding: 12px;
+}
+
+.eventControlsModalBody {
+  scrollbar-color: rgba(167, 139, 250, 0.58) rgba(24, 24, 27, 0.72);
+}
+
+.eventControlsModalBody::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.eventControlsModalBody::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.72);
+}
+
+.eventControlsModalBody::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.52);
+  border-radius: 999px;
+  border: 2px solid rgba(24, 24, 27, 0.72);
 }
 
 .notice {
@@ -2049,6 +2377,18 @@
     justify-content: flex-start;
   }
 
+  .eventControlsQuickActions {
+    width: 100%;
+  }
+
+  .eventControlsQuickActions > button {
+    flex: 1 1 0;
+  }
+
+  .eventControlGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .table {
     min-width: 1540px;
   }
@@ -2069,7 +2409,8 @@
     width: 100%;
   }
 
-  .topBarActionButtons > button {
+  .topBarActionButtons > button,
+  .topBarActionButtons > a {
     flex: 1 1 0;
     min-width: 0;
   }
@@ -2305,7 +2646,8 @@
     width: 100%;
   }
 
-  .topBarActionButtons > button {
+  .topBarActionButtons > button,
+  .topBarActionButtons > a {
     flex: 1 1 0;
     min-width: 0;
   }
@@ -2343,6 +2685,64 @@
   }
 
   .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .eventControlsQuickHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .eventControlsQuickActions {
+    width: 100%;
+  }
+
+  .eventControlsQuickActions > button {
+    flex: 1 1 0;
+  }
+
+  .eventControlsQuickMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .eventControlsOverlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .eventControlsModal {
+    width: 100vw;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+
+  .eventControlsModalHeader {
+    padding: 11px;
+  }
+
+  .eventControlsModalBody {
+    padding: 10px;
+  }
+
+  .eventControlsHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .eventControlsActions {
+    width: 100%;
+  }
+
+  .eventControlsActions > button {
+    flex: 1 1 0;
+  }
+
+  .eventControlGrid {
     grid-template-columns: 1fr;
   }
 
@@ -2385,6 +2785,13 @@
   .actionRow {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .eventInlineCheckbox {
+    white-space: normal;
+    align-items: flex-start;
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 
   .topBarDivider {

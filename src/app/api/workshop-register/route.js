@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminDb, FieldValue } from "../../../../lib/admin";
+import { resolveRegistrationGate } from "../../../../lib/server/registration-gate";
 
 export const dynamic = "force-static";
 
@@ -44,6 +45,18 @@ function isValidPhone(phone) {
 
 export async function POST(request) {
   try {
+    const registrationGate = await resolveRegistrationGate(adminDb, "workshop");
+    if (!registrationGate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: registrationGate.message,
+          registration_window: registrationGate.window,
+        },
+        { status: 403 }
+      );
+    }
+
     const clientIp = getClientIp(request);
     if (hitRateLimit(`workshop:${clientIp}`)) {
       return NextResponse.json(

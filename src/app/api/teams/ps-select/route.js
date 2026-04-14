@@ -4,6 +4,7 @@ import { PHASES } from "../../../../../lib/constants/phases";
 import { ROLES } from "../../../../../lib/constants/roles";
 import { verifyRequestWithProfile } from "../../../../../lib/server/auth";
 import { getHackathonConfig } from "../../../../../lib/server/hackathon";
+import { resolveTeamEditingGate } from "../../../../../lib/server/team-editing-gate";
 
 export const dynamic = "force-static";
 
@@ -62,6 +63,24 @@ export async function POST(request) {
         { status: 403 }
       );
     }
+
+    const editingGate = await resolveTeamEditingGate(adminDb, {
+      teamId,
+      actorEmail: authUser?.email || "",
+    });
+
+    if (!editingGate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: editingGate.message,
+          freeze_window: editingGate.freezeWindow,
+          team_freeze: editingGate.teamFreeze,
+        },
+        { status: 403 }
+      );
+    }
+
     if (team?.psSelection?.selected || team?.psSelection?.locked) {
       return NextResponse.json(
         { success: false, error: "Problem statement already selected and locked." },

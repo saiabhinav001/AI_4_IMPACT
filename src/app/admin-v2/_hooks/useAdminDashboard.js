@@ -29,6 +29,11 @@ import {
   toEmailDelivery,
 } from "../_lib/adminData";
 
+const ENV = globalThis?.process?.env || {};
+const DEFAULT_CREDENTIAL_SHEET_URL = String(
+  ENV.NEXT_PUBLIC_CREDENTIAL_SHEET_URL || ""
+).trim();
+
 function normalizeSearchText(value) {
   return String(value || "")
     .toLowerCase()
@@ -125,6 +130,16 @@ export function useAdminDashboard() {
 
   const [apiRuntimeAvailable, setApiRuntimeAvailable] = useState(true);
   const [runtimeNotice, setRuntimeNotice] = useState("");
+  const [credentialSheetUrl, setCredentialSheetUrl] = useState(DEFAULT_CREDENTIAL_SHEET_URL);
+
+  const [eventControls, setEventControls] = useState(null);
+  const [eventControlsEffectiveState, setEventControlsEffectiveState] = useState(null);
+  const [eventControlImplementation, setEventControlImplementation] = useState(null);
+  const [eventControlTimezoneLabel, setEventControlTimezoneLabel] = useState("IST (Asia/Kolkata)");
+  const [eventControlsLoading, setEventControlsLoading] = useState(false);
+  const [eventControlsSaving, setEventControlsSaving] = useState(false);
+  const [eventControlsError, setEventControlsError] = useState("");
+  const [eventControlsMessage, setEventControlsMessage] = useState("");
 
   const [previewScreenshot, setPreviewScreenshot] = useState({
     url: "",
@@ -258,6 +273,160 @@ export function useAdminDashboard() {
       clearInterval(intervalId);
     };
   }, [user, fetchRegistrations]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let isCancelled = false;
+
+    const resolveCredentialSheetUrl = async () => {
+      if (DEFAULT_CREDENTIAL_SHEET_URL) {
+        if (!isCancelled) {
+          setCredentialSheetUrl(DEFAULT_CREDENTIAL_SHEET_URL);
+        }
+        return;
+      }
+
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(toRuntimeApiUrl("/api/admin/credential-sheet-link"), {
+          headers: buildRuntimeIdTokenHeaders(idToken),
+          cache: "no-store",
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          return;
+        }
+
+        const url = String(data?.url || "").trim();
+        if (!isCancelled && url) {
+          setCredentialSheetUrl(url);
+        }
+      } catch {
+        // Keep dashboard fully functional even when sheet-link lookup fails.
+      }
+    };
+
+    void resolveCredentialSheetUrl();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
+
+  const fetchEventControls = useCallback(async () => {
+    if (!user) return;
+
+    setEventControlsLoading(true);
+    setEventControlsError("");
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(toRuntimeApiUrl("/api/admin/event-controls"), {
+        headers: buildRuntimeIdTokenHeaders(idToken),
+        cache: "no-store",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 404 || response.status === 405) {
+        setApiRuntimeAvailable(false);
+        setRuntimeNotice(API_RUNTIME_NOTICE);
+        throw new Error("Event controls are unavailable on static hosting mode.");
+      }
+
+      if (!response.ok || data?.success !== true) {
+        throw new Error(data?.error || "Failed to load event controls.");
+      }
+
+      setEventControls(data?.controls || null);
+      setEventControlsEffectiveState(data?.effectiveState || null);
+      setEventControlImplementation(data?.implementation || null);
+      setEventControlTimezoneLabel(
+        String(data?.timezoneLabel || data?.timezone || "IST (Asia/Kolkata)").trim() ||
+          "IST (Asia/Kolkata)"
+      );
+      setApiRuntimeAvailable(true);
+      setRuntimeNotice("");
+      return data;
+    } catch (error) {
+      setEventControlsError(error?.message || "Failed to load event controls.");
+      return null;
+    } finally {
+      setEventControlsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchEventControls();
+  }, [user, fetchEventControls]);
+
+  const saveEventControls = useCallback(
+    async (nextControls) => {
+      if (!user || !nextControls || typeof nextControls !== "object") {
+        return null;
+      }
+
+      setEventControlsSaving(true);
+      setEventControlsError("");
+      setEventControlsMessage("");
+
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(toRuntimeApiUrl("/api/admin/event-controls"), {
+          method: "PUT",
+          headers: buildRuntimeIdTokenHeaders(idToken, {
+            "Content-Type": "application/json",
+          }),
+          body: JSON.stringify({ controls: nextControls }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 404 || response.status === 405) {
+          setApiRuntimeAvailable(false);
+          setRuntimeNotice(API_RUNTIME_NOTICE);
+          throw new Error("Event controls are unavailable on static hosting mode.");
+        }
+
+        if (!response.ok || data?.success !== true) {
+          const details = Array.isArray(data?.details) ? data.details : [];
+          const detailText = details.length > 0 ? ` ${details.join(" ")}` : "";
+          throw new Error(`${data?.error || "Failed to save event controls."}${detailText}`.trim());
+        }
+
+        setEventControls(data?.controls || null);
+        setEventControlsEffectiveState(data?.effectiveState || null);
+        setEventControlImplementation(data?.implementation || null);
+        setEventControlTimezoneLabel(
+          String(data?.timezoneLabel || data?.timezone || "IST (Asia/Kolkata)").trim() ||
+            "IST (Asia/Kolkata)"
+        );
+        setEventControlsMessage("Event controls saved successfully.");
+        setApiRuntimeAvailable(true);
+        setRuntimeNotice("");
+        return data;
+      } catch (error) {
+        setEventControlsError(error?.message || "Failed to save event controls.");
+        return null;
+      } finally {
+        setEventControlsSaving(false);
+      }
+    },
+    [user]
+  );
+
+  const updateEventControlsDraft = useCallback((nextControls) => {
+    if (!nextControls || typeof nextControls !== "object") {
+      return;
+    }
+
+    setEventControls(nextControls);
+    setEventControlsMessage("");
+    setEventControlsError("");
+  }, []);
 
   const registrationsForTrack = useMemo(() => {
     return registrations.filter((registration) => registration.registrationType === filterTrack);
@@ -1196,6 +1365,15 @@ export function useAdminDashboard() {
     dataError,
     runtimeNotice,
     apiRuntimeAvailable,
+    credentialSheetUrl,
+    eventControls,
+    eventControlsEffectiveState,
+    eventControlImplementation,
+    eventControlTimezoneLabel,
+    eventControlsLoading,
+    eventControlsSaving,
+    eventControlsError,
+    eventControlsMessage,
 
     activeTab,
     setActiveTab,
@@ -1249,6 +1427,9 @@ export function useAdminDashboard() {
     closeScreenshotPreview,
 
     exportCSV,
+    fetchEventControls,
+    saveEventControls,
+    updateEventControlsDraft,
     handleLogout,
     handleStatusToggle,
     handleRegenerateCredentials,

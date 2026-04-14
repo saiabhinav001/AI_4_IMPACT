@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { JetBrains_Mono, Sora } from "next/font/google";
 import { AnimatePresence, motion } from "framer-motion";
 import AdminShell from "./_components/AdminShell";
 import AdminTopBar from "./_components/AdminTopBar";
 import AnalyticsPanel from "./_components/AnalyticsPanel";
 import DetailDrawer from "./_components/DetailDrawer";
+import EventControlsQuickAccess from "./_components/EventControlsQuickAccess";
+import EventControlsWorkspaceModal from "./_components/EventControlsWorkspaceModal";
 import FilterBar from "./_components/FilterBar";
 import LoadingState from "./_components/LoadingState";
 import OperationsRail from "./_components/OperationsRail";
@@ -73,6 +75,20 @@ function DuplicateNotice({ duplicates }) {
 
 export default function AdminV2Page() {
   const dashboard = useAdminDashboard();
+  const [eventControlsOpen, setEventControlsOpen] = useState(false);
+
+  const openEventControlsWorkspace = () => {
+    setEventControlsOpen(true);
+    void dashboard.fetchEventControls();
+  };
+
+  const closeEventControlsWorkspace = () => {
+    if (dashboard.eventControlsSaving) {
+      return;
+    }
+
+    setEventControlsOpen(false);
+  };
 
   const activeTrackLabel = useMemo(() => {
     const activeOption = TRACK_OPTIONS.find((option) => option.value === dashboard.filterTrack);
@@ -97,6 +113,9 @@ export default function AdminV2Page() {
           onChangeTab={dashboard.setActiveTab}
           stats={dashboard.stats}
           filterTrack={dashboard.filterTrack}
+          credentialSheetUrl={dashboard.credentialSheetUrl}
+          apiRuntimeAvailable={dashboard.apiRuntimeAvailable}
+          onOpenEventControls={openEventControlsWorkspace}
           onExportCSV={dashboard.exportCSV}
           onLogout={dashboard.handleLogout}
         />
@@ -107,6 +126,8 @@ export default function AdminV2Page() {
               userEmail={dashboard.user?.email}
               activeTrackLabel={activeTrackLabel}
               apiRuntimeAvailable={dashboard.apiRuntimeAvailable}
+              credentialSheetUrl={dashboard.credentialSheetUrl}
+              onOpenEventControls={openEventControlsWorkspace}
               onExportCSV={dashboard.exportCSV}
               onLogout={dashboard.handleLogout}
             />
@@ -136,6 +157,20 @@ export default function AdminV2Page() {
                 transition={{ duration: 0.14, ease: transitionEase }}
               >
                 <SummaryCards stats={dashboard.stats} filterTrack={dashboard.filterTrack} />
+              </motion.div>
+
+              <motion.div
+                className={styles.trackTransitionLayer}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18, ease: transitionEase }}
+              >
+                <EventControlsQuickAccess
+                  effectiveState={dashboard.eventControlsEffectiveState}
+                  timezoneLabel={dashboard.eventControlTimezoneLabel}
+                  loading={dashboard.eventControlsLoading}
+                  error={dashboard.eventControlsError}
+                  onOpen={openEventControlsWorkspace}
+                />
               </motion.div>
             </section>
 
@@ -232,6 +267,32 @@ export default function AdminV2Page() {
           </motion.main>
         </div>
       </div>
+
+      <AnimatePresence>
+        {eventControlsOpen ? (
+          <EventControlsWorkspaceModal
+            key="event-controls-workspace"
+            isOpen={eventControlsOpen}
+            onClose={closeEventControlsWorkspace}
+            controls={dashboard.eventControls}
+            effectiveState={dashboard.eventControlsEffectiveState}
+            timezoneLabel={dashboard.eventControlTimezoneLabel}
+            loading={dashboard.eventControlsLoading}
+            saving={dashboard.eventControlsSaving}
+            error={dashboard.eventControlsError}
+            message={dashboard.eventControlsMessage}
+            onRefresh={() => {
+              void dashboard.fetchEventControls();
+            }}
+            onChangeDraft={(nextControls) => {
+              dashboard.updateEventControlsDraft(nextControls);
+            }}
+            onSave={(nextControls) => {
+              void dashboard.saveEventControls(nextControls);
+            }}
+          />
+        ) : null}
+      </AnimatePresence>
 
       <AnimatePresence>
         {dashboard.selectedTeam ? (
