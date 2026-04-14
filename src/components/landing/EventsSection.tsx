@@ -22,7 +22,7 @@ const events = [
 
 export default function EventsSection() {
   return (
-    <section id="events" className="py-20 relative scroll-mt-32">
+    <section id="events" className="pt-10 pb-20 relative scroll-mt-32">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}

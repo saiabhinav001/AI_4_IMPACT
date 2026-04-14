@@ -49,7 +49,7 @@ export default function AboutSection() {
     <section 
       id="about" 
       ref={containerRef} 
-      className="relative py-24 lg:py-32 overflow-hidden scroll-mt-32"
+      className="relative py-12 lg:py-16 overflow-hidden scroll-mt-32"
     >
       {/* Subtle Background Texture */}
       <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle_at_center,_#fff_1px,_transparent_1px)] bg-[length:40px_40px] pointer-events-none" />

@@ -56,7 +56,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section id="hero" className="relative grid min-h-screen items-center gap-8 pt-24 pb-12 md:grid-cols-2 md:gap-12 lg:pt-32 scroll-mt-32">
+    <section id="hero" className="relative grid min-h-screen items-center gap-8 pt-24 pb-4 md:grid-cols-2 md:gap-12 lg:pt-32 scroll-mt-32">
       {/* Dynamic Background Glows with Parallax */}
       <motion.div 
         animate={{ x: mousePos.x, y: mousePos.y }}
