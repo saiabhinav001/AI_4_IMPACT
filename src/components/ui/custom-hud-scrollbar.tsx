@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useSpring } from "framer-motion";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 
 export function CustomHUDScrollbar() {
@@ -11,6 +11,13 @@ export function CustomHUDScrollbar() {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001
+  });
+
+  const thumbPosition = useTransform(scrollYProgress, [0, 1], ["0%", "calc(100% - 5rem)"]);
+  const thumbTop = useSpring(thumbPosition, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
   });
 
   useEffect(() => {
@@ -34,7 +41,7 @@ export function CustomHUDScrollbar() {
         
         {/* The Digital HUD Thumb */}
         <motion.div 
-          style={{ top: useSpring(useScroll().scrollYProgress, { stiffness: 100, damping: 30 }) }}
+          style={{ top: thumbTop }}
           className="absolute left-0 right-0 h-20 w-full"
         >
           {/* Scanning Ray */}

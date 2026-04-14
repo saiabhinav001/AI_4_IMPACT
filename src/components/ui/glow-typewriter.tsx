@@ -38,7 +38,7 @@ export function GlowTypewriter({
       filter: "blur(0px)",
       transition: {
         duration: 0.4,
-        ease: [0.16, 1, 0.3, 1],
+        ease: [0.16, 1, 0.3, 1] as const,
       },
     },
   };
@@ -76,7 +76,7 @@ export function GlowTypewriter({
           className="relative inline-block"
         >
           <motion.span
-            variants={glowVariants}
+            variants={glowVariants as any}
             initial="initial"
             animate="animate"
             className="inline-block"

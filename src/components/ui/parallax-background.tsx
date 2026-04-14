@@ -1,12 +1,58 @@
 "use client";
 
 import { motion, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
+
+type Shard = {
+  top: string;
+  left: string;
+  width: string;
+  height: string;
+  rotate: string;
+  duration: number;
+  delay: number;
+};
+
+type Dust = {
+  top: string;
+  left: string;
+};
+
+function createSeededRandom(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state = (1664525 * state + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+function createShardData(count: number, seed: number): Shard[] {
+  const rand = createSeededRandom(seed);
+  return Array.from({ length: count }, () => ({
+    top: `${rand() * 300}%`,
+    left: `${rand() * 100}%`,
+    width: `${rand() * 30 + 10}px`,
+    height: `${rand() * 30 + 10}px`,
+    rotate: `rotate(${rand() * 360}deg)`,
+    duration: 3 + rand() * 5,
+    delay: rand() * 2,
+  }));
+}
+
+function createDustData(count: number, seed: number): Dust[] {
+  const rand = createSeededRandom(seed);
+  return Array.from({ length: count }, () => ({
+    top: `${rand() * 400}%`,
+    left: `${rand() * 100}%`,
+  }));
+}
 
 export function ParallaxBackground() {
   const { scrollYProgress } = useScroll();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const shards = useMemo(() => createShardData(20, 20260414), []);
+  const dust = useMemo(() => createDustData(40, 20260415), []);
 
   // Smooth mouse movement
   const springX = useSpring(mouseX, { stiffness: 50, damping: 20 });
@@ -71,7 +117,7 @@ export function ParallaxBackground() {
         style={{ x: shardsX, y: shardsY }}
         className="absolute inset-0"
       >
-        {[...Array(20)].map((_, i) => ( // Increased count
+        {shards.map((shard, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0 }}
@@ -80,17 +126,17 @@ export function ParallaxBackground() {
               scale: [1, 1.2, 1],
             }}
             transition={{ 
-              duration: 3 + Math.random() * 5, 
+              duration: shard.duration,
               repeat: Infinity,
-              delay: Math.random() * 2
+              delay: shard.delay,
             }}
             className="absolute rounded-sm border border-white/10 bg-white/10 backdrop-blur-[2px]"
             style={{
-              top: `${Math.random() * 300}%`,
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 30 + 10}px`,
-              height: `${Math.random() * 30 + 10}px`,
-              transform: `rotate(${Math.random() * 360}deg)`
+              top: shard.top,
+              left: shard.left,
+              width: shard.width,
+              height: shard.height,
+              transform: shard.rotate,
             }}
           />
         ))}
@@ -101,13 +147,13 @@ export function ParallaxBackground() {
         style={{ y: dustY }}
         className="absolute inset-0 pointer-events-none"
       >
-        {[...Array(40)].map((_, i) => (
+        {dust.map((particle, i) => (
           <div
             key={`dust-${i}`}
             className="absolute h-1 w-1 rounded-full bg-white/20"
             style={{
-              top: `${Math.random() * 400}%`,
-              left: `${Math.random() * 100}%`,
+              top: particle.top,
+              left: particle.left,
               boxShadow: "0 0 10px rgba(255,255,255,0.3)"
             }}
           />

@@ -135,23 +135,23 @@ export default function TimelineSection() {
   });
 
   return (
-    <section id="timeline" className="py-20 sm:py-32 scroll-mt-32" style={{ transformStyle: "preserve-3d" }}>
+    <section id="timeline" className="landing-section" style={{ transformStyle: "preserve-3d" }}>
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-8 lg:mb-10 px-0 sm:px-8 lg:px-12"
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
+        className="mb-6 px-0 sm:px-8 lg:mb-8 lg:px-12"
       >
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-3xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl">
+          <h2 className="type-h2 font-black tracking-tighter text-white">
             THE <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent italic">TIMELINE</span>
           </h2>
         </div>
       </motion.div>
 
-      <div className="py-6 sm:py-8 lg:py-10 px-0 sm:px-8 lg:px-12">
-        <div className="mb-14 h-[1px] w-12 bg-[#8D36D5]" />
+      <div className="px-0 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8">
+        <div className="mb-10 h-[1px] w-12 bg-[#8D36D5]" />
 
         <Timeline 
           data={data} 

@@ -1,11 +1,19 @@
-import AboutSection from "../components/landing/AboutSection";
-import EventsSection from "../components/landing/EventsSection";
+import dynamic from "next/dynamic";
 import HeroSection from "../components/landing/HeroSection";
-import HighlightsSection from "../components/landing/HighlightsSection";
-import SponsorsSection from "../components/landing/SponsorsSection";
-import TimelineSection from "../components/landing/TimelineSection";
-import { ParallaxBackground } from "../components/ui/parallax-background";
-import { KineticHUD } from "../components/ui/kinetic-hud";
+
+const ParallaxBackground = dynamic(
+  () => import("../components/ui/parallax-background").then((mod) => mod.ParallaxBackground)
+);
+
+const KineticHUD = dynamic(
+  () => import("../components/ui/kinetic-hud").then((mod) => mod.KineticHUD)
+);
+
+const AboutSection = dynamic(() => import("../components/landing/AboutSection"));
+const EventsSection = dynamic(() => import("../components/landing/EventsSection"));
+const TimelineSection = dynamic(() => import("../components/landing/TimelineSection"));
+const HighlightsSection = dynamic(() => import("../components/landing/HighlightsSection"));
+const SponsorsSection = dynamic(() => import("../components/landing/SponsorsSection"));
 
 export default function HomePage() {
   return (
@@ -15,13 +23,11 @@ export default function HomePage() {
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-0 sm:px-6 lg:px-8">
         <HeroSection />
-        <div className="flex flex-col gap-24 py-24 sm:gap-32 sm:py-32">
-          <AboutSection />
-          <EventsSection />
-          <TimelineSection />
-          <HighlightsSection />
-          <SponsorsSection />
-        </div>
+        <AboutSection />
+        <EventsSection />
+        <TimelineSection />
+        <HighlightsSection />
+        <SponsorsSection />
       </div>
 
       {/* Retro Footer Decal */}

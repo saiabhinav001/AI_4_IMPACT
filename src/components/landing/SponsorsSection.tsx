@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 const regularSponsors = [
   { role: "Cloud Partner", name: "AWS_ACTIVE", detail: "Infrastructure Core" },
@@ -11,15 +12,15 @@ const regularSponsors = [
 
 export default function SponsorsSection() {
   return (
-    <section id="sponsors" className="py-20 sm:py-32">
+    <section id="sponsors" className="landing-section">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-10 text-center md:text-left"
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
+        className="mb-8 text-center md:text-left"
       >
-        <h2 className="text-3xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl">
+        <h2 className="type-h2 font-black tracking-tighter text-white">
           THE <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent italic">PARTNERS</span>
         </h2>
       </motion.div>
@@ -63,19 +64,22 @@ export default function SponsorsSection() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center gap-6 text-center md:flex-row md:text-left md:gap-10">
-          <div className="flex h-24 w-44 shrink-0 items-center justify-center rounded-2xl border border-[#8D36D5]/30 bg-white/5 p-4 backdrop-blur-md transition-all duration-500 sm:h-32 sm:w-56 sm:p-6 group-hover:bg-white/10 group-hover:scale-105">
-            <img 
+          <div className="flex h-24 w-44 shrink-0 items-center justify-center rounded-2xl border border-[#8D36D5]/30 bg-white/5 p-4 backdrop-blur-md transition-all duration-500 group-hover:scale-105 group-hover:bg-white/10 sm:h-32 sm:w-56 sm:p-6">
+            <Image
               src="/kavion.png" 
               alt="Kavion.ai Logo" 
-              className="max-h-full max-w-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
+              width={320}
+              height={160}
+              sizes="(max-width: 640px) 176px, 224px"
+              className="max-h-full max-w-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
             />
           </div>
           
           <div>
-            <h3 className="mb-2 text-xl font-black tracking-tighter text-white sm:text-3xl sm:mb-4 group-hover:animate-glitch">
+            <h3 className="type-h3 group-hover:animate-glitch mb-2 font-black tracking-tighter text-white sm:mb-4">
               Kavion.ai
             </h3>
-            <p className="max-w-3xl text-xs leading-relaxed text-zinc-400 sm:text-lg">
+            <p className="type-body max-w-3xl text-zinc-400">
               The Governed Intelligence Layer for the Enterprise. Kavion transforms unstructured, business-critical documents into continuous, validated commercial intelligence.
             </p>
           </div>

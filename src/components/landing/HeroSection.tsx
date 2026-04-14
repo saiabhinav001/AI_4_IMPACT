@@ -60,14 +60,14 @@ export default function HeroSection() {
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
     },
   };
 
   return (
     <section 
       id="hero" 
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center pt-24 pb-12 sm:grid sm:grid-cols-2 sm:gap-12 sm:pt-32 scroll-mt-32 overflow-hidden"
+      className="relative flex min-h-[92dvh] flex-col items-center justify-center overflow-hidden pb-10 pt-24 scroll-mt-28 sm:grid sm:grid-cols-2 sm:gap-10 sm:pt-28"
     >
       {/* Precision HUD Background Layer */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
@@ -106,13 +106,13 @@ export default function HeroSection() {
           <div className="hidden sm:block">
             <TextReveal
               text="AI4 IMPACT"
-              className="text-7xl font-black uppercase leading-[0.8] tracking-tighter lg:text-9xl text-white"
+              className="type-display font-black text-white"
             />
           </div>
           <div className="sm:hidden">
             <GlowTypewriter
               text="AI4 IMPACT"
-              className="text-3xl font-black uppercase leading-[0.8] tracking-tighter text-white"
+              className="type-display font-black text-white"
               glowColor="#8D36D5"
             />
           </div>
@@ -124,7 +124,7 @@ export default function HeroSection() {
         >
           <TextReveal
             text="Build practical AI solutions for real-world social impact with mentors, domain experts, and creators."
-            className="text-sm text-zinc-400 leading-relaxed sm:text-base lg:text-xl font-medium"
+            className="type-body-lg font-medium text-zinc-400"
           />
         </motion.div>
 
@@ -139,7 +139,7 @@ export default function HeroSection() {
                 boxShadow: ["0 0 20px rgba(141,54,213,0.3)", "0 0 40px rgba(141,54,213,0.5)", "0 0 20px rgba(141,54,213,0.3)"],
               }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="group relative overflow-hidden rounded-2xl bg-white px-8 py-4 text-xs font-black tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)] sm:px-12 sm:py-6 sm:text-sm"
+              className="touch-target group relative overflow-hidden rounded-2xl bg-white px-8 py-4 text-xs font-black tracking-[0.2em] text-black shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all hover:scale-105 active:scale-95 sm:px-12 sm:py-6 sm:text-sm"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
               REGISTER NOW
@@ -148,7 +148,7 @@ export default function HeroSection() {
 
           <div className="flex items-center gap-3">
             <span className="h-1.5 w-1.5 rounded-full bg-[#8D36D5] animate-pulse" />
-            <p className="text-xs font-bold tracking-[0.2em] text-zinc-500 uppercase">APRIL 15 - APRIL 18, 2026</p>
+            <p className="type-body-sm font-bold uppercase tracking-[0.2em] text-zinc-500">APRIL 15 - APRIL 18, 2026</p>
           </div>
         </motion.div>
       </motion.div>
@@ -158,7 +158,7 @@ export default function HeroSection() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         style={{ y: cardY }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] as const }}
         className="relative group mt-10 sm:mt-0 sm:ml-auto perspective-1000 w-full max-w-[280px] sm:max-w-none px-0 sm:px-0"
       >
         <motion.div

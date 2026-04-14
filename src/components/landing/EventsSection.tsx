@@ -1,9 +1,8 @@
 "use client";
 
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Cpu, Terminal, Zap, Shield } from "lucide-react";
+import { Cpu, Terminal } from "lucide-react";
 import { TextReveal } from "../ui/text-reveal";
-import { MagneticWrapper } from "../ui/magnetic-wrapper";
 
 const events = [
   {
@@ -22,6 +21,88 @@ const events = [
   },
 ];
 
+function EventCard({
+  event,
+  itemVariants,
+}: {
+  event: (typeof events)[number];
+  itemVariants: any;
+}) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const mouseXSpring = useSpring(x);
+  const mouseYSpring = useSpring(y);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["5deg", "-5deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-5deg", "5deg"]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.article
+      key={event.title}
+      variants={itemVariants}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+      className="group relative"
+    >
+      <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+      <div className="absolute -bottom-2 -right-2 h-8 w-8 border-b-2 border-r-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+
+      <div className="relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.01] p-6 backdrop-blur-3xl transition-all duration-500 group-hover:border-white/10 group-hover:bg-white/[0.03] sm:p-8">
+        <div className="scanning-ray opacity-40 transition-opacity sm:opacity-0 sm:group-hover:opacity-100" />
+
+        <div className="relative z-10 flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
+          <div className="flex-1" style={{ transform: "translateZ(30px)" }}>
+            <div className="mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#8D36D5]/20 bg-[#8D36D5]/10 text-[#8D36D5]">
+                {event.icon}
+              </div>
+            </div>
+
+            <h3 className="type-h3 font-black tracking-tighter text-white transition-colors group-hover:text-[#8D36D5]">
+              {event.title}
+            </h3>
+            <p className="type-body mt-4 max-w-xl text-zinc-500 transition-colors group-hover:text-zinc-300">
+              {event.detail}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end" style={{ transform: "translateZ(40px)" }}>
+            {event.specs.map((spec) => (
+              <div
+                key={spec}
+                className="rounded-md border border-white/5 bg-black/40 px-3 py-1 text-[9px] font-bold tracking-[0.2em] text-zinc-500 transition-all group-hover:border-[#8D36D5]/30 group-hover:bg-[#8D36D5]/5 group-hover:text-[#8D36D5]"
+              >
+                {spec}
+              </div>
+            ))}
+            <div className="mt-2 hidden items-center gap-2 lg:flex">
+              <span className="h-1 w-1 animate-pulse rounded-full bg-[#8D36D5]" />
+              <span className="text-[8px] font-black uppercase tracking-[0.4em] text-[#8D36D5]/50">LINK_ESTABLISHED</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
 export default function EventsSection() {
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -39,23 +120,23 @@ export default function EventsSection() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
     },
   };
 
   return (
-    <section id="events" className="py-20 sm:py-32 relative scroll-mt-32">
+    <section id="events" className="landing-section">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-12"
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
+        className="mb-10"
       >
         <div className="mb-6 h-[1px] w-8 bg-[#8D36D5]" />
         <TextReveal 
           text="THE FLOW"
-          className="text-3xl font-black uppercase tracking-tighter text-white sm:text-7xl lg:text-8xl"
+          className="type-h2 font-black tracking-tighter text-white"
         />
       </motion.div>
 
@@ -64,86 +145,11 @@ export default function EventsSection() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="grid gap-12"
+        className="grid gap-6 md:gap-8"
       >
-        {events.map((event, idx) => {
-          const x = useMotionValue(0);
-          const y = useMotionValue(0);
-          const mouseXSpring = useSpring(x);
-          const mouseYSpring = useSpring(y);
-          const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["5deg", "-5deg"]);
-          const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-5deg", "5deg"]);
-
-          const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const width = rect.width;
-            const height = rect.height;
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            const xPct = mouseX / width - 0.5;
-            const yPct = mouseY / height - 0.5;
-            x.set(xPct);
-            y.set(yPct);
-          };
-
-          const handleMouseLeave = () => {
-            x.set(0);
-            y.set(0);
-          };
-
-          return (
-            <motion.article
-              key={event.title}
-              variants={itemVariants}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-              className="group relative"
-            >
-              {/* Holographic Corner Brackets */}
-              <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5] sm:border-[#8D36D5]/40 transition-all duration-500 sm:group-hover:border-[#8D36D5] sm:group-hover:h-12 sm:group-hover:w-12" />
-              <div className="absolute -right-2 -bottom-2 h-8 w-8 border-r-2 border-b-2 border-[#8D36D5] sm:border-[#8D36D5]/40 transition-all duration-500 sm:group-hover:border-[#8D36D5] sm:group-hover:h-12 sm:group-hover:w-12" />
-              
-              <div className="relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.01] p-6 backdrop-blur-3xl transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-white/10 sm:p-8">
-                {/* Scanning Ray */}
-                <div className="scanning-ray opacity-40 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
-
-                <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-                  <div className="flex-1" style={{ transform: "translateZ(30px)" }}>
-                    <div className="mb-4">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8D36D5]/10 text-[#8D36D5] border border-[#8D36D5]/20">
-                        {event.icon}
-                      </div>
-                    </div>
-                    
-                    <h3 className="text-xl font-black uppercase tracking-tighter text-white group-hover:text-[#8D36D5] transition-colors sm:text-4xl">
-                      {event.title}
-                    </h3>
-                    <p className="mt-4 text-sm text-zinc-500 max-w-xl group-hover:text-zinc-300 transition-colors sm:text-base lg:text-lg">
-                      {event.detail}
-                    </p>
-                  </div>
-
-                  {/* Data Expansion Specs */}
-                  <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end" style={{ transform: "translateZ(40px)" }}>
-                    {event.specs.map((spec) => (
-                      <div 
-                        key={spec}
-                        className="px-3 py-1 rounded-md border border-white/5 bg-black/40 text-[9px] font-bold tracking-[0.2em] text-zinc-500 transition-all group-hover:border-[#8D36D5]/30 group-hover:text-[#8D36D5] group-hover:bg-[#8D36D5]/5"
-                      >
-                        {spec}
-                      </div>
-                    ))}
-                    <div className="mt-2 hidden lg:flex items-center gap-2">
-                      <span className="h-1 w-1 rounded-full bg-[#8D36D5] animate-pulse" />
-                      <span className="text-[8px] font-black text-[#8D36D5]/50 uppercase tracking-[0.4em]">LINK_ESTABLISHED</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.article>
-          );
-        })}
+        {events.map((event) => (
+          <EventCard key={event.title} event={event} itemVariants={itemVariants} />
+        ))}
       </motion.div>
       
     </section>

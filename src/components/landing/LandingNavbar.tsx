@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
+import Link from "next/link";
 
 const navItems = [
   { label: "Home", href: "/#hero" },
@@ -90,7 +91,7 @@ export default function LandingNavbar() {
 
   const itemVariants = {
     closed: { x: -20, opacity: 0 },
-    open: { x: 0, opacity: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+    open: { x: 0, opacity: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } },
   };
 
   return (
@@ -114,11 +115,11 @@ export default function LandingNavbar() {
           
           <div className="relative z-10 flex items-center justify-between">
             {/* Logo */}
-            <a href="/#hero" onClick={closeMenu} className="group flex items-center gap-1.5 text-lg font-black uppercase tracking-[0.1em] text-white sm:text-2xl sm:gap-3 sm:tracking-[0.3em]">
+            <Link href="/#hero" onClick={closeMenu} className="group flex items-center gap-1.5 text-lg font-black uppercase tracking-[0.1em] text-white sm:text-2xl sm:gap-3 sm:tracking-[0.3em]">
               <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent transition-all group-hover:scale-105">AI4</span>
               <span className="inline">IMPACT</span>
               <div className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse hidden sm:block" />
-            </a>
+            </Link>
 
             {/* Desktop Nav */}
             <ul className="hidden lg:flex items-center gap-2">
@@ -128,7 +129,7 @@ export default function LandingNavbar() {
                   <li key={item.href}>
                     <a
                       href={item.href}
-                      className={`relative px-5 py-2.5 text-sm font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
+                      className={`touch-target relative inline-flex items-center px-5 py-2.5 text-sm font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
                         isActive ? "text-white" : "text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
@@ -151,7 +152,7 @@ export default function LandingNavbar() {
                     boxShadow: ["0 0 10px rgba(141,54,213,0.2)", "0 0 25px rgba(141,54,213,0.4)", "0 0 10px rgba(141,54,213,0.2)"],
                   }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="relative group overflow-hidden rounded-xl bg-white px-6 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] whitespace-nowrap"
+                  className="touch-target relative group inline-flex items-center overflow-hidden whitespace-nowrap rounded-xl bg-white px-6 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:scale-105 active:scale-95"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
                   REGISTER NOW
@@ -161,7 +162,7 @@ export default function LandingNavbar() {
 
             <button 
               onClick={toggleMenu}
-              className="group relative z-[100] flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white transition-all hover:bg-white/10 lg:hidden sm:h-12 sm:w-12 sm:rounded-2xl"
+              className="touch-target group relative z-[100] flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-white transition-all hover:bg-white/10 lg:hidden sm:h-12 sm:w-12 sm:rounded-2xl"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -204,7 +205,7 @@ export default function LandingNavbar() {
                         <a
                           href={item.href}
                           onClick={closeMenu}
-                          className={`group relative flex items-center justify-between text-4xl font-black uppercase tracking-tighter transition-all sm:text-6xl ${
+                          className={`touch-target group relative flex items-center justify-between py-1 text-[clamp(2rem,8vw,3.75rem)] font-black uppercase tracking-tighter transition-all ${
                             isActive ? "text-white" : "text-zinc-600 hover:text-white"
                           }`}
                         >
@@ -221,14 +222,14 @@ export default function LandingNavbar() {
               </nav>
 
               <motion.div variants={itemVariants} className="mt-16 w-full">
-                <a
-                   href="/#register"
+                <Link
+                  href="/#register"
                   onClick={closeMenu}
-                  className="group relative flex w-full items-center justify-center overflow-hidden rounded-2xl bg-white py-6 text-base font-black uppercase tracking-[0.4em] text-black shadow-2xl transition-all hover:scale-105 active:scale-95"
+                  className="touch-target group relative flex w-full items-center justify-center overflow-hidden rounded-2xl bg-white py-6 text-base font-black uppercase tracking-[0.4em] text-black shadow-2xl transition-all hover:scale-105 active:scale-95"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
                   REGISTER NOW
-                </a>
+                </Link>
                 <div className="mt-8 flex items-center justify-center gap-4 text-[8px] font-bold tracking-[0.4em] text-zinc-600 uppercase">
                   <div className="h-[1px] w-6 bg-zinc-800" />
                   Secure Terminal Protocol 0x4f
@@ -241,4 +242,4 @@ export default function LandingNavbar() {
       </AnimatePresence>
     </header>
   );
-}
+}

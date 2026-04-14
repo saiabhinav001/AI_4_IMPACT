@@ -1,11 +1,9 @@
 "use client";
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { useEffect, useState } from "react";
 
 export function NeuralBackground() {
   const { scrollYProgress } = useScroll();
-  const [isMounted, setIsMounted] = useState(false);
 
   // Smooth out the scroll values for liquid-like motion
   const smoothY = useSpring(scrollYProgress, {
@@ -19,12 +17,6 @@ export function NeuralBackground() {
   const translateY = useTransform(smoothY, [0, 1], [0, -200]);
   const scanY = useTransform(smoothY, [0, 1], ["0%", "100%"]);
   const opacity = useTransform(smoothY, [0, 0.2, 0.8, 1], [0.3, 0.6, 0.6, 0.3]);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) return null;
 
   return (
     <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
