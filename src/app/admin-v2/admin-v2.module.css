@@ -365,6 +365,11 @@
 .topBarSubtext {
   color: var(--text-muted);
   font-size: 0.77rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  line-height: 1.45;
 }
 
 .topBarTrack {
@@ -373,7 +378,7 @@
 }
 
 .topBarDivider {
-  margin: 0 8px;
+  margin: 0 2px;
   color: #52525b;
 }
 
@@ -395,12 +400,21 @@
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .topBarActionButtons {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.topBarActionButtons > button,
+.topBarActionButtons > a {
+  min-width: 0;
 }
 
 .operatorChip {
@@ -731,7 +745,11 @@
 .eventStatusNow {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 6px;
+  row-gap: 2px;
+  min-width: 0;
   font-size: 0.72rem;
   color: var(--text-muted);
 }
@@ -1419,9 +1437,15 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--line-soft);
+}
+
+.tableHeaderBar > div {
+  min-width: 0;
+  flex: 1 1 300px;
 }
 
 .tableHeaderTitle {
@@ -1446,6 +1470,7 @@
   font-weight: 640;
   padding: 4px 9px;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .tableWrap {
@@ -1819,6 +1844,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 11px;
 }
@@ -1830,6 +1856,7 @@
   border-color: var(--line-soft);
   min-width: 38px;
   padding: 6px 10px;
+  flex: 0 0 auto;
 }
 
 .paginationButton:hover:not(:disabled) {
@@ -1931,7 +1958,13 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
+}
+
+.drawerHeader > div {
+  min-width: 0;
+  flex: 1 1 280px;
 }
 
 .drawerTrack {
@@ -1945,6 +1978,7 @@
   font-size: clamp(1.08rem, 1.5vw, 1.36rem);
   line-height: 1.2;
   margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 
 .drawerSubTitle {
@@ -2027,8 +2061,9 @@
 
 .detailValueRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -2036,6 +2071,8 @@
   font-size: 0.8rem;
   color: #fafafa;
   overflow-wrap: anywhere;
+  min-width: 0;
+  flex: 1 1 0;
 }
 
 .detailValueMono {
@@ -2050,6 +2087,7 @@
   background: rgba(167, 139, 250, 0.14);
   border-color: rgba(167, 139, 250, 0.4);
   padding: 4px 7px;
+  flex-shrink: 0;
 }
 
 .copyButton:hover:not(:disabled) {
@@ -2147,14 +2185,17 @@
   border-bottom: 1px solid var(--line-soft);
   padding: 10px 12px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .previewTitle {
   font-size: 0.83rem;
   color: #fafafa;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .previewImageWrap {
@@ -2389,6 +2430,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .topBarActionButtons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .topBarActionButtons > button,
+  .topBarActionButtons > a {
+    flex: 1 1 calc(50% - 8px);
+  }
+
   .table {
     min-width: 1540px;
   }
@@ -2407,11 +2458,13 @@
 
   .topBarActionButtons {
     width: 100%;
+    justify-content: flex-start;
+    order: 1;
   }
 
   .topBarActionButtons > button,
   .topBarActionButtons > a {
-    flex: 1 1 0;
+    flex: 1 1 calc(50% - 8px);
     min-width: 0;
   }
 
@@ -2419,6 +2472,7 @@
     flex: 1 1 100%;
     max-width: none;
     min-width: 0;
+    order: 2;
   }
 
   .summaryGrid {
@@ -2453,6 +2507,10 @@
 
   .resultsMetaActions {
     justify-content: flex-start;
+  }
+
+  .resultsMetaActions > button {
+    width: 100%;
   }
 
   .tableWrap {
@@ -2644,11 +2702,13 @@
 
   .topBarActionButtons {
     width: 100%;
+    justify-content: flex-start;
+    order: 1;
   }
 
   .topBarActionButtons > button,
   .topBarActionButtons > a {
-    flex: 1 1 0;
+    flex: 1 1 calc(50% - 8px);
     min-width: 0;
   }
 
@@ -2656,6 +2716,7 @@
     flex: 1 1 100%;
     max-width: none;
     min-width: 0;
+    order: 2;
   }
 
   .summaryGrid {
@@ -2739,7 +2800,7 @@
   }
 
   .eventControlsActions > button {
-    flex: 1 1 0;
+    flex: 1 1 calc(50% - 8px);
   }
 
   .eventControlGrid {
@@ -2756,6 +2817,21 @@
 
   .detailDrawer {
     width: 100vw;
+  }
+
+  .previewOverlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .previewModal {
+    width: 100vw;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
   }
 
   .table {
@@ -2787,6 +2863,15 @@
     align-items: stretch;
   }
 
+  .topBarActionButtons > button,
+  .topBarActionButtons > a {
+    flex-basis: 100%;
+  }
+
+  .eventControlsActions > button {
+    flex-basis: 100%;
+  }
+
   .eventInlineCheckbox {
     white-space: normal;
     align-items: flex-start;
@@ -2809,5 +2894,17 @@
 
   .table tbody td {
     grid-template-columns: 1fr;
+  }
+
+  .previewHeader {
+    padding: 10px;
+  }
+
+  .previewImageWrap {
+    padding: 8px;
+  }
+
+  .previewImage {
+    max-height: calc(100dvh - 96px);
   }
 }
