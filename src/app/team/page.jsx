@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { getUserRole, logoutAdmin, onUserAuthChange } from "../../../lib/auth";
 import { toRuntimeApiUrl } from "../../../lib/api-base";
@@ -44,6 +45,8 @@ function DashboardCard({ children, className = "", sheenColor = "rgba(141, 54, 2
   const sheenY = useTransform(mouseYSpring, [-0.5, 0.5], ["20%", "-20%"]);
 
   const handleMouseMove = (e) => {
+    // Only apply 3D effect on desktop sizes to prevent glitching on mobile touch
+    if (window.innerWidth < 768) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -64,15 +67,15 @@ function DashboardCard({ children, className = "", sheenColor = "rgba(141, 54, 2
       className={`perspective-1000 preserve-3d group ${className}`}
     >
       <motion.div
-        className="relative backdrop-blur-[40px] overflow-hidden rounded-[40px] border border-white/10 bg-[#0F061C]/40 shadow-[0_40px_100px_rgba(0,0,0,0.6)] p-0.5 glass-sheen"
+        className="relative backdrop-blur-[40px] overflow-hidden rounded-[24px] sm:rounded-[40px] border border-white/20 sm:border-white/10 bg-[#0F061C]/70 sm:bg-[#0F061C]/40 shadow-[0_20px_50px_rgba(0,0,0,0.8)] sm:shadow-[0_40px_100px_rgba(0,0,0,0.6)] glass-sheen"
         style={{ "--sheen-x": sheenX, "--sheen-y": sheenY }}
       >
         {/* Hardware Corner Notches */}
-        <div className="absolute top-0 left-0 h-10 w-10 border-t-2 border-l-2 border-white/10 rounded-tl-[40px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 h-10 w-10 border-b-2 border-r-2 border-white/10 rounded-br-[40px] pointer-events-none" />
+        <div className="absolute top-0 left-0 h-8 w-8 sm:h-10 sm:w-10 border-t-2 border-l-2 border-white/20 sm:border-white/10 rounded-tl-[24px] sm:rounded-tl-[40px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-r-2 border-white/20 sm:border-white/10 rounded-br-[24px] sm:rounded-br-[40px] pointer-events-none" />
 
         <div className="scanning-ray opacity-10 group-hover:opacity-30 transition-opacity" />
-        <div className="relative z-10 p-5 sm:p-8 lg:p-10">
+        <div className="relative z-10 p-4 sm:p-8 lg:p-10">
           {children}
         </div>
       </motion.div>
@@ -286,34 +289,38 @@ export default function TeamLeadDashboard() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex flex-col gap-2"
+            className="flex flex-col gap-2 w-full md:w-auto"
           >
-            <h1 className="type-h3 font-black uppercase tracking-tight flex items-center gap-4 text-white"
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight flex items-center gap-2 sm:gap-4 text-white flex-wrap"
               style={{ textShadow: '0 0 40px rgba(141, 54, 213, 0.4)' }}>
               TEAM <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent italic">DASHBOARD</span>
               <span className="hidden sm:inline-block h-2.5 w-2.5 rounded-full bg-[#00FFFF] animate-pulse ml-1 shadow-[0_0_15px_#00FFFF]" />
             </h1>
-            <div className="flex flex-wrap items-center gap-5">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-5 mt-1 sm:mt-0">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#00FFFF] shadow-[0_0_8px_#00FFFF]" />
-                <span className="text-[10px] font-bold text-[#00FFFF] tracking-[0.2em] uppercase opacity-80">
+                <span className="text-[9px] sm:text-[10px] font-bold text-[#00FFFF] tracking-[0.2em] uppercase opacity-80 break-all">
                   ID: {user?.email?.split('@')[0] || "LOGGED_IN"}
                 </span>
               </div>
-              <div className="h-3 w-px bg-white/10 hidden sm:block" />
-              <div className="flex items-center gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]" />
-              </div>
             </div>
           </motion.div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full md:w-auto mt-2 md:mt-0">
+            <Link
+              href="/"
+              className="group relative flex-1 md:flex-none px-6 py-3.5 rounded-2xl border border-white/10 bg-white/5 transition-all outline-none hover:bg-white/10 active:scale-[0.98]"
+            >
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70 group-hover:text-white transition-colors text-center block w-full">
+                &lt; BACK TO HOME
+              </span>
+            </Link>
             <motion.button
               whileHover={{ scale: 1.02, backgroundColor: "rgba(244,63,94,0.15)" }}
               whileTap={{ scale: 0.98 }}
-              className="flex-1 md:flex-none relative px-8 py-3.5 rounded-2xl border border-rose-500/20 bg-rose-500/10 transition-all font-heading"
+              className="flex-1 md:flex-none relative px-6 py-3.5 rounded-2xl border border-rose-500/20 bg-rose-500/10 transition-all font-heading"
               onClick={handleLogout}
             >
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-400 text-center block">
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-400 text-center block w-full">
                 TERMINATE
               </span>
             </motion.button>
@@ -325,7 +332,7 @@ export default function TeamLeadDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-7xl mx-auto pt-20 pb-40 px-6 sm:px-12 relative z-10 lg:pt-24"
+        className="max-w-7xl mx-auto pt-20 pb-40 px-3 sm:px-12 relative z-10 lg:pt-24"
       >
         {error && (
           <motion.div
@@ -355,7 +362,7 @@ export default function TeamLeadDashboard() {
                     { label: "TEAM SIZE", val: dashboard.team?.team_size, color: "text-[#00FFFF]" },
                     { label: "JOIN DATE", val: createdAtLabel, color: "text-zinc-300" }
                   ].map((item) => (
-                    <div key={item.label} className="flex flex-col gap-4 group/item px-4">
+                    <div key={item.label} className="flex flex-col gap-4 group/item px-1 sm:px-4">
                       <span className="text-[12px] font-black text-zinc-500 tracking-[0.3em] uppercase transition-colors group-hover/item:text-[#8D36D5]">
                         {item.label}
                       </span>
@@ -547,8 +554,8 @@ export default function TeamLeadDashboard() {
                       </div>
                     </div>
                   ) : (
-                    <div className="p-12 sm:p-20 rounded-[32px] sm:rounded-[48px] bg-white/[0.02] border-4 border-dashed border-white/10 text-center transition-all hover:bg-white/[0.04] hover:border-white/20">
-                      <p className="text-sm sm:text-[18px] font-black text-zinc-600 tracking-[0.3em] sm:tracking-[0.6em] uppercase">Problem Statements will be Released Soon</p>
+                    <div className="p-6 sm:p-20 rounded-[24px] sm:rounded-[48px] bg-white/[0.02] border-4 border-dashed border-white/10 text-center transition-all hover:bg-white/[0.04] hover:border-white/20">
+                      <p className="text-[11px] sm:text-[18px] font-black text-zinc-600 tracking-[0.2em] sm:tracking-[0.6em] uppercase">Problem Statements will be Released Soon</p>
                     </div>
                   )}
                 </DashboardCard>

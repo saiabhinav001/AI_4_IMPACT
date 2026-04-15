@@ -125,7 +125,7 @@ export default function EventsSection() {
   };
 
   return (
-    <section id="events" className="landing-section">
+    <section id="events" className="landing-section px-2 sm:px-8 lg:px-12 max-w-7xl mx-auto">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -16,12 +17,14 @@ const navItems = [
 ];
 
 const actionItems = [
+  { label: "Register Now", href: "/register" },
   { label: "Login", href: "/auth" },
 ];
 
 const desktopItems = [...navItems, ...actionItems];
 
 export default function LandingNavbar() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("hero");
@@ -151,10 +154,14 @@ export default function LandingNavbar() {
     open: { x: 0, opacity: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } },
   };
 
+  if (pathname && (pathname.startsWith("/team") || pathname.startsWith("/auth") || pathname.startsWith("/admin"))) {
+    return null;
+  }
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? "py-2" : "py-4"
+        scrolled ? "py-2 bg-[#0F061C]/95 backdrop-blur-xl border-b border-white/10 lg:bg-transparent lg:backdrop-blur-none lg:border-transparent" : "py-4 bg-transparent"
       }`}
     >
       {/* Scroll Progress Laser */}
@@ -214,7 +221,7 @@ export default function LandingNavbar() {
                       href={item.href}
                       onMouseEnter={() => setHoveredIndex(index)}
                       className={`touch-target relative z-10 inline-flex items-center px-3 py-1.5 text-sm uppercase tracking-widest font-[var(--font-body)] transition-colors duration-200 ${
-                        isActive ? "text-white" : "text-white/60 hover:text-white"
+                        isActive ? "text-white font-bold drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "text-zinc-200 hover:text-white"
                       }`}
                     >
                       {item.label}
@@ -312,7 +319,7 @@ export default function LandingNavbar() {
                           href={item.href}
                           onClick={closeMenu}
                           className={`touch-target group relative flex items-center justify-between py-1 text-[clamp(2rem,8vw,3.75rem)] font-black uppercase tracking-tighter transition-all ${
-                            isActive ? "text-white" : "text-zinc-600 hover:text-white"
+                            isActive ? "text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]" : "text-zinc-300 hover:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-4">
@@ -329,6 +336,14 @@ export default function LandingNavbar() {
 
               <motion.div variants={itemVariants} className="mt-16 w-full">
                 <div className="grid gap-3">
+                  <Link
+                    href="/register"
+                    onClick={closeMenu}
+                    className="touch-target group relative flex w-full items-center justify-center overflow-hidden rounded-[4px] bg-white py-6 text-base font-black uppercase tracking-[0.4em] text-black shadow-2xl transition-colors hover:bg-zinc-100"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
+                    REGISTER NOW
+                  </Link>
                   <Link
                     href="/auth"
                     onClick={closeMenu}

@@ -118,10 +118,10 @@ export default function HeroSection() {
           className="mt-12 flex flex-col items-start justify-center gap-5"
         >
           <Link
-            href="/auth"
+            href="/register"
             className="touch-target relative inline-flex items-center whitespace-nowrap rounded-[4px] bg-white px-9 py-3 text-xs font-black tracking-[0.22em] text-black shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-colors duration-300 hover:bg-[#8D36D5] hover:text-white font-[var(--font-heading)] sm:px-10 sm:py-4 sm:text-sm"
           >
-            LOGIN
+            REGISTER NOW
           </Link>
 
           <div className="flex items-center gap-3">

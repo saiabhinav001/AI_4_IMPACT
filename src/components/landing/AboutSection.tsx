@@ -127,7 +127,7 @@ export default function AboutSection() {
         AI_4_IMPACT // REGISTER_NOW // BUILD_THE_FUTURE
       </motion.div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-0 sm:px-8 lg:px-12">
+      <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-8 lg:px-12">
         {/* Header Block */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
