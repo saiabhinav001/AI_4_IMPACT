@@ -18,13 +18,13 @@ const events: EventItem[] = [
     title: "Workshop Day 1",
     detail: "Architecting and AI fundamentals: Frontend/UI UX, API ecosystems, and Cloud Functions.",
     start: new Date("2026-04-15T09:00:00"),
-    end: new Date("2026-04-15T16:00:00"),
+    end: new Date("2026-04-15T23:59:59"),
   },
   {
     label: "APRIL 15 | 23:59",
     title: "Registration Ends",
     detail: "Final deadline for hackathon signup and team formation.",
-    start: new Date("2026-04-15T17:56:00"),
+    start: new Date("2026-04-15T23:59:00"),
     end: new Date("2026-04-15T23:59:59"),
   },
   {
@@ -112,7 +112,7 @@ export default function TimelineSection() {
       content: (
         <div className={`group relative w-full rounded-[4px] border transition-all duration-300 md:max-w-xl ${
           isActive 
-            ? "border-[#6B21A8] bg-[#6B21A8] shadow-none -translate-y-1" 
+            ? "border-[#8D36D5] bg-[#8D36D5] shadow-[0_0_40px_rgba(141,54,213,0.15)] -translate-y-1" 
             : "border-white/5 bg-white/[0.01] shadow-[0_0_24px_rgba(141,54,213,0.1)]"
         }`} >
           {/* Corner Brackets */}

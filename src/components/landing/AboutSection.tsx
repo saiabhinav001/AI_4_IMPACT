@@ -25,13 +25,13 @@ const capabilities = [
 const missionPillars = [
   {
     title: "The Vision Gap",
-    text: "Critical impact sectors struggle to translate prototypes into deployable, ethical products. We close this gap through rapid prototyping and domain-expert validation.",
+    text: "Most hackathons end as unfinished demos. No users. No validation. No real impact.",
     index: "01",
     tag: "PROBLEM_STATEMENT"
   },
   {
     title: "Strategic Impact",
-    text: "Teams pair with challenge owners to move from idea to tested proof-of-impact. No fluff, just rapid design, validation, and real-world results.",
+    text: "At AI4 Impact, you build with mentors, validate with experts, and ship something that actually works.",
     index: "02",
     tag: "SOLUTION_LAYER"
   },
@@ -134,12 +134,12 @@ export default function AboutSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
-            className="mb-10 md:mb-14"
+          className="mb-10 md:mb-14"
         >
           <div className="mb-6 h-[1px] w-12 bg-[#8D36D5]" />
-          <TextReveal 
+          <TextReveal
             text="THE WHY"
-              className="type-h2 font-black text-white"
+            className="type-h2 font-black text-white"
           />
         </motion.div>
 

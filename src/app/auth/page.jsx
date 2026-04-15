@@ -191,7 +191,7 @@ function AuthPageContent() {
   // Elite: Staggered variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
       transition: { staggerChildren: 0.12, delayChildren: 0.2 }
     }
@@ -211,7 +211,7 @@ function AuthPageContent() {
       {/* Elite Background Particle Field */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
         {[...Array(20)].map((_, i) => (
-          <div 
+          <div
             key={i}
             className="particle"
             style={{
@@ -230,14 +230,14 @@ function AuthPageContent() {
 
       {/* Immersive Background Layer */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <motion.div 
+        <motion.div
           className="absolute inset-0 animate-breathing"
-          style={{ 
+          style={{
             backgroundImage: `repeating-linear-gradient(0deg, rgba(141,54,213,0.06) 0px, transparent 1px, transparent 60px, rgba(141,54,213,0.06) 60px), repeating-linear-gradient(90deg, rgba(141,54,213,0.06) 0px, transparent 1px, transparent 60px, rgba(141,54,213,0.06) 60px)`,
             maskImage: "radial-gradient(ellipse at 50% 50%, black 0%, transparent 80%)"
-          }} 
+          }}
         />
-        
+
         <motion.div
           className="absolute -left-24 -top-28 w-[500px] h-[500px] rounded-full blur-[90px] opacity-[0.15] bg-[#46067A]"
           animate={{ x: [0, 30], y: [0, 50], scale: [1, 1.1, 1] }}
@@ -248,12 +248,12 @@ function AuthPageContent() {
           animate={{ x: [0, -40], y: [0, 60], scale: [1, 1.2, 1] }}
           transition={{ duration: 25, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
         />
-        
+
         <div className="noise-overlay opacity-[0.04]" />
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6 relative z-10 pt-[110px] sm:pt-[100px]">
-        <motion.div 
+        <motion.div
           style={{ rotateX, rotateY }}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -261,16 +261,16 @@ function AuthPageContent() {
           className="relative w-full max-w-[420px] perspective-1000 preserve-3d"
         >
           {/* Main Glass Card Shell */}
-          <motion.div 
+          <motion.div
             className="relative backdrop-blur-[32px] overflow-hidden rounded-[28px] border border-white/10 bg-[#0F061C]/50 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_0_32px_rgba(141,54,213,0.15)] p-0.5 glass-sheen group"
-            style={{ 
-              "--sheen-x": sheenX, 
-              "--sheen-y": sheenY 
+            style={{
+              "--sheen-x": sheenX,
+              "--sheen-y": sheenY
             }}
           >
             <div className="scanning-ray opacity-20" />
-            
-            <motion.div 
+
+            <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -278,13 +278,13 @@ function AuthPageContent() {
             >
               <motion.header variants={itemVariants} className="text-center mb-8">
                 <div className="flex justify-center mb-6">
-                   <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 shadow-inner relative group/icon">
-                      <div className="absolute inset-0 rounded-2xl bg-[#8D36D5]/20 blur-xl opacity-0 group-hover/icon:opacity-100 transition-opacity" />
-                      <Image src="/site-icon.svg" alt="Portal" width={40} height={40} className="w-10 h-10 relative z-10 transition-transform group-hover/icon:scale-110" />
-                   </div>
+                  <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 shadow-inner relative group/icon">
+                    <div className="absolute inset-0 rounded-2xl bg-[#8D36D5]/20 blur-xl opacity-0 group-hover/icon:opacity-100 transition-opacity" />
+                    <Image src="/site-icon.svg" alt="Portal" width={40} height={40} className="w-10 h-10 relative z-10 transition-transform group-hover/icon:scale-110" />
+                  </div>
                 </div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter mb-2 text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/40 group-hover:via-[#8D36D5] transition-all duration-700"
-                    style={{ textShadow: '0 0 20px rgba(141, 54, 213, 0.4)' }}>
+                  style={{ textShadow: '0 0 20px rgba(141, 54, 213, 0.4)' }}>
                   LOG<span className="text-[#8D36D5]">_</span>IN
                 </h1>
                 <p className="text-[10px] font-bold text-zinc-500 tracking-[0.3em] uppercase opacity-90">
@@ -325,7 +325,7 @@ function AuthPageContent() {
                   </div>
 
                   {error && (
-                    <motion.div 
+                    <motion.div
                       variants={itemVariants}
                       className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold text-[10px] tracking-widest text-center uppercase"
                     >
@@ -342,7 +342,7 @@ function AuthPageContent() {
                       <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] via-[#00FFFF] to-[#46067A] bg-[length:200%_100%] animate-gradient opacity-90 group-hover:opacity-100 transition-opacity" />
                       <div className="relative flex h-14 items-center justify-center rounded-[11px] bg-[#0F061C]/90 transition-all group-hover:bg-transparent">
                         <span className="text-[11px] font-black uppercase tracking-[0.4em] text-white group-hover:text-black transition-colors">
-                          {loading ? "AUTHENTICATING..." : "INITIATE LOGIN"}
+                          {loading ? "AUTHENTICATING..." : "LOGIN"}
                         </span>
                       </div>
                     </button>
@@ -363,7 +363,7 @@ function AuthPageContent() {
                         <p className="font-bold text-white truncate text-lg">{authUser.email}</p>
                       </div>
                       <div className="pt-4 flex items-center justify-center gap-10 border-t border-white/5">
-                         <div>
+                        <div>
                           <span className="text-[8px] font-bold text-zinc-500 block mb-1 tracking-[0.25em] uppercase">SYSTEM RANK</span>
                           <p className="font-black text-[#8D36D5] uppercase tracking-widest text-xs">{role || "PARTICIPANT"}</p>
                         </div>
@@ -375,7 +375,7 @@ function AuthPageContent() {
                       </div>
                     </div>
                   </motion.div>
-                  
+
                   <div className="flex flex-col gap-3">
                     <motion.div variants={itemVariants}>
                       <button
@@ -386,8 +386,8 @@ function AuthPageContent() {
                       </button>
                     </motion.div>
                     <motion.div variants={itemVariants}>
-                      <button 
-                        onClick={handleLogout} 
+                      <button
+                        onClick={handleLogout}
                         className="w-full bg-white/[0.03] border border-white/10 text-zinc-500 font-bold uppercase text-[9px] tracking-[0.4em] py-3.5 rounded-xl hover:bg-rose-500/10 hover:text-rose-500 transition-all"
                       >
                         LOGOUT SESSION
@@ -399,19 +399,20 @@ function AuthPageContent() {
             </motion.div>
 
             <motion.div variants={itemVariants} className="mt-8 mb-4 text-center">
-               <p className="text-[8px] font-bold text-zinc-800 tracking-[0.6em] uppercase">
+              <p className="text-[8px] font-bold text-zinc-800 tracking-[0.6em] uppercase">
                 &copy; 2026 AI4IMPACT SYSTEM CLOUD
               </p>
             </motion.div>
           </motion.div>
-          
+
           {/* Elite Decorative Frames */}
           <div className="absolute -top-3 -left-3 w-12 h-12 border-t-2 border-l-2 border-[#8D36D5]/60 rounded-tl-2xl pointer-events-none transition-all group-hover:scale-110 group-hover:border-[#8D36D5]" />
           <div className="absolute -bottom-3 -right-3 w-12 h-12 border-b-2 border-r-2 border-[#00FFFF]/50 rounded-br-2xl pointer-events-none transition-all group-hover:scale-110 group-hover:border-[#00FFFF]" />
         </motion.div>
       </div>
     </div>
-  );}
+  );
+}
 
 export default function AuthPage() {
   return (
