@@ -108,7 +108,7 @@ export default function HeroSection() {
             />
           </div>
 
-          <p className="font-[var(--font-body)] text-[clamp(1rem,2.1vw,1.35rem)] font-normal uppercase tracking-[0.08em] text-zinc-300">
+          <p className="font-[var(--font-heading)] text-[clamp(0.96rem,1.9vw,1.25rem)] font-normal uppercase tracking-[0.06em] leading-[1.55] text-zinc-300">
             Build practical AI solutions for real-world social impact with mentors, domain experts, and creators.
           </p>
         </motion.div>
@@ -119,7 +119,7 @@ export default function HeroSection() {
         >
           <Link
             href="/register"
-            className="touch-target relative inline-flex items-center whitespace-nowrap rounded-[4px] bg-white px-9 py-3 text-xs font-black tracking-[0.22em] text-black shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-colors hover:bg-zinc-100 sm:px-10 sm:py-4 sm:text-sm"
+            className="touch-target relative inline-flex items-center whitespace-nowrap rounded-[4px] bg-white px-9 py-3 text-xs font-black tracking-[0.22em] text-black shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-colors duration-300 hover:bg-[#8D36D5] hover:text-white font-[var(--font-heading)] sm:px-10 sm:py-4 sm:text-sm"
           >
             REGISTER NOW
           </Link>

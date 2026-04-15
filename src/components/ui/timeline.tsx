@@ -41,17 +41,17 @@ export const Timeline = ({
                   {/* The glowing neon dot */}
                   <div className={`h-4 w-4 rounded-full border-2 bg-black transition-all duration-500 ${
                     isActive 
-                      ? "border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.8)] scale-125" 
+                      ? "border-[#FF6AC1] shadow-[0_0_18px_rgba(255,106,193,0.9)] scale-125" 
                       : isCompleted
                         ? "border-[#8D36D5] bg-[#8D36D5]/40"
                         : "border-[#8D36D5]/30"
                   }`} />
                   {isActive && (
-                    <div className="absolute inset-0 h-10 w-10 rounded-full border border-cyan-400/50 animate-ping" />
+                    <div className="absolute inset-0 h-10 w-10 rounded-full border border-[#FF6AC1]/50 animate-ping" />
                   )}
                 </div>
                 <h3 className={`hidden text-base font-black uppercase tracking-widest md:block md:pl-20 transition-colors duration-500 lg:text-xl ${
-                  isActive ? "text-cyan-400" : isCompleted ? "text-zinc-500" : "text-zinc-700"
+                  isActive ? "text-zinc-100" : isCompleted ? "text-zinc-500" : "text-zinc-700"
                 }`}>
                   {item.title}
                 </h3>
@@ -61,7 +61,7 @@ export const Timeline = ({
               <div className={`relative w-full pr-4 md:pr-0 pl-14 md:pl-0 ${index === data.length - 1 ? "pb-12" : "pb-0"}`}>
                 {/* Mobile Label */}
                 <h3 className={`mb-4 block text-left text-[10px] font-bold uppercase tracking-widest md:hidden transition-colors ${
-                  isActive ? "text-cyan-400 font-black" : isCompleted ? "text-zinc-600" : "text-zinc-800"
+                  isActive ? "text-zinc-100 font-black" : isCompleted ? "text-zinc-600" : "text-zinc-800"
                 }`}>
                   {item.title}
                 </h3>

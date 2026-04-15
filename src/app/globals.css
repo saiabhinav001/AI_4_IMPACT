@@ -206,20 +206,7 @@ h6,
 }
 
 .scanning-ray {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(141, 54, 213, 0.1),
-    transparent
-  );
-  pointer-events: none;
-  animation: scan-move 6s linear infinite;
-  z-index: 5;
+  display: none !important;
 }
 
 .noise-overlay {

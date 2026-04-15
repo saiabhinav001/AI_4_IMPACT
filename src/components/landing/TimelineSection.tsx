@@ -24,7 +24,7 @@ const events: EventItem[] = [
     label: "APRIL 15 | 23:59",
     title: "Registration Ends",
     detail: "Final deadline for hackathon signup and team formation.",
-    start: new Date("2026-04-15T23:58:00"),
+    start: new Date("2026-04-15T17:56:00"),
     end: new Date("2026-04-15T23:59:59"),
   },
   {
@@ -110,25 +110,35 @@ export default function TimelineSection() {
     return {
       title: item.label,
       content: (
-        <div className={`group relative w-full rounded-xl border transition-all duration-500 md:max-w-xl ${
+        <div className={`group relative w-full rounded-[4px] border transition-all duration-300 md:max-w-xl ${
           isActive 
-            ? "border-cyan-500/50 bg-cyan-500/[0.03] shadow-[0_0_30px_rgba(34,211,238,0.1)] -translate-y-1" 
+            ? "border-[#6B21A8] bg-[#6B21A8] shadow-none -translate-y-1" 
             : "border-white/5 bg-white/[0.01] shadow-[0_0_24px_rgba(141,54,213,0.1)]"
         }`} >
           {/* Corner Brackets */}
-          <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
-          <div className="absolute -bottom-2 -right-2 h-8 w-8 border-b-2 border-r-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
-          <div className="relative z-10 flex h-full flex-col rounded-xl p-6 lg:p-8">
+          <div className={`absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 transition-all duration-500 sm:group-hover:h-12 sm:group-hover:w-12 ${
+            isActive
+              ? "border-[#FF6AC1] sm:group-hover:border-[#FF6AC1]"
+              : "border-[#8D36D5] sm:border-[#8D36D5]/40 sm:group-hover:border-[#8D36D5]"
+          }`} />
+          <div className={`absolute -bottom-2 -right-2 h-8 w-8 border-b-2 border-r-2 transition-all duration-500 sm:group-hover:h-12 sm:group-hover:w-12 ${
+            isActive
+              ? "border-[#FF6AC1] sm:group-hover:border-[#FF6AC1]"
+              : "border-[#8D36D5] sm:border-[#8D36D5]/40 sm:group-hover:border-[#8D36D5]"
+          }`} />
+          <div className="relative z-10 flex h-full flex-col rounded-[4px] p-6 lg:p-8">
             <div className={`scanning-ray ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"}`} />
             
             <div className="mb-4" />
 
             <h3 className={`relative z-10 text-xl font-black uppercase tracking-[0.08em] transition-colors duration-300 sm:text-2xl ${
-              isActive ? "text-cyan-400" : "text-white group-hover:text-[#c084fc]"
+              isActive ? "text-white" : "text-white group-hover:text-[#c084fc]"
             }`}>
               {item.title}
             </h3>
-            <p className="relative z-10 mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
+            <p className={`relative z-10 mt-3 text-sm leading-relaxed transition-colors duration-300 sm:text-base ${
+              isActive ? "text-zinc-100" : "text-zinc-400"
+            }`}>
               {item.detail}
             </p>
           </div>

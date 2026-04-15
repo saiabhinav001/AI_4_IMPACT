@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 
 const navItems = [
@@ -14,10 +15,23 @@ const navItems = [
   { label: "Sponsors", href: "/#sponsors" },
 ];
 
+const actionItems = [
+  { label: "Register Now", href: "/register" },
+  { label: "Login", href: "/auth" },
+];
+
+const desktopItems = [...navItems, ...actionItems];
+
 export default function LandingNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("hero");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [isIslandHovered, setIsIslandHovered] = useState(false);
+  const [traceData, setTraceData] = useState<Array<{ offset: number; array: string }>>([]);
+
+  const islandRef = useRef<HTMLDivElement | null>(null);
+  const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -53,6 +67,50 @@ export default function LandingNavbar() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
       sections.forEach((section) => observer.unobserve(section));
+    };
+  }, []);
+
+  useEffect(() => {
+    const calculateTraceData = () => {
+      const islandEl = islandRef.current;
+      if (!islandEl) {
+        return;
+      }
+
+      const islandRect = islandEl.getBoundingClientRect();
+      const perimeter = 2 * (islandRect.width + islandRect.height);
+      if (perimeter <= 0 || islandRect.width <= 0) {
+        return;
+      }
+
+      const topEdgePath = (islandRect.width / perimeter) * 100;
+      const nextTraceData = desktopItems.map((_, index) => {
+        const linkEl = linkRefs.current[index];
+        if (!linkEl) {
+          return { offset: 5, array: "0 0 10 40 10 40" };
+        }
+
+        const linkRect = linkEl.getBoundingClientRect();
+        const centerX = linkRect.left + linkRect.width / 2 - islandRect.left;
+        const ratioX = Math.min(1, Math.max(0, centerX / islandRect.width));
+        const centerPath = ratioX * topEdgePath;
+        const segment = Math.max(8, Math.min(14, ((linkRect.width + 24) / perimeter) * 100 * 2.8));
+        const segmentStart = Math.max(0, Math.min(topEdgePath - segment, centerPath - segment / 2));
+
+        return {
+          offset: Number((100 - segmentStart).toFixed(3)),
+          array: `${segment.toFixed(3)} ${(100 - segment).toFixed(3)}`,
+        };
+      });
+
+      setTraceData(nextTraceData);
+    };
+
+    calculateTraceData();
+    window.addEventListener("resize", calculateTraceData);
+
+    return () => {
+      window.removeEventListener("resize", calculateTraceData);
     };
   }, []);
 
@@ -97,7 +155,7 @@ export default function LandingNavbar() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? "py-3" : "py-5"
+        scrolled ? "py-2" : "py-4"
       }`}
     >
       {/* Scroll Progress Laser */}
@@ -112,76 +170,106 @@ export default function LandingNavbar() {
         }`}
       >
         <nav
-          className={`relative overflow-visible border transition-all duration-500 ${
-            scrolled || isOpen
-              ? "bg-black/75 backdrop-blur-2xl shadow-[0_18px_50px_rgba(0,0,0,0.45)] border-white/14"
-              : "bg-transparent border-transparent"
-          } rounded-[6px] px-5 py-4 sm:px-6`}
+          className="relative overflow-visible border border-transparent bg-transparent px-4 py-3 sm:px-5"
         >
           {/* Animated Background Glow - Hidden on very small screens to prevent overflow */}
           <div className="absolute -left-20 -top-20 h-40 w-40 bg-fuchsia-600/10 blur-3xl hidden sm:block" />
           
-          <div className="relative z-10 flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/#hero" onClick={closeMenu} className="group flex items-center gap-1.5 text-lg font-black uppercase tracking-[0.1em] text-white sm:text-2xl sm:gap-3 sm:tracking-[0.3em]">
-              <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent transition-all group-hover:scale-105">AI4</span>
-              <span className="inline">IMPACT</span>
-              <div className="hidden h-1 w-1 bg-cyan-400 animate-pulse sm:block" />
-            </Link>
+          <div className="relative z-10 flex w-full items-center justify-center">
 
             {/* Desktop Nav */}
-            <ul className="hidden lg:flex items-center gap-2">
-              {navItems.map((item) => {
-                const isActive = activeSection === item.href.slice(1);
-                return (
-                  <li key={item.href}>
+            <div className="relative z-20 hidden lg:flex items-center justify-center">
+              <div
+                ref={islandRef}
+                onMouseEnter={() => setIsIslandHovered(true)}
+                onMouseLeave={() => {
+                  setIsIslandHovered(false);
+                  setHoveredIndex(null);
+                }}
+                className={`group relative flex h-11 items-center gap-1 rounded-sm border px-2.5 transition-all duration-500 ${
+                  scrolled
+                    ? "border-white/10 bg-black/40 backdrop-blur-xl"
+                    : "border-transparent bg-transparent"
+                }`}
+              >
+                <Link
+                  href="/#hero"
+                  onMouseEnter={() => setHoveredIndex(null)}
+                  onClick={closeMenu}
+                  className="relative z-10 flex h-full w-11 items-center justify-center rounded-[2px] border-r border-white/10 bg-white/[0.03]"
+                >
+                  <Image src="/site-icon.svg" alt="AI4 Impact" width={24} height={24} className="h-6 w-6" priority />
+                </Link>
+
+                <div className="absolute -left-2 -top-2 h-6 w-6 border-l-2 border-t-2 border-[#8D36D5]/70 transition-all duration-500 sm:h-8 sm:w-8 sm:border-[#8D36D5]/40 sm:group-hover:h-10 sm:group-hover:w-10 sm:group-hover:border-[#8D36D5]" />
+                <div className="absolute -bottom-2 -right-2 h-6 w-6 border-b-2 border-r-2 border-[#8D36D5]/70 transition-all duration-500 sm:h-8 sm:w-8 sm:border-[#8D36D5]/40 sm:group-hover:h-10 sm:group-hover:w-10 sm:group-hover:border-[#8D36D5]" />
+
+                {navItems.map((item, index) => {
+                  const isActive = activeSection === item.href.slice(1);
+                  return (
                     <a
+                      key={item.href}
+                      ref={(el) => {
+                        linkRefs.current[index] = el;
+                      }}
                       href={item.href}
-                      className={`touch-target relative inline-flex items-center px-4 py-2 text-sm font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
-                        isActive ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      className={`touch-target relative z-10 inline-flex items-center px-3 py-1.5 text-sm uppercase tracking-widest font-[var(--font-body)] transition-colors duration-200 ${
+                        isActive ? "text-white" : "text-white/60 hover:text-white"
                       }`}
                     >
-                      {isActive && (
-                        <motion.div
-                          layoutId="nav-pill"
-                          className="absolute inset-0 rounded-[4px] bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 border border-[#8D36D5]/30 shadow-[0_4px_15px_rgba(141,54,213,0.3)]"
-                          transition={{ type: "spring", bounce: 0.15, duration: 0.6 }}
-                        />
-                      )}
-                      <span className="relative z-10">{item.label}</span>
+                      {item.label}
                     </a>
-                  </li>
-                );
-              })}
-              <li className="ml-6 flex items-center gap-3">
-                <motion.div
-                  animate={{
-                    boxShadow: ["0 0 10px rgba(141,54,213,0.2)", "0 0 25px rgba(141,54,213,0.4)", "0 0 10px rgba(141,54,213,0.2)"],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="rounded-[4px]"
-                >
-                  <Link
-                    href="/register"
-                    className="touch-target relative group inline-flex items-center overflow-hidden whitespace-nowrap rounded-[4px] bg-white px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:bg-zinc-100"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
-                    REGISTER NOW
-                  </Link>
-                </motion.div>
+                  );
+                })}
 
-                <Link
-                  href="/auth"
-                  className="touch-target inline-flex items-center whitespace-nowrap rounded-[4px] border border-white/15 bg-white/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-white/12"
+                <div className="mx-2 h-6 w-px bg-white/10" />
+
+                {actionItems.map((item, idx) => {
+                  const actionIndex = navItems.length + idx;
+                  return (
+                    <Link
+                      key={item.href}
+                      ref={(el) => {
+                        linkRefs.current[actionIndex] = el;
+                      }}
+                      href={item.href}
+                      onMouseEnter={() => setHoveredIndex(actionIndex)}
+                      className="touch-target relative z-10 inline-flex items-center rounded-[2px] border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-white/70 transition-all duration-200 hover:bg-white/[0.08] hover:text-white"
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+
+                <svg
+                  className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
                 >
-                  LOGIN
-                </Link>
-              </li>
-            </ul>
+                  <rect
+                    x="0.6"
+                    y="0.6"
+                    width="98.8"
+                    height="98.8"
+                    fill="transparent"
+                    strokeWidth="0.8"
+                    stroke="rgba(255,255,255,0.95)"
+                    pathLength="100"
+                    style={{
+                      opacity: isIslandHovered ? 1 : 0,
+                      strokeDashoffset: hoveredIndex !== null ? (traceData[hoveredIndex]?.offset ?? 5) : 5,
+                      strokeDasharray: hoveredIndex !== null ? (traceData[hoveredIndex]?.array ?? "0 0 10 40 10 40") : "0 0 10 40 10 40",
+                      transition: "stroke-dashoffset 500ms ease-in-out, stroke-dasharray 500ms ease-in-out, opacity 500ms ease-in-out",
+                    }}
+                  />
+                </svg>
+              </div>
+            </div>
 
             <button 
               onClick={toggleMenu}
-              className="touch-target group relative z-[100] flex h-11 w-11 items-center justify-center rounded-[4px] bg-white/5 text-white transition-all hover:bg-white/10 lg:hidden sm:h-12 sm:w-12"
+              className="touch-target group relative z-[100] ml-auto flex h-11 w-11 items-center justify-center rounded-[2px] bg-white/5 text-white transition-all hover:bg-white/10 lg:hidden sm:h-12 sm:w-12"
             >
               <AnimatePresence mode="wait">
                 <motion.div

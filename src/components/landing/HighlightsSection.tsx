@@ -23,7 +23,7 @@ export default function HighlightsSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
-        className="group relative flex min-h-[200px] w-full flex-col items-center justify-center p-0 md:min-h-[240px] md:p-8"
+        className="group relative mx-auto flex min-h-[148px] w-full max-w-5xl flex-col items-center justify-center p-0 md:min-h-[184px]"
       >
         <svg
           className="absolute inset-0 h-full w-full drop-shadow-[0_0_15px_rgba(141,54,213,0.2)] transition-all duration-500 group-hover:drop-shadow-[0_0_25px_rgba(141,54,213,0.5)]"
@@ -53,9 +53,14 @@ export default function HighlightsSection() {
           <path d="M1600,340 L1540,400" stroke="#c084fc" strokeWidth="6" className="opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
         </svg>
 
-        <h3 className="type-h2 relative z-10 mt-4 text-center font-black tracking-tighter text-white">
-          Rs. 1,00,000<span className="text-[#a855f7]">+</span>
-        </h3>
+        <div className="relative z-10 -mt-2 flex flex-col items-center text-center">
+          <h3 className="text-[clamp(1.8rem,4.8vw,3.5rem)] font-black tracking-[-0.03em] text-white">
+            RS. 1,00,000<span className="text-[#a855f7]">+</span>
+          </h3>
+          <p className="mt-1 font-[var(--font-body)] text-[0.66rem] font-medium uppercase tracking-[0.42em] text-zinc-400 sm:text-[0.72rem]">
+            Prize Pool
+          </p>
+        </div>
         
       </motion.article>
     </section>
