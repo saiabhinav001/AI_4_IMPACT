@@ -33,11 +33,69 @@ const ENV = globalThis?.process?.env || {};
 const DEFAULT_CREDENTIAL_SHEET_URL = String(
   ENV.NEXT_PUBLIC_CREDENTIAL_SHEET_URL || ""
 ).trim();
-const DEFAULT_ADMIN_POLL_MS = 90000;
-const FAST_ADMIN_POLL_MS = 15000;
-const HIDDEN_ADMIN_POLL_MS = 180000;
-const FAST_POLL_WINDOW_MS = 120000;
-const LEGACY_ADMIN_POLL_MS = 15000;
+
+function toPositiveInteger(value, fallbackValue) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return fallbackValue;
+  }
+
+  return Math.floor(numeric);
+}
+
+function clampPositiveInteger(value, minValue, maxValue, fallbackValue) {
+  const parsed = toPositiveInteger(value, fallbackValue);
+  return Math.min(maxValue, Math.max(minValue, parsed));
+}
+
+const DEFAULT_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_DEFAULT_MS,
+  120000,
+  300000,
+  180000
+);
+const FAST_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_FAST_MS,
+  5000,
+  30000,
+  15000
+);
+const HIDDEN_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_HIDDEN_MS,
+  180000,
+  600000,
+  300000
+);
+const FAST_POLL_WINDOW_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_FAST_WINDOW_MS,
+  30000,
+  300000,
+  90000
+);
+const LEGACY_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_LEGACY_MS,
+  15000,
+  120000,
+  60000
+);
+const ADMIN_PERIODIC_FRESH_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_PERIODIC_FRESH_MS,
+  300000,
+  1800000,
+  900000
+);
+const ADMIN_REGISTRATIONS_PAGE_LIMIT = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_REGISTRATIONS_PAGE_LIMIT,
+  25,
+  500,
+  120
+);
+const ADMIN_REGISTRATIONS_MAX_PAGES = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_REGISTRATIONS_MAX_PAGES,
+  1,
+  50,
+  8
+);
 const ADAPTIVE_POLLING_ENABLED =
   String(ENV.NEXT_PUBLIC_FEATURE_ADMIN_ADAPTIVE_POLLING_ENABLED || "true")
     .trim()
@@ -47,7 +105,7 @@ const CLIENT_FALLBACK_ENABLED =
     .trim()
     .toLowerCase() === "true";
 
-function buildAdminRegistrationsUrl({ fresh = false, track = "all" } = {}) {
+function buildAdminRegistrationsUrl({ fresh = false, track = "all", limit, cursor } = {}) {
   const baseUrl = toRuntimeApiUrl("/api/admin/registrations");
 
   const query = new URLSearchParams();
@@ -58,6 +116,16 @@ function buildAdminRegistrationsUrl({ fresh = false, track = "all" } = {}) {
   const normalizedTrack = String(track || "").trim().toLowerCase();
   if (normalizedTrack === "workshop" || normalizedTrack === "hackathon") {
     query.set("type", normalizedTrack);
+  }
+
+  const normalizedLimit = toPositiveInteger(limit, 0);
+  if (normalizedLimit > 0) {
+    query.set("limit", String(Math.min(normalizedLimit, 500)));
+  }
+
+  const normalizedCursor = String(cursor || "").trim();
+  if (normalizedCursor) {
+    query.set("cursor", normalizedCursor);
   }
 
   const serializedQuery = query.toString();
@@ -192,6 +260,7 @@ export function useAdminDashboard() {
   const router = useRouter();
   const adminPollTimerRef = useRef(null);
   const fastPollingUntilRef = useRef(0);
+  const lastFreshSyncRef = useRef(0);
 
   const clearAdminPollTimer = useCallback(() => {
     if (adminPollTimerRef.current) {
@@ -262,37 +331,65 @@ export function useAdminDashboard() {
 
       try {
         const idToken = await user.getIdToken();
-        const response = await fetch(buildAdminRegistrationsUrl({ fresh, track: filterTrack }), {
-          headers: buildRuntimeIdTokenHeaders(
-            idToken,
-            fresh ? { "x-admin-cache-bypass": "1" } : {}
-          ),
-          cache: "no-store",
-        });
+        const headers = buildRuntimeIdTokenHeaders(
+          idToken,
+          fresh ? { "x-admin-cache-bypass": "1" } : {}
+        );
 
-        const data = await response.json().catch(() => ({}));
+        const mapped = [];
+        let cursor = "";
 
-        if (response.ok) {
-          const mapped = Array.isArray(data?.registrations)
-            ? data.registrations.map((item) => mapRegistrationItem(item))
-            : [];
+        for (let pageIndex = 0; pageIndex < ADMIN_REGISTRATIONS_MAX_PAGES; pageIndex += 1) {
+          const response = await fetch(
+            buildAdminRegistrationsUrl({
+              fresh,
+              track: filterTrack,
+              limit: ADMIN_REGISTRATIONS_PAGE_LIMIT,
+              cursor,
+            }),
+            {
+              headers,
+              cache: "no-store",
+            }
+          );
 
-          setRegistrations(mapped);
-          setDataError("");
-          setApiRuntimeAvailable(true);
-          setRuntimeNotice("");
-          return;
-        }
+          const data = await response.json().catch(() => ({}));
 
-        if (response.status !== 404 && response.status !== 405) {
-          if (response.status === 403) {
-            throw new Error(
-              "Admin access denied. Ensure this account has admin claim or users/{uid}.role=ADMIN."
-            );
+          if (!response.ok) {
+            if (response.status !== 404 && response.status !== 405) {
+              if (response.status === 403) {
+                throw new Error(
+                  "Admin access denied. Ensure this account has admin claim or users/{uid}.role=ADMIN."
+                );
+              }
+
+              throw new Error(data?.error || "Failed to sync dashboard data.");
+            }
+
+            break;
           }
 
-          throw new Error(data?.error || "Failed to sync dashboard data.");
+          const pageRegistrations = Array.isArray(data?.registrations)
+            ? data.registrations.map((item) => mapRegistrationItem(item))
+            : [];
+          mapped.push(...pageRegistrations);
+
+          const pagination = data?.pagination || null;
+          const nextCursor = String(pagination?.next_cursor || "").trim();
+          const hasMore = pagination?.has_more === true && Boolean(nextCursor);
+
+          if (!hasMore || nextCursor === cursor) {
+            break;
+          }
+
+          cursor = nextCursor;
         }
+
+        setRegistrations(mapped);
+        setDataError("");
+        setApiRuntimeAvailable(true);
+        setRuntimeNotice("");
+        return;
       } catch (apiError) {
         if (apiError?.message) {
           apiFailureMessage = String(apiError.message);
@@ -352,8 +449,17 @@ export function useAdminDashboard() {
     };
 
     const syncOnce = async ({ fresh = false } = {}) => {
+      const now = Date.now();
+      const needsPeriodicFresh =
+        ADMIN_PERIODIC_FRESH_MS > 0 &&
+        now - Number(lastFreshSyncRef.current || 0) >= ADMIN_PERIODIC_FRESH_MS;
+      const shouldFetchFresh = fresh || needsPeriodicFresh;
+
       try {
-        await fetchRegistrations({ fresh });
+        await fetchRegistrations({ fresh: shouldFetchFresh });
+        if (shouldFetchFresh) {
+          lastFreshSyncRef.current = Date.now();
+        }
       } catch (error) {
         if (!isCancelled) {
           setDataError(error?.message || "Failed to sync dashboard data.");

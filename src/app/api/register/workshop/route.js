@@ -20,6 +20,7 @@ import {
 import { getClientIp, hitRateLimit } from "../_utils/rate-limit";
 import { resolveRegistrationGate } from "../../../../../lib/server/registration-gate";
 import { upsertAdminReadModelForTransaction } from "../../../../../lib/server/admin-read-model.js";
+import { invalidateAdminRegistrationsCache } from "../../admin/_utils/runtime-cache-invalidation";
 
 export const runtime = "nodejs";
 
@@ -267,6 +268,8 @@ export async function POST(request) {
     } catch (readModelError) {
       console.error("Failed to upsert admin read model after workshop registration:", readModelError);
     }
+
+    invalidateAdminRegistrationsCache();
 
     return respond(
       {

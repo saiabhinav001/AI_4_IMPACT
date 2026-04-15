@@ -13,7 +13,7 @@ const ALLOWED_TYPES = new Set(["workshop", "hackathon"]);
 const ALLOWED_STATUSES = new Set(["pending", "verified", "rejected"]);
 const ENV = globalThis?.process?.env || {};
 const ADMIN_REGISTRATIONS_CACHE_TTL_MS = Number(
-  ENV.ADMIN_REGISTRATIONS_CACHE_TTL_MS || 45000
+  ENV.ADMIN_REGISTRATIONS_CACHE_TTL_MS || 300000
 );
 
 function asTrimmedString(value) {
