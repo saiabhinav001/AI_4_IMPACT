@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import Link from "next/link";
 
@@ -16,7 +16,6 @@ const navItems = [
 
 export default function LandingNavbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isRegisterMenuOpen, setIsRegisterMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("hero");
 
@@ -68,32 +67,8 @@ export default function LandingNavbar() {
 
   const closeMenu = () => {
     setIsOpen(false);
-    setIsRegisterMenuOpen(false);
     document.body.style.overflow = "unset";
   };
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest("[data-register-dropdown]")) {
-        setIsRegisterMenuOpen(false);
-      }
-    };
-
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsRegisterMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    document.addEventListener("keydown", handleEsc);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("keydown", handleEsc);
-    };
-  }, []);
 
   const menuVariants = {
     closed: {
@@ -122,7 +97,7 @@ export default function LandingNavbar() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? "py-3" : "py-6"
+        scrolled ? "py-3" : "py-5"
       }`}
     >
       {/* Scroll Progress Laser */}
@@ -131,10 +106,18 @@ export default function LandingNavbar() {
         style={{ scaleX }}
       />
       
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <nav className={`relative overflow-visible rounded-[2rem] border border-white/10 transition-all duration-500 ${
-          scrolled || isOpen ? "bg-black/95 backdrop-blur-2xl shadow-2xl" : "bg-black/40 backdrop-blur-lg"
-        } px-6 py-4`}>
+      <div
+        className={`mx-auto w-full transition-all duration-500 ${
+          scrolled || isOpen ? "max-w-7xl px-4 sm:px-6 lg:px-8" : "max-w-none px-0"
+        }`}
+      >
+        <nav
+          className={`relative overflow-visible border transition-all duration-500 ${
+            scrolled || isOpen
+              ? "bg-black/75 backdrop-blur-2xl shadow-[0_18px_50px_rgba(0,0,0,0.45)] border-white/14"
+              : "bg-transparent border-transparent"
+          } rounded-[6px] px-5 py-4 sm:px-6`}
+        >
           {/* Animated Background Glow - Hidden on very small screens to prevent overflow */}
           <div className="absolute -left-20 -top-20 h-40 w-40 bg-fuchsia-600/10 blur-3xl hidden sm:block" />
           
@@ -143,7 +126,7 @@ export default function LandingNavbar() {
             <Link href="/#hero" onClick={closeMenu} className="group flex items-center gap-1.5 text-lg font-black uppercase tracking-[0.1em] text-white sm:text-2xl sm:gap-3 sm:tracking-[0.3em]">
               <span className="bg-gradient-to-r from-[#8D36D5] to-[#46067A] bg-clip-text text-transparent transition-all group-hover:scale-105">AI4</span>
               <span className="inline">IMPACT</span>
-              <div className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse hidden sm:block" />
+              <div className="hidden h-1 w-1 bg-cyan-400 animate-pulse sm:block" />
             </Link>
 
             {/* Desktop Nav */}
@@ -154,14 +137,14 @@ export default function LandingNavbar() {
                   <li key={item.href}>
                     <a
                       href={item.href}
-                      className={`touch-target relative inline-flex items-center px-5 py-2.5 text-sm font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
+                      className={`touch-target relative inline-flex items-center px-4 py-2 text-sm font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
                         isActive ? "text-white" : "text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="nav-pill"
-                          className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 border border-[#8D36D5]/30 shadow-[0_4px_15px_rgba(141,54,213,0.3)]"
+                          className="absolute inset-0 rounded-[4px] bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 border border-[#8D36D5]/30 shadow-[0_4px_15px_rgba(141,54,213,0.3)]"
                           transition={{ type: "spring", bounce: 0.15, duration: 0.6 }}
                         />
                       )}
@@ -170,62 +153,35 @@ export default function LandingNavbar() {
                   </li>
                 );
               })}
-              <li className="ml-6">
+              <li className="ml-6 flex items-center gap-3">
                 <motion.div
-                  data-register-dropdown
-                  animate={{ 
+                  animate={{
                     boxShadow: ["0 0 10px rgba(141,54,213,0.2)", "0 0 25px rgba(141,54,213,0.4)", "0 0 10px rgba(141,54,213,0.2)"],
                   }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="relative inline-flex items-stretch overflow-visible"
+                  className="rounded-[4px]"
                 >
                   <Link
                     href="/register"
-                    className="touch-target relative group inline-flex items-center overflow-hidden whitespace-nowrap rounded-l-xl bg-white px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:scale-[1.02] active:scale-95"
+                    className="touch-target relative group inline-flex items-center overflow-hidden whitespace-nowrap rounded-[4px] bg-white px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:bg-zinc-100"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
                     REGISTER NOW
                   </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsRegisterMenuOpen((prev) => !prev)}
-                    aria-expanded={isRegisterMenuOpen}
-                    aria-label="Toggle register dropdown"
-                    className="touch-target relative inline-flex w-11 items-center justify-center rounded-r-xl border-l border-black/10 bg-white text-black transition-all hover:bg-zinc-100"
-                  >
-                    <ChevronDown
-                      size={16}
-                      className={`transition-transform duration-300 ${isRegisterMenuOpen ? "rotate-180" : "rotate-0"}`}
-                    />
-                  </button>
-
-                  <AnimatePresence>
-                    {isRegisterMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 top-[calc(100%+0.5rem)] z-[120] min-w-[180px] rounded-xl border border-white/10 bg-black/95 p-1.5 backdrop-blur-2xl"
-                      >
-                        <Link
-                          href="/auth"
-                          onClick={() => setIsRegisterMenuOpen(false)}
-                          className="touch-target flex w-full items-center rounded-lg px-3 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-zinc-200 transition-colors hover:bg-white/10 hover:text-white"
-                        >
-                          LOGIN
-                        </Link>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </motion.div>
+
+                <Link
+                  href="/auth"
+                  className="touch-target inline-flex items-center whitespace-nowrap rounded-[4px] border border-white/15 bg-white/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-white/12"
+                >
+                  LOGIN
+                </Link>
               </li>
             </ul>
 
             <button 
               onClick={toggleMenu}
-              className="touch-target group relative z-[100] flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-white transition-all hover:bg-white/10 lg:hidden sm:h-12 sm:w-12 sm:rounded-2xl"
+              className="touch-target group relative z-[100] flex h-11 w-11 items-center justify-center rounded-[4px] bg-white/5 text-white transition-all hover:bg-white/10 lg:hidden sm:h-12 sm:w-12"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -276,7 +232,7 @@ export default function LandingNavbar() {
                             <span className="text-[10px] font-bold tracking-[0.5em] text-[#8D36D5] opacity-50">/0{idx + 1}</span>
                             {item.label}
                           </div>
-                          {isActive && <motion.div layoutId="active-dot" className="h-2 w-2 rounded-full bg-cyan-400" />}
+                          {isActive && <motion.div layoutId="active-dot" className="h-2 w-2 bg-cyan-400" />}
                         </a>
                       </motion.li>
                     );
@@ -289,7 +245,7 @@ export default function LandingNavbar() {
                   <Link
                     href="/register"
                     onClick={closeMenu}
-                    className="touch-target group relative flex w-full items-center justify-center overflow-hidden rounded-2xl bg-white py-6 text-base font-black uppercase tracking-[0.4em] text-black shadow-2xl transition-all hover:scale-105 active:scale-95"
+                    className="touch-target group relative flex w-full items-center justify-center overflow-hidden rounded-[4px] bg-white py-6 text-base font-black uppercase tracking-[0.4em] text-black shadow-2xl transition-colors hover:bg-zinc-100"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
                     REGISTER NOW
@@ -298,7 +254,7 @@ export default function LandingNavbar() {
                   <Link
                     href="/auth"
                     onClick={closeMenu}
-                    className="touch-target flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 py-4 text-sm font-black uppercase tracking-[0.3em] text-white transition-colors hover:bg-white/10"
+                    className="touch-target flex w-full items-center justify-center rounded-[4px] border border-white/10 bg-white/5 py-4 text-sm font-black uppercase tracking-[0.3em] text-white transition-colors hover:bg-white/10"
                   >
                     LOGIN
                   </Link>

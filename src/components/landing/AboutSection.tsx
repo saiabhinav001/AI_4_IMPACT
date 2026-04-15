@@ -80,8 +80,10 @@ function MissionPillarCard({
       style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
       className="group relative lg:col-span-6"
     >
-      <div className="absolute -inset-[1px] rounded-[2rem] bg-gradient-to-br from-[#8D36D5]/20 to-transparent opacity-50 transition-opacity sm:group-hover:opacity-100" />
-      <div className="relative h-full overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.03] p-6 backdrop-blur-sm transition-all duration-500 sm:group-hover:bg-white/[0.05] sm:p-12">
+      {/* Corner Brackets */}
+      <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+      <div className="absolute -bottom-2 -right-2 h-8 w-8 border-b-2 border-r-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+      <div className="relative h-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.01] p-6 backdrop-blur-3xl transition-all duration-500 group-hover:border-white/10 group-hover:bg-white/[0.03] sm:p-12">
         <div className="scanning-ray opacity-40 transition-opacity sm:opacity-0 sm:group-hover:opacity-100" />
 
         <div className="relative z-10 mb-8 flex items-start justify-between" style={{ transform: "translateZ(30px)" }}>
@@ -158,7 +160,10 @@ export default function AboutSection() {
               transition={{ duration: 0.5, delay: 0.3 + (i * 0.1), ease: [0.16, 1, 0.3, 1] as const }}
               className="lg:col-span-4 group relative"
             >
-              <div className="relative h-full overflow-hidden rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-all sm:hover:bg-white/[0.04] sm:p-8">
+              {/* Corner Brackets */}
+              <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+              <div className="absolute -bottom-2 -right-2 h-8 w-8 border-b-2 border-r-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+              <div className="relative h-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.01] p-6 backdrop-blur-3xl transition-all duration-500 group-hover:border-white/10 group-hover:bg-white/[0.03] sm:p-8\">
                 {/* HUD Scan Effect */}
                 <div className="scanning-ray opacity-40 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
 

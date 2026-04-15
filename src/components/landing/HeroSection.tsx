@@ -4,14 +4,9 @@ import Image from "next/image";
 import { motion, useMotionValue, useSpring, useTransform, useScroll } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
-import { MagneticWrapper } from "../ui/magnetic-wrapper";
-import { TextReveal } from "../ui/text-reveal";
-import { GlowTypewriter } from "../ui/glow-typewriter";
 
 export default function HeroSection() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isRegisterMenuOpen, setIsRegisterMenuOpen] = useState(false);
 
   // 3D Card Animation Values
   const x = useMotionValue(0);
@@ -47,29 +42,6 @@ export default function HeroSection() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [x, y]);
 
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest("[data-hero-register-dropdown]")) {
-        setIsRegisterMenuOpen(false);
-      }
-    };
-
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsRegisterMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    document.addEventListener("keydown", handleEsc);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("keydown", handleEsc);
-    };
-  }, []);
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -93,7 +65,7 @@ export default function HeroSection() {
   return (
     <section 
       id="hero" 
-      className="relative flex min-h-[92dvh] flex-col items-center justify-center overflow-x-hidden pb-10 pt-24 scroll-mt-28 sm:grid sm:grid-cols-2 sm:gap-10 sm:pt-28"
+      className="relative grid min-h-[92dvh] grid-cols-1 items-center overflow-x-hidden px-6 pb-10 pt-24 font-[var(--font-body)] scroll-mt-28 sm:grid-cols-2 sm:gap-10 sm:px-10 sm:pt-28 lg:px-14"
     >
       {/* Precision HUD Background Layer */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
@@ -105,7 +77,7 @@ export default function HeroSection() {
       <motion.div
         animate={{ x: mousePos.x, y: mousePos.y }}
         style={{ opacity: glowOpacity }}
-        className="pointer-events-none absolute -left-20 top-20 h-96 w-96 rounded-full bg-[#8D36D5]/20 blur-[120px]"
+        className="pointer-events-none absolute left-[-28vw] top-16 h-[36rem] w-[36rem] bg-[#8D36D5]/18 blur-[140px]"
       />
       <motion.div
         animate={{ x: -mousePos.x, y: -mousePos.y }}
@@ -118,99 +90,43 @@ export default function HeroSection() {
         initial="hidden"
         animate="visible"
         style={{ y: titleY }}
-        className="relative z-10 flex flex-col items-center text-center sm:block sm:text-left"
+        className="relative z-10 flex flex-col items-start text-left"
       >
-        <div className="mb-8 hidden h-[1px] w-24 bg-gradient-to-r from-[#8D36D5] to-transparent sm:block" />
-
-        {/* Mobile Badge - Small floating indicator */}
-        <motion.div variants={itemVariants} className="mb-6 flex items-center gap-3 sm:hidden">
-          <div className="h-2 w-2 rounded-full bg-[#8D36D5] animate-pulse" />
-          <span className="text-[10px] font-black tracking-[0.4em] text-[#8D36D5] uppercase">HACKATHON // 2026</span>
-        </motion.div>
-
-        <div className="relative">
-          <div className="hidden sm:block">
-            <TextReveal
-              text="AI4 IMPACT"
-              className="type-display font-black text-white"
-            />
-          </div>
-          <div className="sm:hidden">
-            <GlowTypewriter
-              text="AI4 IMPACT"
-              className="type-display font-black text-white"
-              glowColor="#8D36D5"
-            />
-          </div>
-        </div>
-
         <motion.div
           variants={itemVariants}
-          className="mt-6 max-w-xl border-l-2 border-[#8D36D5]/30 pl-6 lg:mt-12 sm:border-l-2 sm:pl-6 sm:mt-10 mx-auto sm:mx-0"
+          className="mt-2 max-w-xl border-l-2 border-[#8D36D5]/30 pl-6"
         >
-          <TextReveal
-            text="Build practical AI solutions for real-world social impact with mentors, domain experts, and creators."
-            className="type-body-lg font-medium text-zinc-400"
-          />
+          <div className="mb-8 flex justify-start">
+            <Image
+              src="/logo-w.svg"
+              alt="AI4 Impact logo"
+              width={380}
+              height={164}
+              className="h-auto w-[220px] sm:w-[280px] lg:w-[340px]"
+              style={{ filter: "drop-shadow(0 0 24px rgba(141, 54, 213, 0.3))" }}
+              priority
+            />
+          </div>
+
+          <p className="font-[var(--font-body)] text-[clamp(1rem,2.1vw,1.35rem)] font-normal uppercase tracking-[0.08em] text-zinc-300">
+            Build practical AI solutions for real-world social impact with mentors, domain experts, and creators.
+          </p>
         </motion.div>
 
         <motion.div
           variants={itemVariants}
-          className="mt-14 flex flex-col items-center justify-center gap-6 sm:items-start"
+          className="mt-12 flex flex-col items-start justify-center gap-5"
         >
-          <MagneticWrapper>
-            <motion.div
-              data-hero-register-dropdown
-              animate={{
-                boxShadow: ["0 0 20px rgba(141,54,213,0.3)", "0 0 40px rgba(141,54,213,0.5)", "0 0 20px rgba(141,54,213,0.3)"],
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="relative inline-flex items-stretch overflow-visible"
-            >
-              <Link
-                href="/register"
-                className="touch-target relative group inline-flex items-center overflow-hidden whitespace-nowrap rounded-l-2xl bg-white px-8 py-4 text-xs font-black tracking-[0.2em] text-black shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all hover:scale-[1.02] active:scale-95 sm:px-12 sm:py-6 sm:text-sm"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#8D36D5] to-[#46067A] opacity-0 transition-opacity group-hover:opacity-10" />
-                REGISTER NOW
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => setIsRegisterMenuOpen((prev) => !prev)}
-                aria-expanded={isRegisterMenuOpen}
-                aria-label="Toggle register dropdown"
-                className="touch-target relative inline-flex w-11 items-center justify-center rounded-r-2xl border-l border-black/10 bg-white text-black transition-all hover:bg-zinc-100"
-              >
-                <ChevronDown
-                  size={16}
-                  className={`transition-transform duration-300 ${isRegisterMenuOpen ? "rotate-180" : "rotate-0"}`}
-                />
-              </button>
-
-              {isRegisterMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-[calc(100%+0.5rem)] z-50 min-w-[180px] rounded-xl border border-white/10 bg-black/95 p-1.5 backdrop-blur-2xl"
-                >
-                  <Link
-                    href="/auth"
-                    onClick={() => setIsRegisterMenuOpen(false)}
-                    className="touch-target flex w-full items-center rounded-lg px-3 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-zinc-200 transition-colors hover:bg-white/10 hover:text-white"
-                  >
-                    LOGIN
-                  </Link>
-                </motion.div>
-              )}
-            </motion.div>
-          </MagneticWrapper>
+          <Link
+            href="/register"
+            className="touch-target relative inline-flex items-center whitespace-nowrap rounded-[4px] bg-white px-9 py-3 text-xs font-black tracking-[0.22em] text-black shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-colors hover:bg-zinc-100 sm:px-10 sm:py-4 sm:text-sm"
+          >
+            REGISTER NOW
+          </Link>
 
           <div className="flex items-center gap-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#8D36D5] animate-pulse" />
-            <p className="type-body-sm font-bold uppercase tracking-[0.2em] text-zinc-500">APRIL 15 - APRIL 18, 2026</p>
+            <span className="h-1.5 w-1.5 bg-[#8D36D5] animate-pulse" />
+            <p className="font-[var(--font-body)] text-[0.78rem] font-bold uppercase tracking-[0.2em] text-zinc-500 sm:text-[0.86rem]">APRIL 15 - APRIL 18, 2026</p>
           </div>
         </motion.div>
       </motion.div>
@@ -221,30 +137,29 @@ export default function HeroSection() {
         animate={{ opacity: 1, scale: 1 }}
         style={{ y: cardY }}
         transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] as const }}
-        className="relative group mt-10 sm:mt-0 sm:ml-auto perspective-1000 w-full max-w-[280px] sm:max-w-none px-0 sm:px-0"
+        className="relative group flex h-full w-full items-center justify-center perspective-1000"
       >
         <motion.div
           style={{ rotateX, rotateY }}
-          className="relative preserve-3d hardware-accelerated transition-transform duration-200"
+          className="relative w-[min(78vw,28rem)] preserve-3d hardware-accelerated transition-transform duration-200 sm:w-[min(38vw,33rem)]"
         >
-          {/* Mobile Background Wash Effect */}
-          <div className="absolute -inset-4 rounded-[3.5rem] bg-gradient-to-r from-[#8D36D5]/20 to-[#46067A]/20 blur-3xl sm:hidden" />
+          {/* Corner Brackets */}
+          <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+          <div className="absolute -bottom-2 -right-2 h-8 w-8 border-b-2 border-r-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
 
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/40 p-6 backdrop-blur-3xl sm:rounded-[3rem] sm:p-16">
+          <div className="relative overflow-hidden rounded-xl border border-white/5 bg-black/40 p-6 backdrop-blur-3xl transition-all duration-500 group-hover:border-white/10 group-hover:bg-white/[0.02] sm:p-10">
             <div className="scanning-ray opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <div className="relative mx-auto flex max-w-[140px] items-center justify-center p-2 sm:max-w-sm sm:p-4">
-              <Image
-                src="/logo-w.svg"
-                alt="AI4 Impact logo"
-                width={420}
-                height={420}
-                className="h-auto w-full transition-all duration-700 group-hover:scale-110"
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/site-icon.png"
+                alt="AI4 Impact site icon"
+                className="h-auto w-full max-w-[280px] object-contain"
                 style={{
-                  filter: "drop-shadow(0 0 50px rgba(141, 54, 213, 0.4))",
-                  transform: "translateZ(60px)"
+                  filter: "drop-shadow(0 0 40px rgba(141, 54, 213, 0.35))",
+                  transform: "translateZ(40px)",
                 }}
-                priority
               />
             </div>
 
@@ -253,14 +168,6 @@ export default function HeroSection() {
               <div className="h-px w-8 bg-white/10" />
               <p className="text-[7px] font-black tracking-[0.5em] text-zinc-500 uppercase">LAT: 17.3850 N / LONG: 78.4867 E</p>
             </div>
-          </div>
-
-          {/* Technical Accent Badges - Hidden on very small screens for cleanliness */}
-          <div className="absolute -bottom-6 -left-2 hidden rounded-xl border border-white/10 bg-black/80 px-4 py-2 text-[8px] font-black tracking-[0.4em] text-cyan-400 backdrop-blur-xl shadow-2xl border-l-4 border-l-cyan-500 sm:block sm:-bottom-8 sm:-left-4 sm:text-[10px]">
-            AI4IMPACT
-          </div>
-          <div className="absolute -top-4 -right-2 hidden rounded-xl border border-white/10 bg-black/80 px-3 py-1.5 text-[7px] font-black tracking-[0.4em] text-[#8D36D5] backdrop-blur-xl opacity-50 sm:block sm:-top-6 sm:-right-4 sm:text-[8px]">
-            AI4IMPACT
           </div>
         </motion.div>
       </motion.div>

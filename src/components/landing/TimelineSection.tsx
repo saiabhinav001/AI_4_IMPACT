@@ -110,12 +110,15 @@ export default function TimelineSection() {
     return {
       title: item.label,
       content: (
-        <div className={`group relative w-full overflow-hidden rounded-2xl border transition-all duration-500 md:max-w-xl ${
+        <div className={`group relative w-full rounded-xl border transition-all duration-500 md:max-w-xl ${
           isActive 
             ? "border-cyan-500/50 bg-cyan-500/[0.03] shadow-[0_0_30px_rgba(34,211,238,0.1)] -translate-y-1" 
-            : "border-[#8D36D5]/40 bg-white/[0.02] shadow-[0_0_24px_rgba(141,54,213,0.1)]"
-        }`}>
-          <div className="relative z-10 flex h-full flex-col rounded-2xl p-6 lg:p-8">
+            : "border-white/5 bg-white/[0.01] shadow-[0_0_24px_rgba(141,54,213,0.1)]"
+        }`} >
+          {/* Corner Brackets */}
+          <div className="absolute -left-2 -top-2 h-8 w-8 border-l-2 border-t-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+          <div className="absolute -bottom-2 -right-2 h-8 w-8 border-b-2 border-r-2 border-[#8D36D5] transition-all duration-500 sm:border-[#8D36D5]/40 sm:group-hover:h-12 sm:group-hover:w-12 sm:group-hover:border-[#8D36D5]" />
+          <div className="relative z-10 flex h-full flex-col rounded-xl p-6 lg:p-8">
             <div className={`scanning-ray ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"}`} />
             
             <div className="mb-4" />

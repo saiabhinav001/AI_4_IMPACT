@@ -1,14 +1,11 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="100%" height="100%" viewBox="0 0 1400 960" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
-    <g transform="matrix(1,0,0,1,2000,-920)">
-        <g id="logo">
-            <g transform="matrix(1,0,0,1,-2200,0)">
-                <path d="M955.833,1200L880,1200L830,1000L645,1000L290,1880L200,1880L600,920L880,920L955.833,1200ZM888.305,1228.605L909.032,1300L794,1298L699,1511L820,1512L900,1820L1060,1820L880,1200L955.833,1200L1140,1880L840,1880L759,1580L589,1580L739,1229L888.305,1228.605ZM982.917,1300L963.958,1230L1190,1230L1360,1820L1510,1820L1320,1230L1390,1230L1600,1880L1300,1880L1130,1300L982.917,1300Z" style="fill:white;"/>
-            </g>
-            <g transform="matrix(1,0,0,1,-2160,0)">
-                <path d="M1040,1140L980,920L1260,920L1320,1140L1040,1140ZM1084.555,1081.667L1243.627,1081.667L1215.445,978.333L1056.373,978.333L1084.555,1081.667Z" style="fill:white;"/>
-            </g>
-        </g>
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 1400 960"
+    fill="none"
+    preserveAspectRatio="xMidYMid meet"
+>
+    <g fill="#fff">
+        <path d="M955.833 1200H880l-50-200H645l-355 880h-90l400-960h280l75.833 280zm-67.528 28.605L909.032 1300l-115-2-95 213 121 1 80 308h160L880 1200h75.833l184.167 680H840l-81-300H589l150-351 149.305-.395zM982.917 1300l-18.959-70H1190l170 590h150l-190-590h70l210 650h-300l-170-580H982.917z" transform="translate(-200 -920)"/>
+        <path d="M1040 1140 980 920h280l60 220h-280zm44.555-58.333h159.072l-28.182-103.334h-159.072l28.182 103.334z" transform="translate(-160 -920)"/>
     </g>
 </svg>
