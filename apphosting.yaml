@@ -8,6 +8,69 @@ runConfig:
   memoryMiB: 512
 
 env:
+  - variable: FEATURE_ADMIN_READ_MODEL_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FEATURE_ADMIN_CLIENT_FALLBACK_ENABLED
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FEATURE_PAYMENT_SCREENSHOT_COMPRESSION_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
+
+  - variable: ADMIN_REGISTRATIONS_CACHE_TTL_MS
+    value: "300000"
+    availability:
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_ADMIN_POLL_DEFAULT_MS
+    value: "180000"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_ADMIN_POLL_HIDDEN_MS
+    value: "300000"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_ADMIN_POLL_FAST_MS
+    value: "15000"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_ADMIN_POLL_FAST_WINDOW_MS
+    value: "90000"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_ADMIN_PERIODIC_FRESH_MS
+    value: "900000"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_ADMIN_REGISTRATIONS_PAGE_LIMIT
+    value: "120"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_ADMIN_REGISTRATIONS_MAX_PAGES
+    value: "8"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: CREDENTIAL_SHEET_SYNC_ENABLED
     value: "true"
     availability:

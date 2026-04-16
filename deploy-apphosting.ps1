@@ -4,6 +4,7 @@ param(
   [string]$GitBranch = "main",
   [switch]$SourceDeploy,
   [switch]$Force,
+  [switch]$AllowMainDeploy,
   [switch]$AcknowledgeAppHosting
 )
 
@@ -11,6 +12,10 @@ $ErrorActionPreference = "Stop"
 
 if (-not $AcknowledgeAppHosting) {
   throw "App Hosting deploy is paused by default. Re-run with -AcknowledgeAppHosting only when you intentionally want to use Firebase App Hosting."
+}
+
+if ($GitBranch -eq "main" -and -not $AllowMainDeploy) {
+  throw "Main branch rollout is blocked by default for safety. Deploy from release/* branch or re-run with -AllowMainDeploy when main is intentionally approved."
 }
 
 function Invoke-FirebaseTools {

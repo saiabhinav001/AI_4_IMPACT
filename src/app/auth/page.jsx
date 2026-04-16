@@ -54,6 +54,40 @@ function AuthPageContent() {
       : "";
   }, [searchParams]);
 
+  const isTeamLoginIntent = useMemo(() => {
+    return searchParams?.get("intent") === "team-login";
+  }, [searchParams]);
+
+  const isTeamPasswordResetFlow = useMemo(() => {
+    const fromQuery = searchParams?.get("flow") === "team-password-reset";
+    if (fromQuery) {
+      return true;
+    }
+
+    if (typeof document === "undefined") {
+      return false;
+    }
+
+    const referrer = String(document.referrer || "");
+    return /\/__\/auth\/action/i.test(referrer) && /[?&]mode=resetPassword/i.test(referrer);
+  }, [searchParams]);
+
+  const shouldForceTeamLoginPrompt = isTeamPasswordResetFlow || isTeamLoginIntent;
+
+  const passwordResetMessage = useMemo(() => {
+    return isTeamPasswordResetFlow
+      ? ">>> PASSWORD UPDATED. LOGIN WITH TEAM ID AND YOUR NEW PASSWORD."
+      : "";
+  }, [isTeamPasswordResetFlow]);
+
+  const teamLoginModeMessage = useMemo(() => {
+    if (isTeamPasswordResetFlow || !isTeamLoginIntent) {
+      return "";
+    }
+
+    return ">>> TEAM LOGIN MODE ENABLED. USE TEAM ID (OR LEADER EMAIL) + PASSWORD.";
+  }, [isTeamLoginIntent, isTeamPasswordResetFlow]);
+
   const hasTeamDashboardAccess = useCallback(async (user) => {
     if (!user) return false;
     try {
@@ -92,10 +126,32 @@ function AuthPageContent() {
 
   useEffect(() => {
     let isActive = true;
+    let resetFlowHandled = false;
+
     const unsub = onUserAuthChange(
       (user) => {
         const resolveRole = async () => {
           if (!isActive) return;
+
+          if (shouldForceTeamLoginPrompt && !resetFlowHandled) {
+            resetFlowHandled = true;
+
+            if (user) {
+              try {
+                await logoutAdmin();
+              } catch {
+                // Keep user on auth screen even if sign-out cleanup fails.
+              }
+
+              if (!isActive) return;
+            }
+
+            setAuthUser(null);
+            setRole(null);
+            setCheckingAuth(false);
+            return;
+          }
+
           if (!user) {
             setAuthUser(null);
             setRole(null);
@@ -133,15 +189,26 @@ function AuthPageContent() {
       isActive = false;
       unsub();
     };
-  }, [hasTeamDashboardAccess, router]);
+  }, [hasTeamDashboardAccess, router, shouldForceTeamLoginPrompt]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError("");
+
     try {
-      const loginEmail = await resolveLoginEmail(identifier);
+      const normalizedIdentifier = String(identifier || "").trim();
+      const isTeamIdLoginAttempt =
+        Boolean(normalizedIdentifier) && !normalizedIdentifier.includes("@");
+
+      const loginEmail = await resolveLoginEmail(normalizedIdentifier);
       const { user, role: userRole } = await loginWithRole(loginEmail, password);
+
+      if (isTeamIdLoginAttempt && (await hasTeamDashboardAccess(user))) {
+        router.replace("/team");
+        return;
+      }
+
       if (userRole === ROLES.ADMIN) {
         router.replace("/admin");
         return;
@@ -157,12 +224,37 @@ function AuthPageContent() {
       setAuthUser(user);
       setRole(userRole || ROLES.PARTICIPANT);
     } catch (err) {
-      if (err?.code === "TEAM_ID_NOT_FOUND") {
+      const errorCode = String(err?.code || "").trim();
+      const errorMessage = String(err?.message || "").toUpperCase();
+
+      if (errorCode === "TEAM_ID_NOT_FOUND") {
         setError(">>> TEAM ID INVALID OR TEAM ACCESS IS NOT ENABLED YET.");
-      } else if (err?.code === "IDENTIFIER_REQUIRED") {
+      } else if (errorCode === "IDENTIFIER_REQUIRED") {
         setError(">>> ENTER EMAIL OR TEAM ID.");
-      } else if (err?.code === "auth/invalid-credential") {
+      } else if (
+        errorCode === "auth/invalid-credential" ||
+        errorCode === "auth/invalid-login-credentials" ||
+        errorCode === "auth/wrong-password" ||
+        errorCode === "auth/invalid-email" ||
+        errorMessage.includes("INVALID_LOGIN_CREDENTIALS")
+      ) {
         setError(">>> INVALID EMAIL OR PASSWORD.");
+      } else if (errorCode === "auth/user-not-found") {
+        setError(">>> ACCOUNT NOT FOUND.");
+      } else if (errorCode === "auth/too-many-requests") {
+        setError(">>> TOO MANY LOGIN ATTEMPTS. PLEASE TRY AGAIN IN A FEW MINUTES.");
+      } else if (
+        errorCode === "auth/unauthorized-domain" ||
+        errorMessage.includes("UNAUTHORIZED_DOMAIN")
+      ) {
+        setError(">>> LOGIN DOMAIN IS NOT AUTHORIZED. CONTACT ADMIN.");
+      } else if (
+        errorCode === "FIREBASE_CLIENT_CONFIG_MISSING" ||
+        errorMessage.includes("FIREBASE_CLIENT_CONFIG_MISSING")
+      ) {
+        setError(">>> AUTH CONFIG IS MISSING. CONTACT ADMIN.");
+      } else if (errorCode.startsWith("auth/")) {
+        setError(">>> AUTHENTICATION FAILED. VERIFY CREDENTIALS AND TRY AGAIN.");
       } else {
         setError(">>> AUTHENTICATION FAILED.");
       }
@@ -291,6 +383,33 @@ function AuthPageContent() {
                   SECURE ACCESS GATEWAY
                 </p>
               </motion.header>
+
+              {adminOnlyMessage ? (
+                <motion.p
+                  variants={itemVariants}
+                  className="mb-5 rounded-xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-rose-300"
+                >
+                  {adminOnlyMessage}
+                </motion.p>
+              ) : null}
+
+              {passwordResetMessage ? (
+                <motion.p
+                  variants={itemVariants}
+                  className="mb-5 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200"
+                >
+                  {passwordResetMessage}
+                </motion.p>
+              ) : null}
+
+              {teamLoginModeMessage ? (
+                <motion.p
+                  variants={itemVariants}
+                  className="mb-5 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200"
+                >
+                  {teamLoginModeMessage}
+                </motion.p>
+              ) : null}
 
               {!authUser && (
                 <form onSubmit={handleLogin} className="space-y-6">

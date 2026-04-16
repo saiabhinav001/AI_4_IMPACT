@@ -1,10 +1,13 @@
-import { Download, LogOut, ShieldCheck } from "lucide-react";
+import { Download, FileSpreadsheet, LogOut, Settings2, ShieldCheck, UserPlus } from "lucide-react";
 import styles from "../admin-v2.module.css";
 
 export default function AdminTopBar({
   userEmail,
   activeTrackLabel,
   apiRuntimeAvailable,
+  credentialSheetUrl,
+  onOpenAddTeam,
+  onOpenEventControls,
   onExportCSV,
   onLogout,
 }) {
@@ -36,6 +39,59 @@ export default function AdminTopBar({
         </div>
 
         <div className={styles.topBarActionButtons}>
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            title={
+              apiRuntimeAvailable
+                ? "Add a team registration manually"
+                : "Team creation is unavailable in Firestore fallback mode"
+            }
+            onClick={onOpenAddTeam}
+            disabled={!apiRuntimeAvailable}
+          >
+            <UserPlus size={14} aria-hidden="true" />
+            Add Team
+          </button>
+
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            title={
+              apiRuntimeAvailable
+                ? "Open event controls workspace"
+                : "Event controls are unavailable in Firestore fallback mode"
+            }
+            onClick={onOpenEventControls}
+            disabled={!apiRuntimeAvailable}
+          >
+            <Settings2 size={14} aria-hidden="true" />
+            Event Controls
+          </button>
+
+          {credentialSheetUrl ? (
+            <a
+              href={credentialSheetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.btnSecondary} ${styles.actionLinkButton}`.trim()}
+              title="Open Google Sheet for credential verification"
+            >
+              <FileSpreadsheet size={14} aria-hidden="true" />
+              Open Credential Sheet
+            </a>
+          ) : (
+            <button
+              type="button"
+              className={styles.btnSecondary}
+              title="Credential sheet link is not configured in runtime settings"
+              disabled
+            >
+              <FileSpreadsheet size={14} aria-hidden="true" />
+              Sheet Link Unavailable
+            </button>
+          )}
+
           <button type="button" className={styles.btnSecondary} onClick={onExportCSV}>
             <Download size={14} aria-hidden="true" />
             Export CSV

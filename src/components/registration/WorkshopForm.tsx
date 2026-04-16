@@ -5,20 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  collection,
-  doc,
-  getDocs,
-  increment,
-  limit,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-  writeBatch,
-} from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { db, storage } from "../../../lib/firebase";
 import CyberDropdown from "./CyberDropdown";
 import PaymentSection from "./PaymentSection";
 import {
@@ -29,6 +15,12 @@ import {
   YEAR_OPTIONS,
 } from "./registrationOptions";
 import SubmitButton from "./SubmitButton";
+import {
+  RuntimeApiError,
+  createIdempotencyKey,
+  submitWorkshopRegistration,
+  uploadPaymentScreenshot,
+} from "./runtimeRegistrationApi";
 
 const workshopSchema = z
   .object({
@@ -191,13 +183,10 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
     setUploadMessageTone("info");
 
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const tempId = Math.random().toString(36).substring(2, 15);
-      const objectPath = `payments/workshop/temp_${tempId}.${ext}`;
-      const storageRef = ref(storage, objectPath);
-
-      await uploadBytes(storageRef, file);
-      const uploadedUrl = await getDownloadURL(storageRef);
+      const uploadedUrl = await uploadPaymentScreenshot({
+        file,
+        registrationType: "workshop",
+      });
 
       setUploadMessage("Screenshot uploaded successfully.");
       setUploadMessageTone("ok");
@@ -205,9 +194,14 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
       return uploadedUrl;
     } catch (error) {
       console.error("Workshop screenshot upload failed:", error);
-      setUploadMessage("Screenshot upload failed. Please try again.");
+      const message =
+        error instanceof RuntimeApiError && error.message
+          ? error.message
+          : "Screenshot upload failed. Please try again.";
+
+      setUploadMessage(message);
       setUploadMessageTone("error");
-      setFileError("Payment screenshot upload failed.");
+      setFileError(message);
       return null;
     } finally {
       setIsUploading(false);
@@ -247,49 +241,6 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
       const normalizedEmail = values.email.trim().toLowerCase();
       const normalizedPhone = values.phone.trim();
 
-      const [emailMatches, phoneMatches] = await Promise.all([
-        getDocs(
-          query(
-            collection(db, "participants"),
-            where("email", "==", normalizedEmail),
-            limit(1)
-          )
-        ),
-        getDocs(
-          query(collection(db, "participants"), where("phone", "==", normalizedPhone), limit(1))
-        ),
-      ]);
-
-      let hasDuplicate = false;
-
-      const hasWorkshopEmailDuplicate = emailMatches.docs.some(
-        (participantDoc) => participantDoc.data().registration_type === "workshop"
-      );
-      const hasWorkshopPhoneDuplicate = phoneMatches.docs.some(
-        (participantDoc) => participantDoc.data().registration_type === "workshop"
-      );
-
-      if (hasWorkshopEmailDuplicate) {
-        setError("email", {
-          type: "manual",
-          message: "This email is already used for workshop registration.",
-        });
-        hasDuplicate = true;
-      }
-
-      if (hasWorkshopPhoneDuplicate) {
-        setError("phone", {
-          type: "manual",
-          message: "This phone number is already used for workshop registration.",
-        });
-        hasDuplicate = true;
-      }
-
-      if (hasDuplicate) {
-        setSubmitError("Duplicate details found. Resolve highlighted fields before submitting.");
-        return;
-      }
-
       const branchValue =
         values.department === OTHER_BRANCH_OPTION
           ? String(values.branchOther || "").trim()
@@ -302,70 +253,30 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
         return;
       }
 
-      const batch = writeBatch(db);
-      const participantRef = doc(collection(db, "participants"));
-      const workshopRef = doc(collection(db, "workshop_registrations"));
-      const transactionRef = doc(collection(db, "transactions"));
+      const idempotencyKey = createIdempotencyKey("workshop", [
+        normalizedEmail,
+        normalizedPhone,
+        values.transactionId,
+      ]);
 
-      batch.set(participantRef, {
-        participant_id: participantRef.id,
-        name: values.fullName.trim(),
-        email: normalizedEmail,
-        phone: normalizedPhone,
-        roll_number: values.rollNumber.trim(),
-        state: stateValue,
-        branch: branchValue,
-        department: branchValue,
-        branch_selection: values.department.trim(),
-        year_of_study: values.yearOfStudy.trim(),
-        yearOfStudy: values.yearOfStudy.trim(),
-        registration_type: "workshop",
-        registration_ref: workshopRef.id,
-        created_at: serverTimestamp(),
-      });
-
-      batch.set(workshopRef, {
-        workshop_id: workshopRef.id,
-        participant_id: participantRef.id,
-        transaction_id: transactionRef.id,
-        college: collegeValue,
-        state: stateValue,
-        roll_number: values.rollNumber.trim(),
-        branch: branchValue,
-        department: branchValue,
-        branch_selection: values.department.trim(),
-        year_of_study: values.yearOfStudy.trim(),
-        yearOfStudy: values.yearOfStudy.trim(),
-        payment_verified: false,
-        created_at: serverTimestamp(),
-      });
-
-      batch.set(transactionRef, {
-        transaction_id: transactionRef.id,
-        registration_type: "workshop",
-        registration_ref: workshopRef.id,
-        upi_transaction_id: values.transactionId.trim(),
-        screenshot_url: uploadedUrl,
-        amount: 60,
-        status: "pending",
-        verified_by: null,
-        verified_at: null,
-        created_at: serverTimestamp(),
-      });
-
-      await batch.commit();
-
-      const analyticsRef = doc(db, "analytics", "summary");
-      try {
-        await updateDoc(analyticsRef, {
-          total_workshop: increment(1),
-          [`colleges.${collegeValue}`]: increment(1),
-          [`colleges_workshop.${collegeValue}`]: increment(1),
-          updated_at: serverTimestamp(),
-        });
-      } catch (analyticsError) {
-        console.warn("Workshop analytics update skipped:", analyticsError);
-      }
+      await submitWorkshopRegistration(
+        {
+          name: values.fullName.trim(),
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          college: collegeValue,
+          state: stateValue,
+          roll_number: values.rollNumber.trim(),
+          branch: branchValue,
+          department: branchValue,
+          branch_selection: values.department.trim(),
+          year_of_study: values.yearOfStudy.trim(),
+          yearOfStudy: values.yearOfStudy.trim(),
+          upi_transaction_id: values.transactionId.trim(),
+          screenshot_url: uploadedUrl,
+        },
+        idempotencyKey
+      );
 
       setSubmitSuccess(
         "Registration successful. We'll contact you shortly regarding the venue details."
@@ -377,6 +288,29 @@ export default function WorkshopForm({ qrSrc }: WorkshopFormProps) {
       setFileError(undefined);
     } catch (error) {
       console.error("Workshop registration failed:", error);
+
+      if (error instanceof RuntimeApiError) {
+        const hasEmailConflict = Boolean(error.fieldErrors?.email);
+        const hasPhoneConflict = Boolean(error.fieldErrors?.phone);
+
+        if (hasEmailConflict) {
+          setError("email", {
+            type: "manual",
+            message: "This email is already used for workshop registration.",
+          });
+        }
+
+        if (hasPhoneConflict) {
+          setError("phone", {
+            type: "manual",
+            message: "This phone number is already used for workshop registration.",
+          });
+        }
+
+        setSubmitError(error.message || "Failed to complete workshop registration.");
+        return;
+      }
+
       setSubmitError(
         error instanceof Error && error.message
           ? error.message

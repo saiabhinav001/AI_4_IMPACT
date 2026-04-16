@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb, FieldPath, FieldValue } from "../../../../../firebaseAdmin";
 import { requireAdmin } from "../_utils/auth";
+import { invalidateAdminRegistrationsCache } from "../_utils/runtime-cache-invalidation";
+import { deleteAdminReadModelForTransaction } from "../../../../../lib/server/admin-read-model.js";
 
 export const dynamic = "force-dynamic";
 
@@ -252,6 +254,14 @@ export async function POST(request) {
         }
       }
     }
+
+    try {
+      await deleteAdminReadModelForTransaction(transactionId);
+    } catch (readModelError) {
+      console.error("Failed to delete admin read model record:", readModelError);
+    }
+
+    invalidateAdminRegistrationsCache();
 
     return NextResponse.json({
       success: true,

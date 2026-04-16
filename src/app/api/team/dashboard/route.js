@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "../../../../../firebaseAdmin";
 import { readRuntimeIdTokenFromRequest } from "../../../../../lib/runtime-auth";
+import {
+  EVENT_TIME_ZONE,
+  EVENT_TIME_ZONE_LABEL,
+  buildPublicEventState,
+} from "../../../../../lib/server/event-controls";
+import { readEventControlsFromDb } from "../../../../../lib/server/registration-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +29,22 @@ function toIsoString(value) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function toIstDateLabel(value) {
+  const date = new Date(String(value || ""));
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: EVENT_TIME_ZONE,
+    timeZoneName: "short",
+  });
 }
 
 function normalizeRole(role) {
@@ -119,7 +141,7 @@ async function loadTeamSelection(teamId) {
   }
 }
 
-function buildUpdates(payment, selectedProblem, problemStatementsCount) {
+function buildUpdates(payment, selectedProblem, problemStatementsCount, effectiveState, teamFrozen) {
   const updates = [];
 
   if (payment?.status === "verified") {
@@ -130,12 +152,39 @@ function buildUpdates(payment, selectedProblem, problemStatementsCount) {
     updates.push("Payment is pending verification.");
   }
 
-  if (selectedProblem?.problem_id || selectedProblem?.problem_title) {
+  const problemStatus = String(effectiveState?.problemStatements?.status || "DISABLED").toUpperCase();
+  const problemReleaseAt = effectiveState?.problemStatements?.releaseAt;
+
+  if (problemStatus === "SCHEDULED") {
+    updates.push(
+      `Problem statements will be released at ${toIstDateLabel(problemReleaseAt)} (${EVENT_TIME_ZONE_LABEL}).`
+    );
+  } else if (problemStatus === "DISABLED") {
+    updates.push("Problem statements are currently disabled by admin controls.");
+  } else if (selectedProblem?.problem_id || selectedProblem?.problem_title) {
     updates.push("Problem statement selected by your team.");
   } else if (problemStatementsCount > 0) {
     updates.push("Problem statements are available. Please complete your selection.");
   } else {
     updates.push("Problem statements are not published yet.");
+  }
+
+  const freezeStatus = String(effectiveState?.freeze?.status || "DISABLED").toUpperCase();
+  const freezeOpenAt = effectiveState?.freeze?.openAt;
+  const freezeCloseAt = effectiveState?.freeze?.closeAt;
+
+  if (teamFrozen) {
+    updates.push("Your team workspace is frozen and no further team edits are allowed.");
+  } else if (freezeStatus === "OPEN") {
+    updates.push("Freeze window is open. Team lead can lock the workspace now.");
+  } else if (freezeStatus === "SCHEDULED") {
+    updates.push(
+      `Freeze window starts at ${toIstDateLabel(freezeOpenAt)} (${EVENT_TIME_ZONE_LABEL}).`
+    );
+  } else if (freezeStatus === "CLOSED") {
+    updates.push(
+      `Freeze window closed at ${toIstDateLabel(freezeCloseAt)} (${EVENT_TIME_ZONE_LABEL}).`
+    );
   }
 
   return updates;
@@ -226,12 +275,26 @@ export async function GET(request) {
         }
       }
 
+      const controls = await readEventControlsFromDb(adminDb);
+      const effectiveState = buildPublicEventState(controls);
+      const problemStatementsLive = effectiveState?.problemStatements?.isLive === true;
+
       const [problemStatements, selectedProblem] = await Promise.all([
-        loadProblemStatements(),
+        problemStatementsLive ? loadProblemStatements() : Promise.resolve([]),
         loadTeamSelection(teamDoc.id),
       ]);
 
-      const updates = buildUpdates(payment, selectedProblem, problemStatements.length);
+      const teamFreeze =
+        teamData?.freeze && typeof teamData.freeze === "object" ? teamData.freeze : {};
+      const teamFrozen = teamFreeze?.locked === true;
+
+      const updates = buildUpdates(
+        payment,
+        selectedProblem,
+        problemStatements.length,
+        effectiveState,
+        teamFrozen
+      );
 
       return NextResponse.json({
         success: true,
@@ -244,12 +307,25 @@ export async function GET(request) {
             college: teamData?.college || "",
             team_size: teamData?.team_size || memberIds.length,
             created_at: toIsoString(teamData?.created_at),
+            freeze: {
+              locked: teamFrozen,
+              locked_at: toIsoString(teamFreeze?.locked_at || teamFreeze?.lockedAt),
+              locked_by_uid: String(teamFreeze?.locked_by_uid || teamFreeze?.lockedByUid || ""),
+              locked_by_email: String(teamFreeze?.locked_by_email || teamFreeze?.lockedByEmail || ""),
+              source: String(teamFreeze?.source || ""),
+            },
           },
           members: members.map((member, index) => ({
             ...member,
             is_leader: index === 0,
           })),
           payment,
+          event_controls: {
+            timezone: EVENT_TIME_ZONE,
+            timezone_label: EVENT_TIME_ZONE_LABEL,
+            problem_statements: effectiveState?.problemStatements || null,
+            freeze: effectiveState?.freeze || null,
+          },
           selected_problem: selectedProblem,
           problem_statements: problemStatements,
           updates,

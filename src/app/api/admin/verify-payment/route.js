@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { adminAuth, adminDb, FieldValue } from "../../../../../firebaseAdmin";
 import { requireAdmin } from "../_utils/auth";
+import { invalidateAdminRegistrationsCache } from "../_utils/runtime-cache-invalidation";
+import { upsertAdminReadModelForTransaction } from "../../../../../lib/server/admin-read-model.js";
 import {
   attemptCredentialSheetExportSync,
   buildCredentialSheetExportEvent,
@@ -439,6 +441,14 @@ export async function POST(request) {
         console.error("Credential sheet sync failed after verify action:", sheetSyncResult.error);
       }
     }
+
+    try {
+      await upsertAdminReadModelForTransaction(transactionId);
+    } catch (readModelError) {
+      console.error("Failed to upsert admin read model after verify-payment:", readModelError);
+    }
+
+    invalidateAdminRegistrationsCache();
 
     return NextResponse.json({
       success: true,

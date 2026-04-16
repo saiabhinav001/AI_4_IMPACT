@@ -13,19 +13,19 @@ import {
   cleanupTempScreenshot,
   isTempScreenshotForRegistrationType,
 } from "../_utils/screenshotCleanup";
+import {
+  beginRegistrationIdempotency,
+  finalizeRegistrationIdempotency,
+} from "../_utils/idempotency";
+import { getClientIp, hitRateLimit } from "../_utils/rate-limit";
+import { resolveRegistrationGate } from "../../../../../lib/server/registration-gate";
+import { upsertAdminReadModelForTransaction } from "../../../../../lib/server/admin-read-model.js";
+import { invalidateAdminRegistrationsCache } from "../../admin/_utils/runtime-cache-invalidation";
 
 export const runtime = "nodejs";
 
-function badRequest(error) {
-  return NextResponse.json({ error }, { status: 400 });
-}
-
-function conflict(error, fieldErrors = {}) {
-  return NextResponse.json(
-    { error, field_errors: fieldErrors },
-    { status: 409 }
-  );
-}
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
 
 function normalizeTeamName(value) {
   return String(value || "")
@@ -35,8 +35,90 @@ function normalizeTeamName(value) {
 }
 
 export async function POST(request) {
+  let idempotencyContext = null;
+  let uploadedScreenshotUrl = "";
+
+  const buildResponse = (payload, status = 200, { replayed = false } = {}) => {
+    const response = NextResponse.json(payload, { status });
+
+    if (idempotencyContext?.enabled) {
+      response.headers.set("x-idempotency-key", idempotencyContext.idempotencyKey);
+    }
+
+    if (replayed) {
+      response.headers.set("x-idempotency-replayed", "1");
+    }
+
+    return response;
+  };
+
+  const respond = async (payload, status = 200) => {
+    await finalizeRegistrationIdempotency({
+      context: idempotencyContext,
+      status,
+      responseBody: payload,
+      errorMessage: payload?.error,
+    });
+
+    return buildResponse(payload, status);
+  };
+
   try {
+    const clientIp = getClientIp(request);
+    if (
+      hitRateLimit({
+        scope: "register-hackathon",
+        identity: clientIp,
+        windowMs: RATE_LIMIT_WINDOW_MS,
+        maxRequests: RATE_LIMIT_MAX_REQUESTS,
+      })
+    ) {
+      return buildResponse(
+        { error: "Too many registration attempts. Please retry in a minute." },
+        429
+      );
+    }
+
+    const registrationGate = await resolveRegistrationGate(adminDb, "hackathon");
+    if (!registrationGate.allowed) {
+      return buildResponse(
+        {
+          error: registrationGate.message,
+          registration_window: registrationGate.window,
+        },
+        403
+      );
+    }
+
     const body = await request.json();
+
+    idempotencyContext = await beginRegistrationIdempotency({
+      request,
+      body,
+      scope: "register-hackathon",
+    });
+
+    if (idempotencyContext.mode === "replay") {
+      return buildResponse(
+        idempotencyContext.replayBody || { success: true },
+        Number(idempotencyContext.replayStatus || 200),
+        { replayed: true }
+      );
+    }
+
+    if (idempotencyContext.mode === "in-progress") {
+      return buildResponse(
+        { error: "A matching registration request is already in progress. Please retry shortly." },
+        409
+      );
+    }
+
+    if (idempotencyContext.mode === "payload-mismatch") {
+      return buildResponse(
+        { error: "Idempotency key was reused with a different payload." },
+        409
+      );
+    }
 
     const teamName = asTrimmedString(body?.team_name);
     const normalizedTeamName = normalizeTeamName(teamName);
@@ -46,6 +128,7 @@ export async function POST(request) {
     const members = Array.isArray(body?.members) ? body.members : null;
     const upiTransactionId = asTrimmedString(body?.upi_transaction_id);
     const screenshotUrl = asTrimmedString(body?.screenshot_url);
+    uploadedScreenshotUrl = screenshotUrl;
 
     if (
       !teamName ||
@@ -57,24 +140,25 @@ export async function POST(request) {
       !upiTransactionId ||
       !screenshotUrl
     ) {
-      return badRequest("Missing required fields.");
+      return respond({ error: "Missing required fields." }, 400);
     }
 
     if (![2, 3, 4].includes(teamSize)) {
-      return badRequest("team_size must be 2, 3 or 4.");
+      return respond({ error: "team_size must be 2, 3 or 4." }, 400);
     }
 
     if (members.length !== teamSize) {
-      return badRequest("members count must match team_size.");
+      return respond({ error: "members count must match team_size." }, 400);
     }
 
     if (!isValidHttpUrl(screenshotUrl)) {
-      return badRequest("Invalid screenshot_url.");
+      return respond({ error: "Invalid screenshot_url." }, 400);
     }
 
     if (!isTempScreenshotForRegistrationType(screenshotUrl, "hackathon")) {
-      return badRequest(
-        "screenshot_url must be an uploaded hackathon payment screenshot."
+      return respond(
+        { error: "screenshot_url must be an uploaded hackathon payment screenshot." },
+        400
       );
     }
 
@@ -93,23 +177,23 @@ export async function POST(request) {
       const branchSelection = asTrimmedString(member.branch_selection || member.department || branch);
 
       if (!name || !email || !phone || !rollNumber || !branch || !yearOfStudy) {
-        return badRequest(`Member ${index + 1} has missing required fields.`);
+        return respond({ error: `Member ${index + 1} has missing required fields.` }, 400);
       }
 
       if (!isValidEmail(email)) {
-        return badRequest(`Member ${index + 1} has invalid email.`);
+        return respond({ error: `Member ${index + 1} has invalid email.` }, 400);
       }
 
       if (!isValidPhone(phone)) {
-        return badRequest(`Member ${index + 1} phone must be exactly 10 digits.`);
+        return respond({ error: `Member ${index + 1} phone must be exactly 10 digits.` }, 400);
       }
 
       if (emailSet.has(email)) {
-        return badRequest(`Duplicate member email in request: ${email}.`);
+        return respond({ error: `Duplicate member email in request: ${email}.` }, 400);
       }
 
       if (phoneSet.has(phone)) {
-        return badRequest(`Duplicate member phone in request: ${phone}.`);
+        return respond({ error: `Duplicate member phone in request: ${phone}.` }, 400);
       }
 
       emailSet.add(email);
@@ -169,19 +253,25 @@ export async function POST(request) {
       }
 
       await cleanupTempScreenshot(screenshotUrl);
-      return conflict(messageParts.join(" "), {
-        member_emails: Array.from(new Set(conflictingEmails)),
-        member_phones: Array.from(new Set(conflictingPhones)),
-      });
+      return respond(
+        {
+          error: messageParts.join(" "),
+          field_errors: {
+            member_emails: Array.from(new Set(conflictingEmails)),
+            member_phones: Array.from(new Set(conflictingPhones)),
+          },
+        },
+        409
+      );
     }
 
     const analyticsRef = adminDb.collection("analytics").doc("summary");
     const analyticsDoc = await analyticsRef.get();
 
     if (!analyticsDoc.exists) {
-      return NextResponse.json(
+      return respond(
         { error: "Analytics not initialized. Call /api/admin/init-db first." },
-        { status: 500 }
+        500
       );
     }
 
@@ -199,6 +289,13 @@ export async function POST(request) {
         name: member.name,
         email: member.email,
         phone: member.phone,
+        roll_number: member.roll_number,
+        state: member.state,
+        branch: member.branch,
+        department: member.department,
+        branch_selection: member.branch_selection,
+        year_of_study: member.year_of_study,
+        yearOfStudy: member.yearOfStudy,
         registration_type: "hackathon",
         registration_ref: teamRef.id,
         created_at: FieldValue.serverTimestamp(),
@@ -213,6 +310,7 @@ export async function POST(request) {
       state,
       team_size: teamSize,
       member_ids: participantRefs.map((ref) => ref.id),
+      members: normalizedMembers,
       transaction_id: transactionRef.id,
       payment_verified: false,
       created_at: FieldValue.serverTimestamp(),
@@ -249,15 +347,28 @@ export async function POST(request) {
 
     await batch.commit();
 
-    return NextResponse.json({
-      success: true,
-      team_id: teamRef.id,
-    });
+    try {
+      await upsertAdminReadModelForTransaction(transactionRef.id);
+    } catch (readModelError) {
+      console.error("Failed to upsert admin read model after hackathon registration:", readModelError);
+    }
+
+    invalidateAdminRegistrationsCache();
+
+    return respond(
+      {
+        success: true,
+        team_id: teamRef.id,
+      },
+      200
+    );
   } catch (error) {
     console.error("Hackathon registration failed:", error);
-    return NextResponse.json(
-      { error: "Failed to complete hackathon registration." },
-      { status: 500 }
-    );
+
+    if (uploadedScreenshotUrl) {
+      await cleanupTempScreenshot(uploadedScreenshotUrl);
+    }
+
+    return respond({ error: "Failed to complete hackathon registration." }, 500);
   }
 }

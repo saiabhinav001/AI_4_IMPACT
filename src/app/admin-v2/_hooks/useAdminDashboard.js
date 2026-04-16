@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getUserRole, logoutAdmin, onUserAuthChange } from "../../../../lib/auth";
 import { toRuntimeApiUrl } from "../../../../lib/api-base";
@@ -28,6 +28,122 @@ import {
   toDateSafe,
   toEmailDelivery,
 } from "../_lib/adminData";
+
+const ENV = globalThis?.process?.env || {};
+const DEFAULT_CREDENTIAL_SHEET_URL = String(
+  ENV.NEXT_PUBLIC_CREDENTIAL_SHEET_URL || ""
+).trim();
+
+function toPositiveInteger(value, fallbackValue) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return fallbackValue;
+  }
+
+  return Math.floor(numeric);
+}
+
+function clampPositiveInteger(value, minValue, maxValue, fallbackValue) {
+  const parsed = toPositiveInteger(value, fallbackValue);
+  return Math.min(maxValue, Math.max(minValue, parsed));
+}
+
+const DEFAULT_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_DEFAULT_MS,
+  120000,
+  300000,
+  180000
+);
+const FAST_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_FAST_MS,
+  5000,
+  30000,
+  15000
+);
+const HIDDEN_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_HIDDEN_MS,
+  180000,
+  600000,
+  300000
+);
+const FAST_POLL_WINDOW_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_FAST_WINDOW_MS,
+  30000,
+  300000,
+  90000
+);
+const LEGACY_ADMIN_POLL_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_POLL_LEGACY_MS,
+  15000,
+  120000,
+  60000
+);
+const ADMIN_PERIODIC_FRESH_MS = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_PERIODIC_FRESH_MS,
+  300000,
+  1800000,
+  900000
+);
+const ADMIN_REGISTRATIONS_PAGE_LIMIT = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_REGISTRATIONS_PAGE_LIMIT,
+  25,
+  500,
+  120
+);
+const ADMIN_REGISTRATIONS_MAX_PAGES = clampPositiveInteger(
+  ENV.NEXT_PUBLIC_ADMIN_REGISTRATIONS_MAX_PAGES,
+  1,
+  50,
+  8
+);
+const ADAPTIVE_POLLING_ENABLED =
+  String(ENV.NEXT_PUBLIC_FEATURE_ADMIN_ADAPTIVE_POLLING_ENABLED || "true")
+    .trim()
+    .toLowerCase() !== "false";
+const CLIENT_FALLBACK_ENABLED =
+  String(ENV.NEXT_PUBLIC_FEATURE_ADMIN_CLIENT_FALLBACK_ENABLED || "false")
+    .trim()
+    .toLowerCase() === "true";
+
+function buildAdminRegistrationsUrl({ fresh = false, track = "all", limit, cursor } = {}) {
+  const baseUrl = toRuntimeApiUrl("/api/admin/registrations");
+
+  const query = new URLSearchParams();
+  if (fresh) {
+    query.set("fresh", "1");
+  }
+
+  const normalizedTrack = String(track || "").trim().toLowerCase();
+  if (normalizedTrack === "workshop" || normalizedTrack === "hackathon") {
+    query.set("type", normalizedTrack);
+  }
+
+  const normalizedLimit = toPositiveInteger(limit, 0);
+  if (normalizedLimit > 0) {
+    query.set("limit", String(Math.min(normalizedLimit, 500)));
+  }
+
+  const normalizedCursor = String(cursor || "").trim();
+  if (normalizedCursor) {
+    query.set("cursor", normalizedCursor);
+  }
+
+  const serializedQuery = query.toString();
+  if (!serializedQuery) {
+    return baseUrl;
+  }
+
+  const joinSymbol = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${joinSymbol}${serializedQuery}`;
+}
+
+function isDocumentVisible() {
+  if (typeof document === "undefined") {
+    return true;
+  }
+
+  return document.visibilityState === "visible";
+}
 
 function normalizeSearchText(value) {
   return String(value || "")
@@ -122,9 +238,21 @@ export function useAdminDashboard() {
   const [bulkSendBusy, setBulkSendBusy] = useState(false);
   const [bulkActionMessage, setBulkActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
+  const [addTeamBusy, setAddTeamBusy] = useState(false);
+  const [addTeamError, setAddTeamError] = useState("");
 
   const [apiRuntimeAvailable, setApiRuntimeAvailable] = useState(true);
   const [runtimeNotice, setRuntimeNotice] = useState("");
+  const [credentialSheetUrl, setCredentialSheetUrl] = useState(DEFAULT_CREDENTIAL_SHEET_URL);
+
+  const [eventControls, setEventControls] = useState(null);
+  const [eventControlsEffectiveState, setEventControlsEffectiveState] = useState(null);
+  const [eventControlImplementation, setEventControlImplementation] = useState(null);
+  const [eventControlTimezoneLabel, setEventControlTimezoneLabel] = useState("IST (Asia/Kolkata)");
+  const [eventControlsLoading, setEventControlsLoading] = useState(false);
+  const [eventControlsSaving, setEventControlsSaving] = useState(false);
+  const [eventControlsError, setEventControlsError] = useState("");
+  const [eventControlsMessage, setEventControlsMessage] = useState("");
 
   const [previewScreenshot, setPreviewScreenshot] = useState({
     url: "",
@@ -132,6 +260,24 @@ export function useAdminDashboard() {
   });
 
   const router = useRouter();
+  const adminPollTimerRef = useRef(null);
+  const fastPollingUntilRef = useRef(0);
+  const lastFreshSyncRef = useRef(0);
+
+  const clearAdminPollTimer = useCallback(() => {
+    if (adminPollTimerRef.current) {
+      clearTimeout(adminPollTimerRef.current);
+      adminPollTimerRef.current = null;
+    }
+  }, []);
+
+  const boostAdminPollingWindow = useCallback(() => {
+    if (!ADAPTIVE_POLLING_ENABLED) {
+      return;
+    }
+
+    fastPollingUntilRef.current = Date.now() + FAST_POLL_WINDOW_MS;
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -174,73 +320,148 @@ export function useAdminDashboard() {
     };
   }, [router]);
 
-  const fetchRegistrations = useCallback(async () => {
-    if (!user) return;
+  const fetchRegistrations = useCallback(
+    async ({ fresh = false } = {}) => {
+      if (!user) return;
 
-    const setClientFallbackMode = () => {
-      setApiRuntimeAvailable(false);
-      setRuntimeNotice(API_RUNTIME_NOTICE);
-    };
+      let apiFailureMessage = "";
 
-    try {
-      const idToken = await user.getIdToken();
-      const response = await fetch(toRuntimeApiUrl("/api/admin/registrations"), {
-        headers: buildRuntimeIdTokenHeaders(idToken),
-        cache: "no-store",
-      });
+      const setClientFallbackMode = () => {
+        setApiRuntimeAvailable(false);
+        setRuntimeNotice(API_RUNTIME_NOTICE);
+      };
 
-      const data = await response.json().catch(() => ({}));
+      try {
+        const idToken = await user.getIdToken();
+        const headers = buildRuntimeIdTokenHeaders(
+          idToken,
+          fresh ? { "x-admin-cache-bypass": "1" } : {}
+        );
 
-      if (response.ok) {
-        const mapped = Array.isArray(data?.registrations)
-          ? data.registrations.map((item) => mapRegistrationItem(item))
-          : [];
+        const mapped = [];
+        let cursor = "";
+
+        for (let pageIndex = 0; pageIndex < ADMIN_REGISTRATIONS_MAX_PAGES; pageIndex += 1) {
+          const response = await fetch(
+            buildAdminRegistrationsUrl({
+              fresh,
+              track: filterTrack,
+              limit: ADMIN_REGISTRATIONS_PAGE_LIMIT,
+              cursor,
+            }),
+            {
+              headers,
+              cache: "no-store",
+            }
+          );
+
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            if (response.status !== 404 && response.status !== 405) {
+              if (response.status === 403) {
+                throw new Error(
+                  "Admin access denied. Ensure this account has admin claim or users/{uid}.role=ADMIN."
+                );
+              }
+
+              throw new Error(data?.error || "Failed to sync dashboard data.");
+            }
+
+            break;
+          }
+
+          const pageRegistrations = Array.isArray(data?.registrations)
+            ? data.registrations.map((item) => mapRegistrationItem(item))
+            : [];
+          mapped.push(...pageRegistrations);
+
+          const pagination = data?.pagination || null;
+          const nextCursor = String(pagination?.next_cursor || "").trim();
+          const hasMore = pagination?.has_more === true && Boolean(nextCursor);
+
+          if (!hasMore || nextCursor === cursor) {
+            break;
+          }
+
+          cursor = nextCursor;
+        }
 
         setRegistrations(mapped);
         setDataError("");
         setApiRuntimeAvailable(true);
         setRuntimeNotice("");
         return;
-      }
-
-      if (response.status !== 404 && response.status !== 405) {
-        if (response.status === 403) {
-          throw new Error(
-            "Admin access denied. Ensure this account has admin claim or users/{uid}.role=ADMIN."
-          );
+      } catch (apiError) {
+        if (apiError?.message) {
+          apiFailureMessage = String(apiError.message);
         }
 
-        throw new Error(data?.error || "Failed to sync dashboard data.");
+        if (apiFailureMessage && !apiFailureMessage.includes("Failed to fetch")) {
+          setDataError(apiFailureMessage);
+        }
       }
-    } catch (apiError) {
-      if (apiError?.message && !String(apiError.message).includes("Failed to fetch")) {
-        setDataError(apiError.message);
+
+      if (!CLIENT_FALLBACK_ENABLED) {
+        setApiRuntimeAvailable(false);
+        setRuntimeNotice(API_RUNTIME_NOTICE);
+        throw new Error(apiFailureMessage || "Runtime API unavailable for admin registrations.");
       }
-    }
 
-    try {
-      const fallbackData = await loadAdminRegistrationsFromClient(db);
-      const mappedFallback = fallbackData.map((item) => mapRegistrationItem(item));
+      try {
+        const fallbackData = await loadAdminRegistrationsFromClient(db);
+        const normalizedTrack = String(filterTrack || "").trim().toLowerCase();
+        const filteredFallback = fallbackData.filter((item) => {
+          if (normalizedTrack === "workshop" || normalizedTrack === "hackathon") {
+            return item?.registration_type === normalizedTrack;
+          }
 
-      setRegistrations(mappedFallback);
-      setDataError("");
-      setClientFallbackMode();
-    } catch (clientError) {
-      throw new Error(
-        clientError?.message ||
-          "Failed to sync dashboard data in Firestore fallback mode. Check admin auth and rules."
-      );
-    }
-  }, [user]);
+          return true;
+        });
+        const mappedFallback = filteredFallback.map((item) => mapRegistrationItem(item));
+
+        setRegistrations(mappedFallback);
+        setDataError("");
+        setClientFallbackMode();
+      } catch (clientError) {
+        throw new Error(
+          clientError?.message ||
+            "Failed to sync dashboard data in Firestore fallback mode. Check admin auth and rules."
+        );
+      }
+    },
+    [user, filterTrack]
+  );
 
   useEffect(() => {
     if (!user) return;
 
     let isCancelled = false;
 
-    const syncOnce = async () => {
+    const getNextPollDelay = () => {
+      if (!ADAPTIVE_POLLING_ENABLED) {
+        return LEGACY_ADMIN_POLL_MS;
+      }
+
+      if (Date.now() < fastPollingUntilRef.current) {
+        return FAST_ADMIN_POLL_MS;
+      }
+
+      return isDocumentVisible() ? DEFAULT_ADMIN_POLL_MS : HIDDEN_ADMIN_POLL_MS;
+    };
+
+    const syncOnce = async ({ fresh = false } = {}) => {
+      const now = Date.now();
+      const needsPeriodicFresh =
+        ADMIN_PERIODIC_FRESH_MS > 0 &&
+        now - Number(lastFreshSyncRef.current || 0) >= ADMIN_PERIODIC_FRESH_MS;
+      const shouldFetchFresh = fresh || needsPeriodicFresh;
+
       try {
-        await fetchRegistrations();
+        await fetchRegistrations({ fresh: shouldFetchFresh });
+        if (shouldFetchFresh) {
+          lastFreshSyncRef.current = Date.now();
+        }
       } catch (error) {
         if (!isCancelled) {
           setDataError(error?.message || "Failed to sync dashboard data.");
@@ -248,16 +469,204 @@ export function useAdminDashboard() {
       }
     };
 
+    const scheduleNextPoll = () => {
+      if (isCancelled) {
+        return;
+      }
+
+      clearAdminPollTimer();
+      adminPollTimerRef.current = setTimeout(async () => {
+        await syncOnce();
+        scheduleNextPoll();
+      }, getNextPollDelay());
+    };
+
+    const handleVisibilityChange = () => {
+      if (!ADAPTIVE_POLLING_ENABLED || isCancelled) {
+        return;
+      }
+
+      if (isDocumentVisible()) {
+        void syncOnce();
+      }
+
+      scheduleNextPoll();
+    };
+
     void syncOnce();
-    const intervalId = setInterval(() => {
-      void syncOnce();
-    }, 15000);
+    scheduleNextPoll();
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
 
     return () => {
       isCancelled = true;
-      clearInterval(intervalId);
+      clearAdminPollTimer();
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
     };
-  }, [user, fetchRegistrations]);
+  }, [user, fetchRegistrations, clearAdminPollTimer]);
+
+  const refreshRegistrationsAfterMutation = useCallback(() => {
+    boostAdminPollingWindow();
+    void fetchRegistrations({ fresh: true });
+  }, [boostAdminPollingWindow, fetchRegistrations]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let isCancelled = false;
+
+    const resolveCredentialSheetUrl = async () => {
+      if (DEFAULT_CREDENTIAL_SHEET_URL) {
+        if (!isCancelled) {
+          setCredentialSheetUrl(DEFAULT_CREDENTIAL_SHEET_URL);
+        }
+        return;
+      }
+
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(toRuntimeApiUrl("/api/admin/credential-sheet-link"), {
+          headers: buildRuntimeIdTokenHeaders(idToken),
+          cache: "no-store",
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          return;
+        }
+
+        const url = String(data?.url || "").trim();
+        if (!isCancelled && url) {
+          setCredentialSheetUrl(url);
+        }
+      } catch {
+        // Keep dashboard fully functional even when sheet-link lookup fails.
+      }
+    };
+
+    void resolveCredentialSheetUrl();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
+
+  const fetchEventControls = useCallback(async () => {
+    if (!user) return;
+
+    setEventControlsLoading(true);
+    setEventControlsError("");
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(toRuntimeApiUrl("/api/admin/event-controls"), {
+        headers: buildRuntimeIdTokenHeaders(idToken),
+        cache: "no-store",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 404 || response.status === 405) {
+        setApiRuntimeAvailable(false);
+        setRuntimeNotice(API_RUNTIME_NOTICE);
+        throw new Error("Event controls are unavailable on static hosting mode.");
+      }
+
+      if (!response.ok || data?.success !== true) {
+        throw new Error(data?.error || "Failed to load event controls.");
+      }
+
+      setEventControls(data?.controls || null);
+      setEventControlsEffectiveState(data?.effectiveState || null);
+      setEventControlImplementation(data?.implementation || null);
+      setEventControlTimezoneLabel(
+        String(data?.timezoneLabel || data?.timezone || "IST (Asia/Kolkata)").trim() ||
+          "IST (Asia/Kolkata)"
+      );
+      setApiRuntimeAvailable(true);
+      setRuntimeNotice("");
+      return data;
+    } catch (error) {
+      setEventControlsError(error?.message || "Failed to load event controls.");
+      return null;
+    } finally {
+      setEventControlsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchEventControls();
+  }, [user, fetchEventControls]);
+
+  const saveEventControls = useCallback(
+    async (nextControls) => {
+      if (!user || !nextControls || typeof nextControls !== "object") {
+        return null;
+      }
+
+      setEventControlsSaving(true);
+      setEventControlsError("");
+      setEventControlsMessage("");
+
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(toRuntimeApiUrl("/api/admin/event-controls"), {
+          method: "PUT",
+          headers: buildRuntimeIdTokenHeaders(idToken, {
+            "Content-Type": "application/json",
+          }),
+          body: JSON.stringify({ controls: nextControls }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 404 || response.status === 405) {
+          setApiRuntimeAvailable(false);
+          setRuntimeNotice(API_RUNTIME_NOTICE);
+          throw new Error("Event controls are unavailable on static hosting mode.");
+        }
+
+        if (!response.ok || data?.success !== true) {
+          const details = Array.isArray(data?.details) ? data.details : [];
+          const detailText = details.length > 0 ? ` ${details.join(" ")}` : "";
+          throw new Error(`${data?.error || "Failed to save event controls."}${detailText}`.trim());
+        }
+
+        setEventControls(data?.controls || null);
+        setEventControlsEffectiveState(data?.effectiveState || null);
+        setEventControlImplementation(data?.implementation || null);
+        setEventControlTimezoneLabel(
+          String(data?.timezoneLabel || data?.timezone || "IST (Asia/Kolkata)").trim() ||
+            "IST (Asia/Kolkata)"
+        );
+        setEventControlsMessage("Event controls saved successfully.");
+        setApiRuntimeAvailable(true);
+        setRuntimeNotice("");
+        return data;
+      } catch (error) {
+        setEventControlsError(error?.message || "Failed to save event controls.");
+        return null;
+      } finally {
+        setEventControlsSaving(false);
+      }
+    },
+    [user]
+  );
+
+  const updateEventControlsDraft = useCallback((nextControls) => {
+    if (!nextControls || typeof nextControls !== "object") {
+      return;
+    }
+
+    setEventControls(nextControls);
+    setEventControlsMessage("");
+    setEventControlsError("");
+  }, []);
 
   const registrationsForTrack = useMemo(() => {
     return registrations.filter((registration) => registration.registrationType === filterTrack);
@@ -682,12 +1091,20 @@ export function useAdminDashboard() {
 
         setNoteText(nextNotes);
       }
+
+      refreshRegistrationsAfterMutation();
     } catch (error) {
       setActionError(error?.message || "Failed to update status.");
     } finally {
       setUpdateBusy(false);
     }
-  }, [selectedTeam, user, updateBusy, apiRuntimeAvailable]);
+  }, [
+    selectedTeam,
+    user,
+    updateBusy,
+    apiRuntimeAvailable,
+    refreshRegistrationsAfterMutation,
+  ]);
 
   const handleRegenerateCredentials = useCallback(async () => {
     if (!selectedTeam || !user || updateBusy) return;
@@ -776,12 +1193,20 @@ export function useAdminDashboard() {
             }
           : prev
       );
+
+      refreshRegistrationsAfterMutation();
     } catch (error) {
       setActionError(error?.message || "Failed to regenerate credentials.");
     } finally {
       setUpdateBusy(false);
     }
-  }, [selectedTeam, user, updateBusy, apiRuntimeAvailable]);
+  }, [
+    selectedTeam,
+    user,
+    updateBusy,
+    apiRuntimeAvailable,
+    refreshRegistrationsAfterMutation,
+  ]);
 
   const handleSendCredentialEmail = useCallback(
     async (targetTeam, { force = false } = {}) => {
@@ -876,6 +1301,7 @@ export function useAdminDashboard() {
         );
 
         setDataError("");
+        refreshRegistrationsAfterMutation();
       } catch (error) {
         const message = error?.message || "Failed to send credential email.";
 
@@ -888,7 +1314,13 @@ export function useAdminDashboard() {
         setEmailActionBusyId("");
       }
     },
-    [bulkSendBusy, selectedTeam, user, apiRuntimeAvailable]
+    [
+      bulkSendBusy,
+      selectedTeam,
+      user,
+      apiRuntimeAvailable,
+      refreshRegistrationsAfterMutation,
+    ]
   );
 
   const handleBulkSendUnsent = useCallback(async () => {
@@ -1005,12 +1437,20 @@ export function useAdminDashboard() {
           `Some bulk email operations failed (${failed}). Review email status and retry individually if needed.`
         );
       }
+
+      refreshRegistrationsAfterMutation();
     } catch (error) {
       setDataError(error?.message || "Failed to bulk send unsent credential emails.");
     } finally {
       setBulkSendBusy(false);
     }
-  }, [bulkSendBusy, bulkSendCandidateIds, user, apiRuntimeAvailable]);
+  }, [
+    bulkSendBusy,
+    bulkSendCandidateIds,
+    user,
+    apiRuntimeAvailable,
+    refreshRegistrationsAfterMutation,
+  ]);
 
   const handleDeleteRegistration = useCallback(async (targetTeam) => {
     if (!targetTeam || !user || deleteActionBusyId) {
@@ -1091,6 +1531,8 @@ export function useAdminDashboard() {
       } else {
         setBulkActionMessage(data?.message || "Registration deleted successfully.");
       }
+
+      refreshRegistrationsAfterMutation();
     } catch (error) {
       const message = error?.message || "Failed to delete registration.";
 
@@ -1102,7 +1544,76 @@ export function useAdminDashboard() {
     } finally {
       setDeleteActionBusyId("");
     }
-  }, [apiRuntimeAvailable, deleteActionBusyId, selectedTeam, user]);
+  }, [
+    apiRuntimeAvailable,
+    deleteActionBusyId,
+    selectedTeam,
+    user,
+    refreshRegistrationsAfterMutation,
+  ]);
+
+  const resetAddTeamError = useCallback(() => {
+    setAddTeamError("");
+  }, []);
+
+  const handleAddTeam = useCallback(async (payload) => {
+    if (!user) {
+      throw new Error("Admin session unavailable. Please sign in again.");
+    }
+
+    if (!apiRuntimeAvailable) {
+      const message =
+        "Team creation requires backend API runtime. This action is unavailable in Firestore fallback mode.";
+      setAddTeamError(message);
+      throw new Error(message);
+    }
+
+    if (addTeamBusy) {
+      throw new Error("Team creation is already in progress. Please wait.");
+    }
+
+    setAddTeamBusy(true);
+    setAddTeamError("");
+    setDataError("");
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(toRuntimeApiUrl("/api/admin/add-team"), {
+        method: "POST",
+        headers: buildRuntimeIdTokenHeaders(idToken, {
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify(payload || {}),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 404 || response.status === 405) {
+        setApiRuntimeAvailable(false);
+        setRuntimeNotice(API_RUNTIME_NOTICE);
+        throw new Error("Team creation is unavailable on static hosting mode.");
+      }
+
+      if (!response.ok || data?.success !== true) {
+        throw new Error(data?.error || "Failed to create team.");
+      }
+
+      setBulkActionMessage(data?.message || "Team added successfully.");
+      refreshRegistrationsAfterMutation();
+      return data;
+    } catch (error) {
+      const message = error?.message || "Failed to create team.";
+      setAddTeamError(message);
+      throw new Error(message);
+    } finally {
+      setAddTeamBusy(false);
+    }
+  }, [
+    user,
+    apiRuntimeAvailable,
+    addTeamBusy,
+    refreshRegistrationsAfterMutation,
+  ]);
 
   const handleSaveNotes = useCallback(async () => {
     if (!selectedTeam || updateBusy) return;
@@ -1196,6 +1707,15 @@ export function useAdminDashboard() {
     dataError,
     runtimeNotice,
     apiRuntimeAvailable,
+    credentialSheetUrl,
+    eventControls,
+    eventControlsEffectiveState,
+    eventControlImplementation,
+    eventControlTimezoneLabel,
+    eventControlsLoading,
+    eventControlsSaving,
+    eventControlsError,
+    eventControlsMessage,
 
     activeTab,
     setActiveTab,
@@ -1230,6 +1750,8 @@ export function useAdminDashboard() {
     bulkSendCandidateIds,
     bulkSendBusy,
     bulkActionMessage,
+    addTeamBusy,
+    addTeamError,
 
     selectedTeam,
     selectedEmailDelivery,
@@ -1249,12 +1771,17 @@ export function useAdminDashboard() {
     closeScreenshotPreview,
 
     exportCSV,
+    fetchEventControls,
+    saveEventControls,
+    updateEventControlsDraft,
     handleLogout,
     handleStatusToggle,
     handleRegenerateCredentials,
     handleSendCredentialEmail,
     handleBulkSendUnsent,
     handleDeleteRegistration,
+    handleAddTeam,
+    resetAddTeamError,
     handleSaveNotes,
 
     openTeamDetail,

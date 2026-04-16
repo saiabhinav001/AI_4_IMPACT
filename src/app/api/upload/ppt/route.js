@@ -1,21 +1,68 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { adminStorage } from "../../../../../lib/admin";
+import { adminStorage, adminDb } from "../../../../../lib/admin";
+import { ROLES } from "../../../../../lib/constants/roles";
+import { verifyRequestWithProfile } from "../../../../../lib/server/auth";
+import { resolveTeamEditingGate } from "../../../../../lib/server/team-editing-gate";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
+
+export const runtime = "nodejs";
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
+function clean(value) {
+  return String(value || "").trim();
+}
+
 export async function POST(request) {
   try {
+    const { authUser, profile } = await verifyRequestWithProfile(request);
+    if (!authUser || !profile) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (profile.role !== ROLES.TEAM_LEAD) {
+      return NextResponse.json(
+        { success: false, error: "Only TEAM_LEAD can upload submission files." },
+        { status: 403 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
-    const teamId = String(formData.get("teamId") || "").trim();
+    const requestedTeamId = clean(formData.get("teamId"));
+    const profileTeamId = clean(profile?.teamId);
+    const teamId = profileTeamId || requestedTeamId;
 
     if (!file || !teamId) {
       return NextResponse.json(
         { success: false, error: "file and teamId are required." },
         { status: 400 }
+      );
+    }
+
+    if (profileTeamId && requestedTeamId && requestedTeamId !== profileTeamId) {
+      return NextResponse.json(
+        { success: false, error: "Requested teamId does not match your team profile." },
+        { status: 403 }
+      );
+    }
+
+    const editingGate = await resolveTeamEditingGate(adminDb, {
+      teamId,
+      actorEmail: authUser?.email || "",
+    });
+
+    if (!editingGate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: editingGate.message,
+          freeze_window: editingGate.freezeWindow,
+          team_freeze: editingGate.teamFreeze,
+        },
+        { status: 403 }
       );
     }
 

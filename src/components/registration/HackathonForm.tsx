@@ -5,19 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  collection,
-  doc,
-  getDocs,
-  increment,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-  writeBatch,
-} from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { db, storage } from "../../../lib/firebase";
 import CyberDropdown from "./CyberDropdown";
 import PaymentSection from "./PaymentSection";
 import {
@@ -28,6 +15,12 @@ import {
   YEAR_OPTIONS,
 } from "./registrationOptions";
 import SubmitButton from "./SubmitButton";
+import {
+  RuntimeApiError,
+  createIdempotencyKey,
+  submitHackathonRegistration,
+  uploadPaymentScreenshot,
+} from "./runtimeRegistrationApi";
 
 const phoneRegex = /^\d{10}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -265,13 +258,10 @@ export default function HackathonForm({ qrSrc, duoQrSrc }: HackathonFormProps) {
     setUploadMessageTone("info");
 
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const tempId = Math.random().toString(36).substring(2, 15);
-      const objectPath = `payments/hackathon/temp_${tempId}.${ext}`;
-      const storageRef = ref(storage, objectPath);
-
-      await uploadBytes(storageRef, file);
-      const uploadedUrl = await getDownloadURL(storageRef);
+      const uploadedUrl = await uploadPaymentScreenshot({
+        file,
+        registrationType: "hackathon",
+      });
 
       setUploadMessage("Screenshot uploaded successfully.");
       setUploadMessageTone("ok");
@@ -279,9 +269,14 @@ export default function HackathonForm({ qrSrc, duoQrSrc }: HackathonFormProps) {
       return uploadedUrl;
     } catch (error) {
       console.error("Hackathon screenshot upload failed:", error);
-      setUploadMessage("Screenshot upload failed. Please try again.");
+      const message =
+        error instanceof RuntimeApiError && error.message
+          ? error.message
+          : "Screenshot upload failed. Please try again.";
+
+      setUploadMessage(message);
       setUploadMessageTone("error");
-      setFileError("Payment screenshot upload failed.");
+      setFileError(message);
       return null;
     } finally {
       setIsUploading(false);
@@ -383,128 +378,29 @@ export default function HackathonForm({ qrSrc, duoQrSrc }: HackathonFormProps) {
     }
 
     try {
-      const memberEmails = Array.from(new Set(activeMembers.map((member) => member.email)));
-      const memberPhones = Array.from(new Set(activeMembers.map((member) => member.phone)));
-
-      const [emailMatches, phoneMatches] = await Promise.all([
-        getDocs(query(collection(db, "participants"), where("email", "in", memberEmails))),
-        getDocs(query(collection(db, "participants"), where("phone", "in", memberPhones))),
-      ]);
-
-      const existingHackathonEmailSet = new Set(
-        emailMatches.docs
-          .filter((participantDoc) => participantDoc.data().registration_type === "hackathon")
-          .map((participantDoc) => String(participantDoc.data().email || "").trim().toLowerCase())
-          .filter(Boolean)
-      );
-
-      const existingHackathonPhoneSet = new Set(
-        phoneMatches.docs
-          .filter((participantDoc) => participantDoc.data().registration_type === "hackathon")
-          .map((participantDoc) => String(participantDoc.data().phone || "").trim())
-          .filter(Boolean)
-      );
-
-      if (existingHackathonEmailSet.size || existingHackathonPhoneSet.size) {
-        activeMembers.forEach((member, index) => {
-          if (existingHackathonEmailSet.has(member.email)) {
-            setError(`members.${index}.email` as const, {
-              type: "manual",
-              message: "This email is already registered for hackathon.",
-            });
-          }
-
-          if (existingHackathonPhoneSet.has(member.phone)) {
-            setError(`members.${index}.phone` as const, {
-              type: "manual",
-              message: "This phone number is already registered for hackathon.",
-            });
-          }
-        });
-
-        setSubmitError(
-          "One or more member details are already registered for hackathon. Resolve highlighted fields and try again."
-        );
-        return;
-      }
-
       const uploadedUrl = await uploadScreenshot(selectedFile);
       if (!uploadedUrl) {
         return;
       }
 
-      const batch = writeBatch(db);
-      const teamRef = doc(collection(db, "hackathon_registrations"));
-      const transactionRef = doc(collection(db, "transactions"));
-      const participantRefs = activeMembers.map(() => doc(collection(db, "participants")));
-      const collegeValue = values.college.trim();
-      const stateValue = values.state.trim();
-      const normalizedTeamName = values.teamName.trim().replace(/\s+/g, " ").toLowerCase();
-      const payableAmount = values.teamSize === 2 ? 500 : 800;
+      const idempotencyKey = createIdempotencyKey("hackathon", [
+        values.teamName,
+        values.transactionId,
+        activeMembers[0]?.email,
+      ]);
 
-      participantRefs.forEach((participantRef, index) => {
-        const member = activeMembers[index];
-        batch.set(participantRef, {
-          participant_id: participantRef.id,
-          name: member.name,
-          email: member.email,
-          phone: member.phone,
-          roll_number: member.roll_number,
-          state: member.state,
-          branch: member.branch,
-          department: member.department,
-          branch_selection: member.branch_selection,
-          year_of_study: member.year_of_study,
-          yearOfStudy: member.yearOfStudy,
-          registration_type: "hackathon",
-          registration_ref: teamRef.id,
-          created_at: serverTimestamp(),
-        });
-      });
-
-      batch.set(teamRef, {
-        team_id: teamRef.id,
-        team_name: values.teamName.trim(),
-        team_name_normalized: normalizedTeamName,
-        college: collegeValue,
-        state: stateValue,
-        team_size: values.teamSize,
-        member_ids: participantRefs.map((participantRef) => participantRef.id),
-        members: activeMembers,
-        transaction_id: transactionRef.id,
-        payment_verified: false,
-        created_at: serverTimestamp(),
-      });
-
-      batch.set(transactionRef, {
-        transaction_id: transactionRef.id,
-        registration_type: "hackathon",
-        registration_ref: teamRef.id,
-        upi_transaction_id: values.transactionId.trim(),
-        screenshot_url: uploadedUrl,
-        amount: payableAmount,
-        status: "pending",
-        verified_by: null,
-        verified_at: null,
-        created_at: serverTimestamp(),
-      });
-
-      await batch.commit();
-
-      const analyticsRef = doc(db, "analytics", "summary");
-      const teamSizeCounterField = `team_size_${values.teamSize}`;
-
-      try {
-        await updateDoc(analyticsRef, {
-          total_hackathon: increment(1),
-          [teamSizeCounterField]: increment(1),
-          [`colleges.${collegeValue}`]: increment(1),
-          [`colleges_hackathon.${collegeValue}`]: increment(1),
-          updated_at: serverTimestamp(),
-        });
-      } catch (analyticsError) {
-        console.warn("Hackathon analytics update skipped:", analyticsError);
-      }
+      await submitHackathonRegistration(
+        {
+          team_name: values.teamName.trim(),
+          college: values.college.trim(),
+          state: values.state.trim(),
+          team_size: values.teamSize,
+          members: activeMembers,
+          upi_transaction_id: values.transactionId.trim(),
+          screenshot_url: uploadedUrl,
+        },
+        idempotencyKey
+      );
 
       setSubmitSuccess(
         "Registration successful. Team leader will be notified shortly with access credentials."
@@ -528,6 +424,42 @@ export default function HackathonForm({ qrSrc, duoQrSrc }: HackathonFormProps) {
       setFileError(undefined);
     } catch (error) {
       console.error("Hackathon registration failed:", error);
+
+      if (error instanceof RuntimeApiError) {
+        const memberEmailConflicts = Array.isArray(error.fieldErrors?.member_emails)
+          ? error.fieldErrors.member_emails
+              .map((entry) => String(entry || "").trim().toLowerCase())
+              .filter(Boolean)
+          : [];
+
+        const memberPhoneConflicts = Array.isArray(error.fieldErrors?.member_phones)
+          ? error.fieldErrors.member_phones
+              .map((entry) => String(entry || "").trim())
+              .filter(Boolean)
+          : [];
+
+        if (memberEmailConflicts.length > 0 || memberPhoneConflicts.length > 0) {
+          activeMembers.forEach((member, index) => {
+            if (memberEmailConflicts.includes(member.email)) {
+              setError(`members.${index}.email` as const, {
+                type: "manual",
+                message: "This email is already registered for hackathon.",
+              });
+            }
+
+            if (memberPhoneConflicts.includes(member.phone)) {
+              setError(`members.${index}.phone` as const, {
+                type: "manual",
+                message: "This phone number is already registered for hackathon.",
+              });
+            }
+          });
+        }
+
+        setSubmitError(error.message || "Failed to complete hackathon registration.");
+        return;
+      }
+
       setSubmitError(
         error instanceof Error && error.message
           ? error.message

@@ -3,6 +3,7 @@ import { adminDb, FieldValue } from "../../../../../lib/admin";
 import { ROLES } from "../../../../../lib/constants/roles";
 import { verifyRequestWithProfile } from "../../../../../lib/server/auth";
 import { getHackathonConfig, isSubmissionOpen } from "../../../../../lib/server/hackathon";
+import { resolveTeamEditingGate } from "../../../../../lib/server/team-editing-gate";
 
 export const dynamic = "force-static";
 
@@ -55,6 +56,24 @@ export async function POST(request) {
         { status: 403 }
       );
     }
+
+    const editingGate = await resolveTeamEditingGate(adminDb, {
+      teamId,
+      actorEmail: authUser?.email || "",
+    });
+
+    if (!editingGate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: editingGate.message,
+          freeze_window: editingGate.freezeWindow,
+          team_freeze: editingGate.teamFreeze,
+        },
+        { status: 403 }
+      );
+    }
+
     if (team?.submission?.locked) {
       return NextResponse.json(
         { success: false, error: "Submission is locked for this team." },
