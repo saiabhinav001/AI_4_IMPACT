@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { UserPlus, X } from "lucide-react";
+import FileUpload from "../../../components/registration/FileUpload";
+import {
+  RuntimeApiError,
+  uploadPaymentScreenshot,
+} from "../../../components/registration/runtimeRegistrationApi";
 import styles from "../admin-v2.module.css";
 
 function createEmptyMember() {
@@ -48,11 +53,23 @@ export default function AddTeamModal({
   const [state, setState] = useState("");
   const [teamSize, setTeamSize] = useState(3);
   const [transactionId, setTransactionId] = useState("");
-  const [screenshotUrl, setScreenshotUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [fileError, setFileError] = useState("");
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadMessageTone, setUploadMessageTone] = useState("ok");
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
   const [members, setMembers] = useState(() => buildMembersForSize(3));
   const [localError, setLocalError] = useState("");
+  const isBusy = busy || uploadingScreenshot;
 
   const visibleError = localError || error || "";
+  const uploadToneClass =
+    uploadMessageTone === "error"
+      ? styles.uploadNoticeError
+      : uploadMessageTone === "info"
+        ? styles.uploadNoticeInfo
+        : styles.uploadNoticeOk;
 
   const resetDraft = () => {
     setTeamName("");
@@ -60,7 +77,11 @@ export default function AddTeamModal({
     setState("");
     setTeamSize(3);
     setTransactionId("");
-    setScreenshotUrl("");
+    setSelectedFile(null);
+    setFileName("");
+    setFileError("");
+    setUploadMessage("");
+    setUploadMessageTone("ok");
     setMembers(buildMembersForSize(3));
     setLocalError("");
   };
@@ -73,7 +94,7 @@ export default function AddTeamModal({
     const previousOverflow = document.body.style.overflow;
 
     const handleKeyDown = (event) => {
-      if (event.key === "Escape" && !busy) {
+      if (event.key === "Escape" && !isBusy) {
         onClose?.();
       }
     };
@@ -85,7 +106,7 @@ export default function AddTeamModal({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, busy, onClose]);
+  }, [isOpen, isBusy, onClose]);
 
   useEffect(() => {
     onResetError?.();
@@ -115,7 +136,7 @@ export default function AddTeamModal({
   };
 
   const handleClose = () => {
-    if (busy) {
+    if (isBusy) {
       return;
     }
 
@@ -124,10 +145,64 @@ export default function AddTeamModal({
     onClose?.();
   };
 
+  const uploadScreenshot = async (file) => {
+    if (!file) {
+      setFileError("Payment screenshot is required.");
+      return "";
+    }
+
+    setUploadingScreenshot(true);
+    setUploadMessage("Uploading screenshot securely...");
+    setUploadMessageTone("info");
+
+    try {
+      const uploadedUrl = await uploadPaymentScreenshot({
+        file,
+        registrationType: "hackathon",
+      });
+
+      setUploadMessage("Screenshot uploaded successfully.");
+      setUploadMessageTone("ok");
+      setFileError("");
+      return uploadedUrl;
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof RuntimeApiError && uploadError.message
+          ? uploadError.message
+          : "Screenshot upload failed. Please try again.";
+
+      setUploadMessage(message);
+      setUploadMessageTone("error");
+      setFileError(message);
+      return "";
+    } finally {
+      setUploadingScreenshot(false);
+    }
+  };
+
+  const handleFileSelect = (file) => {
+    setLocalError("");
+
+    if (!file) {
+      setSelectedFile(null);
+      setFileName("");
+      setFileError("");
+      setUploadMessage("");
+      setUploadMessageTone("ok");
+      return;
+    }
+
+    setSelectedFile(file);
+    setFileName(file.name);
+    setFileError("");
+    setUploadMessage("File selected. Ready to submit.");
+    setUploadMessageTone("ok");
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (busy) {
+    if (isBusy) {
       return;
     }
 
@@ -135,9 +210,20 @@ export default function AddTeamModal({
     const normalizedCollege = String(college || "").trim();
     const normalizedState = String(state || "").trim();
     const normalizedTeamSize = normalizeTeamSize(teamSize);
+    const normalizedTransactionId = String(transactionId || "").trim();
 
     if (!normalizedTeamName || !normalizedCollege) {
       setLocalError("Team name and college are required.");
+      return;
+    }
+
+    if (!normalizedTransactionId) {
+      setLocalError("UPI transaction ID is required.");
+      return;
+    }
+
+    if (!selectedFile) {
+      setFileError("Payment screenshot is required.");
       return;
     }
 
@@ -159,14 +245,19 @@ export default function AddTeamModal({
       }
     }
 
+    const uploadedScreenshotUrl = await uploadScreenshot(selectedFile);
+    if (!uploadedScreenshotUrl) {
+      return;
+    }
+
     const payload = {
       team_name: normalizedTeamName,
       college: normalizedCollege,
       state: normalizedState,
       team_size: normalizedTeamSize,
       members: normalizedMembers,
-      upi_transaction_id: String(transactionId || "").trim(),
-      screenshot_url: String(screenshotUrl || "").trim(),
+      upi_transaction_id: normalizedTransactionId,
+      screenshot_url: uploadedScreenshotUrl,
     };
 
     try {
@@ -220,7 +311,7 @@ export default function AddTeamModal({
             className={styles.iconButton}
             onClick={handleClose}
             aria-label="Close add team modal"
-            disabled={busy}
+            disabled={isBusy}
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -239,7 +330,7 @@ export default function AddTeamModal({
                   onChange={(event) => setTeamName(event.target.value)}
                   placeholder="Team Phoenix"
                   maxLength={120}
-                  disabled={busy}
+                  disabled={isBusy}
                   required
                 />
               </label>
@@ -253,7 +344,7 @@ export default function AddTeamModal({
                   onChange={(event) => setCollege(event.target.value)}
                   placeholder="CBIT"
                   maxLength={180}
-                  disabled={busy}
+                  disabled={isBusy}
                   required
                 />
               </label>
@@ -267,7 +358,7 @@ export default function AddTeamModal({
                   onChange={(event) => setState(event.target.value)}
                   placeholder="Telangana"
                   maxLength={80}
-                  disabled={busy}
+                  disabled={isBusy}
                 />
               </label>
 
@@ -277,7 +368,7 @@ export default function AddTeamModal({
                   className={styles.textInput}
                   value={teamSize}
                   onChange={(event) => handleTeamSizeChange(Number(event.target.value))}
-                  disabled={busy}
+                  disabled={isBusy}
                 >
                   {teamSizeOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -288,7 +379,7 @@ export default function AddTeamModal({
               </label>
 
               <label className={styles.searchField}>
-                <span className={styles.fieldLabel}>UPI transaction ID (optional)</span>
+                <span className={styles.fieldLabel}>UPI transaction ID</span>
                 <input
                   type="text"
                   className={styles.textInput}
@@ -296,22 +387,22 @@ export default function AddTeamModal({
                   onChange={(event) => setTransactionId(event.target.value)}
                   placeholder="T2604XXXX"
                   maxLength={120}
-                  disabled={busy}
+                  disabled={isBusy}
+                  required
                 />
               </label>
+            </div>
 
-              <label className={styles.searchField}>
-                <span className={styles.fieldLabel}>Screenshot URL (optional)</span>
-                <input
-                  type="url"
-                  className={styles.textInput}
-                  value={screenshotUrl}
-                  onChange={(event) => setScreenshotUrl(event.target.value)}
-                  placeholder="https://..."
-                  maxLength={500}
-                  disabled={busy}
-                />
-              </label>
+            <div className={styles.fileUploadField}>
+              <span className={styles.fieldLabel}>Payment screenshot</span>
+              <p className={styles.uploadHelpText}>
+                Upload a clear screenshot with transaction ID, amount, and payment status visible.
+              </p>
+              <FileUpload fileName={fileName} disabled={isBusy} onFileSelect={handleFileSelect} />
+              {fileError ? <p className={styles.uploadFieldError}>{fileError}</p> : null}
+              {uploadMessage ? (
+                <p className={[styles.uploadNotice, uploadToneClass].join(" ")}>{uploadMessage}</p>
+              ) : null}
             </div>
           </section>
 
@@ -341,7 +432,7 @@ export default function AddTeamModal({
                         onChange={(event) => updateMemberField(index, "name", event.target.value)}
                         placeholder="Full name"
                         maxLength={120}
-                        disabled={busy}
+                        disabled={isBusy}
                         required
                       />
                     </label>
@@ -355,7 +446,7 @@ export default function AddTeamModal({
                         onChange={(event) => updateMemberField(index, "email", event.target.value)}
                         placeholder="participant@example.com"
                         maxLength={180}
-                        disabled={busy}
+                        disabled={isBusy}
                         required
                       />
                     </label>
@@ -369,7 +460,7 @@ export default function AddTeamModal({
                         onChange={(event) => updateMemberField(index, "phone", event.target.value)}
                         placeholder="10-digit number"
                         maxLength={10}
-                        disabled={busy}
+                        disabled={isBusy}
                         required
                       />
                     </label>
@@ -385,7 +476,7 @@ export default function AddTeamModal({
                         }
                         placeholder="23WU0102186"
                         maxLength={80}
-                        disabled={busy}
+                        disabled={isBusy}
                       />
                     </label>
 
@@ -398,7 +489,7 @@ export default function AddTeamModal({
                         onChange={(event) => updateMemberField(index, "branch", event.target.value)}
                         placeholder="CSE"
                         maxLength={80}
-                        disabled={busy}
+                        disabled={isBusy}
                       />
                     </label>
 
@@ -413,7 +504,7 @@ export default function AddTeamModal({
                         }
                         placeholder="3rd year"
                         maxLength={40}
-                        disabled={busy}
+                        disabled={isBusy}
                       />
                     </label>
                   </div>
@@ -425,11 +516,11 @@ export default function AddTeamModal({
           {visibleError ? <p className={styles.inlineError}>{visibleError}</p> : null}
 
           <div className={styles.actionRow}>
-            <button type="submit" className={styles.btnPrimary} disabled={busy}>
-              {busy ? "Creating team..." : "Create Team"}
+            <button type="submit" className={styles.btnPrimary} disabled={isBusy}>
+              {uploadingScreenshot ? "Uploading screenshot..." : busy ? "Creating team..." : "Create Team"}
             </button>
 
-            <button type="button" className={styles.btnSecondary} disabled={busy} onClick={handleClose}>
+            <button type="button" className={styles.btnSecondary} disabled={isBusy} onClick={handleClose}>
               Cancel
             </button>
           </div>

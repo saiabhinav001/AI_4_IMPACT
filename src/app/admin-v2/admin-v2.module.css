@@ -2118,6 +2118,51 @@
   padding: 7px 8px;
 }
 
+.fileUploadField {
+  display: grid;
+  gap: 7px;
+}
+
+.uploadHelpText {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.uploadFieldError {
+  color: #f1b6b6;
+  font-size: 0.74rem;
+  margin: 0;
+}
+
+.uploadNotice {
+  border-radius: 9px;
+  border: 1px solid;
+  font-size: 0.76rem;
+  font-weight: 620;
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.uploadNoticeOk {
+  background: rgba(74, 222, 128, 0.14);
+  border-color: rgba(74, 222, 128, 0.34);
+  color: #b7f0c8;
+}
+
+.uploadNoticeInfo {
+  background: rgba(167, 139, 250, 0.2);
+  border-color: rgba(167, 139, 250, 0.36);
+  color: #ddd6fe;
+}
+
+.uploadNoticeError {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.42);
+  color: #f1b6b6;
+}
+
 .participantList {
   display: grid;
   gap: 8px;

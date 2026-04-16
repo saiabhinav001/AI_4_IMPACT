@@ -8,6 +8,10 @@ import {
   isValidHttpUrl,
   isValidPhone,
 } from "../../register/_utils/validation";
+import {
+  cleanupTempScreenshot,
+  isTempScreenshotForRegistrationType,
+} from "../../register/_utils/screenshotCleanup";
 import { upsertAdminReadModelForTransaction } from "../../../../../lib/server/admin-read-model.js";
 import { invalidateAdminRegistrationsCache } from "../_utils/runtime-cache-invalidation";
 
@@ -42,6 +46,8 @@ export async function POST(request) {
     return authResult.error;
   }
 
+  let uploadedScreenshotUrl = "";
+
   try {
     const body = await request.json();
 
@@ -53,17 +59,32 @@ export async function POST(request) {
     const members = Array.isArray(body?.members) ? body.members : null;
     const upiTransactionId = asTrimmedString(body?.upi_transaction_id);
     const screenshotUrl = asTrimmedString(body?.screenshot_url);
+    uploadedScreenshotUrl = screenshotUrl;
 
-    if (!teamName || !normalizedTeamName || !college || !teamSize || !members) {
-      return badRequest("team_name, college, team_size, and members are required.");
+    if (
+      !teamName ||
+      !normalizedTeamName ||
+      !college ||
+      !teamSize ||
+      !members ||
+      !upiTransactionId ||
+      !screenshotUrl
+    ) {
+      return badRequest(
+        "team_name, college, team_size, members, upi_transaction_id, and screenshot_url are required."
+      );
     }
 
     if (members.length !== teamSize) {
       return badRequest("members count must match team_size.");
     }
 
-    if (screenshotUrl && !isValidHttpUrl(screenshotUrl)) {
+    if (!isValidHttpUrl(screenshotUrl)) {
       return badRequest("Invalid screenshot_url.");
+    }
+
+    if (!isTempScreenshotForRegistrationType(screenshotUrl, "hackathon")) {
+      return badRequest("screenshot_url must be an uploaded hackathon payment screenshot.");
     }
 
     const normalizedMembers = [];
@@ -151,6 +172,8 @@ export async function POST(request) {
         messageParts.push("One or more member phone numbers are already registered for hackathon.");
       }
 
+      await cleanupTempScreenshot(screenshotUrl);
+
       return NextResponse.json(
         {
           error: messageParts.join(" "),
@@ -179,8 +202,7 @@ export async function POST(request) {
 
     const batch = adminDb.batch();
     const payableAmount = teamSize === 2 ? 500 : 800;
-    const transactionId =
-      upiTransactionId || `ADMIN-${Date.now()}-${String(transactionRef.id).slice(-6).toUpperCase()}`;
+    const transactionId = upiTransactionId;
 
     participantRefs.forEach((participantRef, index) => {
       const member = normalizedMembers[index];
@@ -265,6 +287,11 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("Admin add team failed:", error);
+
+    if (uploadedScreenshotUrl) {
+      await cleanupTempScreenshot(uploadedScreenshotUrl);
+    }
+
     return NextResponse.json(
       { error: "Failed to add team." },
       { status: 500 }
