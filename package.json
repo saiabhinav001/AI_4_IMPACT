@@ -17,13 +17,7 @@
     "health:runtime": "node scripts/check-runtime-endpoints.mjs",
     "iam:grant-hosting-invoker": "node scripts/grant-hosting-run-invoker.cjs",
     "sheets:sync:pending": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/sync-credential-sheet-exports.mjs",
-    "sheets:sync:team": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/sync-team-sheet-exports.mjs",
-    "ps:timer": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/configure-problem-timer.mjs",
-    "ps:timer:verify": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/verify-problem-release-timer.mjs",
-    "ps:test:e2e": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/verify-problem-selection-e2e.mjs",
-    "ps:test:race": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/test-problem-selection-race.mjs",
-    "ps:sheets:verify": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/verify-team-sheet-sync.mjs",
-    "ps:test:cleanup": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/cleanup-problem-selection-test-data.mjs"
+    "sheets:sync:team": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/sync-team-sheet-exports.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
