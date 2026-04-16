@@ -4,6 +4,11 @@ import { ROLES } from "../../../../../lib/constants/roles";
 import { verifyRequestWithProfile } from "../../../../../lib/server/auth";
 import { getHackathonConfig, isSubmissionOpen } from "../../../../../lib/server/hackathon";
 import { resolveTeamEditingGate } from "../../../../../lib/server/team-editing-gate";
+import {
+  attemptTeamSheetExportSync,
+  buildTeamSubmissionSheetExportEvent,
+  createTeamSheetExportEventRef,
+} from "../../admin/_utils/team-sheet-export";
 
 export const dynamic = "force-static";
 
@@ -91,8 +96,47 @@ export async function POST(request) {
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    return NextResponse.json({ success: true });
-  } catch {
+    const members = Array.isArray(team?.members) ? team.members : [];
+    const leadUid = clean(team?.leadUid);
+    const leadMember =
+      members.find((member) => clean(member?.uid) === leadUid) || members[0] || {};
+
+    let teamSheetExportEventId = null;
+
+    try {
+      const sheetEventRef = createTeamSheetExportEventRef();
+      teamSheetExportEventId = sheetEventRef.id;
+
+      await sheetEventRef.set(
+        buildTeamSubmissionSheetExportEvent({
+          teamId,
+          teamName: clean(team?.teamName || team?.team_name),
+          teamLeadName: clean(leadMember?.name),
+          teamLeadEmail: clean(leadMember?.email || authUser?.email || ""),
+          teamLeadPhone: clean(leadMember?.phone),
+          githubLink: githubUrl,
+          pptDriveLink: pptUrl,
+          source: "api/teams/submit",
+        })
+      );
+
+      const sheetSyncResult = await attemptTeamSheetExportSync({
+        eventId: sheetEventRef.id,
+      });
+
+      if (!sheetSyncResult?.success && !sheetSyncResult?.skipped) {
+        console.error("Submission sheet sync failed:", sheetSyncResult.error);
+      }
+    } catch (sheetError) {
+      console.error("Submission sheet export enqueue failed:", sheetError);
+    }
+
+    return NextResponse.json({
+      success: true,
+      team_sheet_export_event_id: teamSheetExportEventId,
+    });
+  } catch (error) {
+    console.error("Final submission save failed:", error);
     return NextResponse.json(
       { success: false, error: "Failed to submit final project entry." },
       { status: 500 }

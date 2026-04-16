@@ -306,13 +306,13 @@ export default function LandingNavbar() {
             exit="closed"
             className="fixed inset-0 z-[90] flex min-h-screen w-full flex-col bg-black/98 backdrop-blur-3xl lg:hidden"
           >
-            <div className="flex h-full flex-col px-6 pb-6 pt-20 sm:px-8 sm:pb-8 sm:pt-24">
+            <div className="flex h-full flex-col overflow-y-auto px-5 pb-4 pt-16 sm:px-7 sm:pb-6 sm:pt-20">
               <div className="scanning-ray opacity-20" />
               {/* Decorative Background Labels */}
-              <div className="absolute right-10 top-32 text-[10vw] font-black text-white/[0.03] pointer-events-none uppercase">NAV_LAYER</div>
+              <div className="pointer-events-none absolute right-7 top-20 text-[9vw] font-black uppercase text-white/[0.025]">NAV_LAYER</div>
               
               <nav className="relative z-10 w-full">
-                <ul className="flex flex-col gap-3 sm:gap-4">
+                <ul className="flex flex-col gap-2.5 sm:gap-3">
                   {navItems.map((item, idx) => {
                     const isActive = activeSection === item.href.slice(1);
                     return (
@@ -320,15 +320,15 @@ export default function LandingNavbar() {
                         <a
                           href={item.href}
                           onClick={closeMenu}
-                          className={`touch-target group relative flex items-center justify-between py-0.5 text-[clamp(1.45rem,6vw,2.5rem)] font-black uppercase tracking-tight transition-all ${
+                          className={`touch-target group relative flex items-center justify-between py-0.5 text-[clamp(1.2rem,5.3vw,2.15rem)] font-black uppercase tracking-tight transition-all ${
                             isActive ? "text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]" : "text-zinc-300 hover:text-white"
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-[9px] font-bold tracking-[0.35em] text-[#8D36D5] opacity-55">/0{idx + 1}</span>
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[8px] font-bold tracking-[0.28em] text-[#8D36D5] opacity-55">/0{idx + 1}</span>
                             {item.label}
                           </div>
-                          {isActive && <motion.div layoutId="active-dot" className="h-2 w-2 bg-cyan-400" />}
+                          {isActive && <motion.div layoutId="active-dot" className="h-1.5 w-1.5 bg-cyan-400" />}
                         </a>
                       </motion.li>
                     );
@@ -336,20 +336,20 @@ export default function LandingNavbar() {
                 </ul>
               </nav>
 
-              <motion.div variants={itemVariants} className="mt-6 w-full sm:mt-8">
+              <motion.div variants={itemVariants} className="mt-4 w-full sm:mt-6">
                 <div className="grid gap-3">
                   <Link
                     href="/auth"
                     onClick={closeMenu}
-                    className="touch-target flex w-full items-center justify-center rounded-[4px] border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-[0.28em] text-white transition-colors hover:bg-white/10"
+                    className="touch-target flex w-full items-center justify-center rounded-[4px] border border-white/10 bg-white/5 py-2.5 text-[11px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-white/10"
                   >
                     LOGIN
                   </Link>
                 </div>
-                <div className="mt-5 flex items-center justify-center gap-3 text-[7px] font-bold tracking-[0.32em] text-zinc-600 uppercase sm:mt-6">
-                  <div className="h-[1px] w-6 bg-zinc-800" />
+                <div className="mt-3 flex items-center justify-center gap-2.5 text-[6px] font-bold tracking-[0.24em] text-zinc-600 uppercase sm:mt-4">
+                  <div className="h-[1px] w-4 bg-zinc-800" />
                   Secure Terminal Protocol 0x4f
-                  <div className="h-[1px] w-6 bg-zinc-800" />
+                  <div className="h-[1px] w-4 bg-zinc-800" />
                 </div>
               </motion.div>
             </div>

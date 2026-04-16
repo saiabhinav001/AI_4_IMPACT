@@ -118,7 +118,13 @@ export default function HeroSection() {
           variants={itemVariants}
           className="mt-12 flex flex-col items-start justify-center gap-5"
         >
-          
+          <Link
+            href="/problem-statements"
+            className="group relative inline-flex items-center overflow-hidden rounded-[4px] border border-cyan-400/35 bg-cyan-500/10 px-5 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200 transition-all hover:bg-cyan-500/20 hover:text-white"
+          >
+            <span className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100 bg-[linear-gradient(90deg,rgba(0,255,255,0.08),rgba(141,54,213,0.12),rgba(0,255,255,0.08))]" />
+            <span className="relative">Click Here To See Problem Statements</span>
+          </Link>
 
           <div className="flex items-center gap-3">
             <span className="h-1.5 w-1.5 bg-[#8D36D5] animate-pulse" />

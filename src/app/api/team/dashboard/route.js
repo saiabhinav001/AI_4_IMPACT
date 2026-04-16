@@ -7,6 +7,13 @@ import {
   buildPublicEventState,
 } from "../../../../../lib/server/event-controls";
 import { readEventControlsFromDb } from "../../../../../lib/server/registration-gate";
+import {
+  getProblemStatementCatalog,
+  mapProblemStatementsWithCapacity,
+  MAX_TEAMS_PER_PROBLEM,
+  readProblemStatementCapacitySnapshot,
+  readTeamProblemSelection,
+} from "../../../../../lib/server/problem-statements";
 
 export const dynamic = "force-dynamic";
 
@@ -93,52 +100,22 @@ async function loadMembers(memberIds) {
     });
 }
 
-async function loadProblemStatements() {
-  try {
-    const snapshot = await adminDb
-      .collection("problem_statements")
-      .orderBy("created_at", "desc")
-      .limit(10)
-      .get();
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        problem_id: doc.id,
-        title: data?.title || data?.name || "Untitled Problem Statement",
-        description: data?.description || "",
-        category: data?.category || "General",
-        published_at: toIsoString(data?.published_at || data?.created_at),
-      };
-    });
-  } catch {
-    return [];
-  }
-}
-
-async function loadTeamSelection(teamId) {
-  try {
-    const snapshot = await adminDb
-      .collection("team_problem_selection")
-      .where("team_id", "==", teamId)
-      .limit(1)
-      .get();
-
-    if (snapshot.empty) return null;
-
-    const doc = snapshot.docs[0];
-    const data = doc.data();
-
-    return {
-      selection_id: doc.id,
-      team_id: teamId,
-      problem_id: data?.problem_id || null,
-      problem_title: data?.problem_title || null,
-      selected_at: toIsoString(data?.selected_at || data?.created_at),
-    };
-  } catch {
+async function loadTeamSelection(teamId, problemCatalog) {
+  const selectedProblem = await readTeamProblemSelection(adminDb, teamId);
+  if (!selectedProblem) {
     return null;
   }
+
+  const matchedProblem = (problemCatalog || []).find(
+    (problem) => problem.id === selectedProblem.problem_id
+  );
+
+  return {
+    ...selectedProblem,
+    problem_title: selectedProblem.problem_title || matchedProblem?.title || null,
+    problem_description:
+      selectedProblem.problem_description || matchedProblem?.description || "",
+  };
 }
 
 function buildUpdates(payment, selectedProblem, problemStatementsCount, effectiveState, teamFrozen) {
@@ -278,11 +255,24 @@ export async function GET(request) {
       const controls = await readEventControlsFromDb(adminDb);
       const effectiveState = buildPublicEventState(controls);
       const problemStatementsLive = effectiveState?.problemStatements?.isLive === true;
+      const problemCatalog = getProblemStatementCatalog();
 
-      const [problemStatements, selectedProblem] = await Promise.all([
-        problemStatementsLive ? loadProblemStatements() : Promise.resolve([]),
-        loadTeamSelection(teamDoc.id),
+      const [capacitySnapshot, selectedProblem] = await Promise.all([
+        problemStatementsLive
+          ? readProblemStatementCapacitySnapshot(adminDb, problemCatalog)
+          : Promise.resolve({
+              maxTeamsPerProblem: MAX_TEAMS_PER_PROBLEM,
+              counts: Object.fromEntries(problemCatalog.map((problem) => [problem.id, 0])),
+            }),
+        loadTeamSelection(teamDoc.id, problemCatalog),
       ]);
+
+      const problemStatements = problemStatementsLive
+        ? mapProblemStatementsWithCapacity({
+            catalog: problemCatalog,
+            capacitySnapshot,
+          })
+        : [];
 
       const teamFreeze =
         teamData?.freeze && typeof teamData.freeze === "object" ? teamData.freeze : {};
@@ -323,7 +313,11 @@ export async function GET(request) {
           event_controls: {
             timezone: EVENT_TIME_ZONE,
             timezone_label: EVENT_TIME_ZONE_LABEL,
-            problem_statements: effectiveState?.problemStatements || null,
+            problem_statements: {
+              ...(effectiveState?.problemStatements || {}),
+              max_teams_per_problem:
+                capacitySnapshot?.maxTeamsPerProblem || MAX_TEAMS_PER_PROBLEM,
+            },
             freeze: effectiveState?.freeze || null,
           },
           selected_problem: selectedProblem,

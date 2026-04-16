@@ -1,13 +1,51 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { getUserRole, logoutAdmin, onUserAuthChange } from "../../../lib/auth";
 import { toRuntimeApiUrl } from "../../../lib/api-base";
 import { buildRuntimeIdTokenHeaders } from "../../../lib/runtime-auth";
 import { ROLES } from "../../../lib/constants/roles";
+
+const DEFAULT_PROBLEM_RELEASE_AT = "2026-04-17T10:30:00+05:30";
+
+function asNormalizedStatus(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase();
+}
+
+function toMillis(value) {
+  if (!value) return NaN;
+  if (typeof value?.toMillis === "function") return value.toMillis();
+  if (typeof value === "number") return value;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? NaN : parsed;
+}
+
+function formatCountdown(msRemaining) {
+  if (!Number.isFinite(msRemaining)) {
+    return "00:00:00";
+  }
+
+  const totalSeconds = Math.max(0, Math.floor(msRemaining / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const hh = String(hours).padStart(2, "0");
+  const mm = String(minutes).padStart(2, "0");
+  const ss = String(seconds).padStart(2, "0");
+
+  if (days > 0) {
+    return `${days}D ${hh}:${mm}:${ss}`;
+  }
+
+  return `${hh}:${mm}:${ss}`;
+}
 
 function SectionHeading({ number, title, color = "purple" }) {
   const isPurple = color === "purple";
@@ -128,13 +166,34 @@ export default function TeamLeadDashboard() {
   const [user, setUser] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState("");
+  const [selectionDialogProblem, setSelectionDialogProblem] = useState(null);
+  const [selectionSubmitting, setSelectionSubmitting] = useState(false);
+  const [selectionError, setSelectionError] = useState("");
+  const [selectionMessage, setSelectionMessage] = useState("");
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
-  const fetchDashboard = useCallback(async (currentUser) => {
+  const pollTimerRef = useRef(null);
+  const dashboardRef = useRef(null);
+
+  const clearPollTimer = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
+  const fetchDashboard = useCallback(async (currentUser, options = {}) => {
     if (!currentUser) return;
 
-    setLoading(true);
+    const silent = options?.silent === true;
 
-    setError("");
+    if (!silent) {
+      setLoading(true);
+    }
+
+    if (!silent) {
+      setError("");
+    }
 
     try {
       const idToken = await currentUser.getIdToken();
@@ -155,11 +214,16 @@ export default function TeamLeadDashboard() {
       }
 
       setDashboard(data?.dashboard || null);
+      setError("");
     } catch (err) {
-      setDashboard(null);
+      if (!silent) {
+        setDashboard(null);
+      }
       setError(err?.message || "Failed to load team dashboard.");
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [router]);
 
@@ -213,7 +277,180 @@ export default function TeamLeadDashboard() {
     };
   }, [fetchDashboard, router]);
 
+  useEffect(() => {
+    dashboardRef.current = dashboard;
+  }, [dashboard]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectionDialogProblem) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectionDialogProblem]);
+
+  const resolveDashboardPollInterval = useCallback(
+    (snapshot) => {
+      if (!snapshot || selectionSubmitting) {
+        return 0;
+      }
+
+      const teamFrozen = snapshot?.team?.freeze?.locked === true;
+      const alreadySelected = Boolean(
+        snapshot?.selected_problem?.problem_id || snapshot?.selected_problem?.problem_title
+      );
+
+      if (teamFrozen || alreadySelected) {
+        return 0;
+      }
+
+      const problemState = snapshot?.event_controls?.problem_statements || {};
+      const freezeState = snapshot?.event_controls?.freeze || {};
+
+      const problemStatus = asNormalizedStatus(problemState?.status);
+      const freezeStatus = asNormalizedStatus(freezeState?.status);
+
+      if (problemStatus === "LIVE" && freezeStatus === "OPEN") {
+        return 5000;
+      }
+
+      if (problemStatus === "LIVE") {
+        return 12000;
+      }
+
+      if (problemStatus === "SCHEDULED") {
+        const releaseAtMs = toMillis(problemState?.releaseAt || DEFAULT_PROBLEM_RELEASE_AT);
+        if (Number.isFinite(releaseAtMs) && releaseAtMs - Date.now() <= 10 * 60 * 1000) {
+          return 5000;
+        }
+
+        return 30000;
+      }
+
+      if (freezeStatus === "SCHEDULED") {
+        return 30000;
+      }
+
+      return 0;
+    },
+    [selectionSubmitting]
+  );
+
+  useEffect(() => {
+    if (!user) {
+      clearPollTimer();
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const scheduleNextPoll = () => {
+      if (cancelled) {
+        return;
+      }
+
+      clearPollTimer();
+
+      const intervalMs = resolveDashboardPollInterval(dashboardRef.current);
+      if (!intervalMs) {
+        return;
+      }
+
+      pollTimerRef.current = setTimeout(async () => {
+        if (cancelled) {
+          return;
+        }
+
+        await fetchDashboard(user, { silent: true });
+        scheduleNextPoll();
+      }, intervalMs);
+    };
+
+    scheduleNextPoll();
+
+    return () => {
+      cancelled = true;
+      clearPollTimer();
+    };
+  }, [user, fetchDashboard, resolveDashboardPollInterval, clearPollTimer]);
+
+  const closeSelectionDialog = useCallback(() => {
+    if (selectionSubmitting) {
+      return;
+    }
+
+    setSelectionDialogProblem(null);
+    setSelectionError("");
+  }, [selectionSubmitting]);
+
+  const openSelectionDialog = useCallback((problem) => {
+    if (!problem || selectionSubmitting) {
+      return;
+    }
+
+    setSelectionMessage("");
+    setSelectionError("");
+    setSelectionDialogProblem(problem);
+  }, [selectionSubmitting]);
+
+  const handleConfirmProblemSelection = useCallback(async () => {
+    if (!user || !selectionDialogProblem || selectionSubmitting) {
+      return;
+    }
+
+    setSelectionSubmitting(true);
+    setSelectionError("");
+    setSelectionMessage("");
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(toRuntimeApiUrl("/api/team/problem-selection"), {
+        method: "POST",
+        headers: buildRuntimeIdTokenHeaders(idToken, {
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({
+          problem_id: selectionDialogProblem.problem_id,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to lock problem statement selection.");
+      }
+
+      setSelectionDialogProblem(null);
+      setSelectionMessage(
+        data?.message || "Problem statement selected and locked successfully."
+      );
+      await fetchDashboard(user, { silent: true });
+    } catch (selectionFailure) {
+      setSelectionError(
+        selectionFailure?.message || "Failed to lock problem statement selection."
+      );
+    } finally {
+      setSelectionSubmitting(false);
+    }
+  }, [selectionDialogProblem, selectionSubmitting, user, fetchDashboard]);
+
   const handleLogout = async () => {
+    clearPollTimer();
     await logoutAdmin();
     router.replace("/auth");
   };
@@ -233,6 +470,115 @@ export default function TeamLeadDashboard() {
       minute: "2-digit",
     });
   }, [dashboard?.team?.created_at]);
+
+  const problemStatements = useMemo(
+    () => (Array.isArray(dashboard?.problem_statements) ? dashboard.problem_statements : []),
+    [dashboard?.problem_statements]
+  );
+
+  const problemControlState = dashboard?.event_controls?.problem_statements || {};
+  const freezeControlState = dashboard?.event_controls?.freeze || {};
+  const teamFreezeState = dashboard?.team?.freeze || {};
+
+  const problemStatus = asNormalizedStatus(problemControlState?.status);
+  const freezeStatus = asNormalizedStatus(freezeControlState?.status);
+  const teamFrozen = teamFreezeState?.locked === true;
+  const hasSelectedProblem = Boolean(
+    dashboard?.selected_problem?.problem_id || dashboard?.selected_problem?.problem_title
+  );
+
+  const releaseAtMs = toMillis(problemControlState?.releaseAt || DEFAULT_PROBLEM_RELEASE_AT);
+  const freezeCloseAtMs = toMillis(freezeControlState?.closeAt);
+  const freezeOpenAtMs = toMillis(freezeControlState?.openAt);
+
+  const releaseAtLabel = useMemo(() => {
+    if (!Number.isFinite(releaseAtMs)) {
+      return "TBA";
+    }
+
+    return new Date(releaseAtMs).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Kolkata",
+      timeZoneName: "short",
+    });
+  }, [releaseAtMs]);
+
+  const countdownModel = useMemo(() => {
+    if (hasSelectedProblem || teamFrozen) {
+      return null;
+    }
+
+    if (problemStatus === "SCHEDULED" && Number.isFinite(releaseAtMs)) {
+      return {
+        label: "PROBLEM RELEASE IN",
+        targetMs: releaseAtMs,
+      };
+    }
+
+    if (
+      problemStatus === "LIVE" &&
+      freezeStatus === "OPEN" &&
+      Number.isFinite(freezeCloseAtMs)
+    ) {
+      return {
+        label: "SELECTION WINDOW CLOSES IN",
+        targetMs: freezeCloseAtMs,
+      };
+    }
+
+    if (freezeStatus === "SCHEDULED" && Number.isFinite(freezeOpenAtMs)) {
+      return {
+        label: "FREEZE WINDOW OPENS IN",
+        targetMs: freezeOpenAtMs,
+      };
+    }
+
+    return null;
+  }, [
+    hasSelectedProblem,
+    teamFrozen,
+    problemStatus,
+    releaseAtMs,
+    freezeStatus,
+    freezeCloseAtMs,
+    freezeOpenAtMs,
+  ]);
+
+  const countdownText = countdownModel
+    ? formatCountdown(countdownModel.targetMs - nowMs)
+    : "";
+
+  const canSelectProblem =
+    problemStatus === "LIVE" && !hasSelectedProblem && !teamFrozen && freezeStatus !== "CLOSED";
+
+  const problemSelectionHint = useMemo(() => {
+    if (teamFrozen) {
+      return "Team workspace is frozen. Problem statement changes are locked.";
+    }
+
+    if (freezeStatus === "CLOSED") {
+      return "Selection window is closed. Contact admin only if override is required.";
+    }
+
+    if (problemStatus === "DISABLED") {
+      return "Problem statements are currently disabled by admin controls.";
+    }
+
+    if (problemStatus === "SCHEDULED") {
+      return "Problem statements will be released soon.";
+    }
+
+    if (problemStatus === "LIVE" && problemStatements.length === 0) {
+      return "Problem statements are live. Please wait while challenge cards are loading.";
+    }
+
+    return "Problem statements will be released soon.";
+  }, [freezeStatus, problemStatus, problemStatements.length, teamFrozen]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -507,35 +853,108 @@ export default function TeamLeadDashboard() {
                   <div className="h-[2px] w-32 bg-gradient-to-r from-[#00FFFF] to-transparent opacity-50" />
                 </div>
                 <DashboardCard sheenColor="rgba(0, 255, 255, 0.1)">
-                  {dashboard.selected_problem ? (
-                    <div className="p-6 sm:p-10 lg:p-14 rounded-[32px] sm:rounded-[48px] bg-gradient-to-br from-[#8D36D5]/30 to-[#46067A]/15 border-2 border-[#8D36D5]/50 shadow-[0_40px_120px_rgba(0,0,0,0.8)] relative group/card transition-all overflow-hidden hover:border-[#8D36D5]">
-                      {/* Decorative icon — capped so it never overflows */}
-                      <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-[0.05] group-hover/card:opacity-[0.12] transition-opacity pointer-events-none">
-                        <svg className="w-24 h-24 sm:w-40 sm:h-40 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
-                        </svg>
+                  <div className="space-y-6 sm:space-y-8">
+                    {countdownModel ? (
+                      <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-4 sm:px-6 sm:py-5">
+                        <p className="text-[10px] font-black tracking-[0.3em] uppercase text-cyan-300">
+                          {countdownModel.label}
+                        </p>
+                        <p className="mt-2 text-2xl sm:text-4xl font-black text-white tracking-[0.12em] font-mono">
+                          {countdownText}
+                        </p>
                       </div>
-                      <h3 className="text-[clamp(1.2rem,4vw,2.8rem)] font-black text-white uppercase mb-6 sm:mb-10 leading-tight tracking-tighter drop-shadow-2xl pr-20 sm:pr-28">
-                        {dashboard.selected_problem.problem_title}
-                      </h3>
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-5 sm:gap-10 pt-6 sm:pt-10 border-t border-white/20">
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">CHALLENGE ID</span>
-                          <span className="text-base sm:text-lg font-black text-[#8D36D5] font-mono bg-[#8D36D5]/20 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl border border-[#8D36D5]/40 shadow-xl inline-block">
-                            #{dashboard.selected_problem.problem_id}
-                          </span>
+                    ) : null}
+
+                    {selectionMessage ? (
+                      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200">
+                        {selectionMessage}
+                      </div>
+                    ) : null}
+
+                    {selectionError ? (
+                      <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-200">
+                        {selectionError}
+                      </div>
+                    ) : null}
+
+                    {hasSelectedProblem ? (
+                      <div className="p-6 sm:p-10 lg:p-14 rounded-[32px] sm:rounded-[48px] bg-gradient-to-br from-[#8D36D5]/30 to-[#46067A]/15 border-2 border-[#8D36D5]/50 shadow-[0_40px_120px_rgba(0,0,0,0.8)] relative group/card transition-all overflow-hidden hover:border-[#8D36D5]">
+                        <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-[0.05] group-hover/card:opacity-[0.12] transition-opacity pointer-events-none">
+                          <svg className="w-24 h-24 sm:w-40 sm:h-40 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                          </svg>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">LOCK DATE</span>
-                          <span className="text-base font-bold text-zinc-100 font-mono italic">{dashboard.selected_problem.selected_at}</span>
+                        <h3 className="text-[clamp(1.2rem,4vw,2.8rem)] font-black text-white uppercase mb-6 sm:mb-10 leading-tight tracking-tighter drop-shadow-2xl pr-20 sm:pr-28">
+                          {dashboard.selected_problem.problem_title}
+                        </h3>
+                        <p className="text-sm sm:text-base font-medium leading-relaxed text-zinc-200 max-w-3xl mb-6 sm:mb-8">
+                          {dashboard.selected_problem.problem_description || "Problem statement locked for your team."}
+                        </p>
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-5 sm:gap-10 pt-6 sm:pt-10 border-t border-white/20">
+                          <div className="flex flex-col gap-2">
+                            <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">CHALLENGE ID</span>
+                            <span className="text-base sm:text-lg font-black text-[#8D36D5] font-mono bg-[#8D36D5]/20 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl border border-[#8D36D5]/40 shadow-xl inline-block">
+                              #{dashboard.selected_problem.problem_id}
+                            </span>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">LOCK DATE</span>
+                            <span className="text-base font-bold text-zinc-100 font-mono italic">{dashboard.selected_problem.selected_at || "Recorded"}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="p-6 sm:p-20 rounded-[24px] sm:rounded-[48px] bg-white/[0.02] border-4 border-dashed border-white/10 text-center transition-all hover:bg-white/[0.04] hover:border-white/20">
-                      <p className="text-[11px] sm:text-[18px] font-black text-zinc-600 tracking-[0.2em] sm:tracking-[0.6em] uppercase">Problem Statements will be Released Soon</p>
-                    </div>
-                  )}
+                    ) : canSelectProblem && problemStatements.length > 0 ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                        {problemStatements.map((problem) => {
+                          const isFull = problem?.is_full === true || Number(problem?.available_slots || 0) <= 0;
+
+                          return (
+                            <article
+                              key={problem.problem_id}
+                              className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 transition-all hover:border-[#8D36D5]/50 hover:bg-white/[0.07]"
+                            >
+                              <p className="text-[10px] font-black tracking-[0.22em] uppercase text-zinc-500">
+                                {problem.category || "General"}
+                              </p>
+                              <h3 className="mt-2 text-lg sm:text-xl font-black text-white tracking-tight leading-tight">
+                                {problem.title}
+                              </h3>
+                              <p className="mt-3 text-sm text-zinc-300 leading-relaxed line-clamp-3">
+                                {problem.description || "Problem statement details will be updated shortly."}
+                              </p>
+                              <div className="mt-4 flex items-center justify-between gap-3">
+                                <p className="text-[11px] font-black tracking-[0.14em] uppercase text-cyan-300">
+                                  {problem.selected_teams_count || 0}/{problem.max_teams_allowed || 5} teams
+                                </p>
+                                <button
+                                  type="button"
+                                  disabled={isFull || selectionSubmitting}
+                                  onClick={() => openSelectionDialog(problem)}
+                                  className="rounded-xl border border-[#8D36D5]/40 bg-[#8D36D5]/20 px-4 py-2 text-[11px] font-black tracking-[0.18em] uppercase text-white transition-all hover:bg-[#8D36D5]/35 disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  {isFull ? "FULL" : "Preview & Freeze"}
+                                </button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-6 sm:p-12 rounded-[24px] sm:rounded-[40px] bg-white/[0.02] border-4 border-dashed border-white/10 text-center transition-all hover:bg-white/[0.04] hover:border-white/20">
+                        <p className="text-[10px] sm:text-[13px] font-black text-zinc-500 tracking-[0.25em] uppercase">
+                          Problem Statement Status
+                        </p>
+                        <p className="mt-3 text-sm sm:text-base font-semibold text-zinc-300 leading-relaxed">
+                          {problemSelectionHint}
+                        </p>
+                        {problemStatus === "SCHEDULED" ? (
+                          <p className="mt-3 text-xs sm:text-sm font-mono text-cyan-300">
+                            Scheduled Release: {releaseAtLabel}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
                 </DashboardCard>
               </motion.div>
 
@@ -573,6 +992,70 @@ export default function TeamLeadDashboard() {
           </div>
         )}
       </motion.main>
+
+      <AnimatePresence>
+        {selectionDialogProblem ? (
+          <motion.div
+            className="fixed inset-0 z-[130] bg-black/85 backdrop-blur-sm px-4 py-8 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeSelectionDialog}
+          >
+            <motion.section
+              className="w-full max-w-2xl rounded-3xl border border-white/15 bg-[#0b0615] p-6 sm:p-8 shadow-[0_40px_120px_rgba(0,0,0,0.8)]"
+              initial={{ y: 24, opacity: 0.96 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0.96 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className="text-[10px] font-black tracking-[0.32em] uppercase text-zinc-500">
+                Confirm Freeze
+              </p>
+              <h3 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {selectionDialogProblem.title}
+              </h3>
+              <p className="mt-4 text-sm sm:text-base leading-relaxed text-zinc-300">
+                {selectionDialogProblem.description || "Problem statement details are unavailable."}
+              </p>
+
+              <div className="mt-5 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-3">
+                <p className="text-[11px] font-black tracking-[0.2em] uppercase text-cyan-300">
+                  Teams Selected: {selectionDialogProblem.selected_teams_count || 0}/{selectionDialogProblem.max_teams_allowed || 5}
+                </p>
+                <p className="mt-2 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  Once you confirm, this problem statement will be locked for your team and cannot be changed later.
+                </p>
+              </div>
+
+              {selectionError ? (
+                <div className="mt-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-200">
+                  {selectionError}
+                </div>
+              ) : null}
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeSelectionDialog}
+                  disabled={selectionSubmitting}
+                  className="rounded-xl border border-white/15 bg-white/[0.06] px-5 py-3 text-[11px] font-black tracking-[0.2em] uppercase text-zinc-100 transition-colors hover:bg-white/[0.12] disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmProblemSelection}
+                  disabled={selectionSubmitting}
+                  className="rounded-xl border border-[#8D36D5]/45 bg-[#8D36D5]/25 px-5 py-3 text-[11px] font-black tracking-[0.2em] uppercase text-white transition-colors hover:bg-[#8D36D5]/38 disabled:opacity-50"
+                >
+                  {selectionSubmitting ? "Locking..." : "Yes, Freeze This Problem"}
+                </button>
+              </div>
+            </motion.section>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
