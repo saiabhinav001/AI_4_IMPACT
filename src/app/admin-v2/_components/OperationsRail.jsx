@@ -10,6 +10,7 @@ import {
   Settings2,
   ShieldCheck,
   Table2,
+  UserPlus,
   Users,
 } from "lucide-react";
 import styles from "../admin-v2.module.css";
@@ -44,6 +45,7 @@ export default function OperationsRail({
   filterTrack,
   credentialSheetUrl,
   apiRuntimeAvailable,
+  onOpenAddTeam,
   onOpenEventControls,
   onExportCSV,
   onLogout,
@@ -140,6 +142,21 @@ export default function OperationsRail({
       </div>
 
       <div className={styles.railActions}>
+        <button
+          type="button"
+          className={styles.btnPrimary}
+          title={
+            apiRuntimeAvailable
+              ? "Add a team registration manually"
+              : "Team creation is unavailable in Firestore fallback mode"
+          }
+          onClick={onOpenAddTeam}
+          disabled={!apiRuntimeAvailable}
+        >
+          <UserPlus size={14} aria-hidden="true" />
+          Add Team
+        </button>
+
         <button
           type="button"
           className={styles.btnPrimary}

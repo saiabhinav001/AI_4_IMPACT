@@ -1,4 +1,4 @@
-import { Download, FileSpreadsheet, LogOut, Settings2, ShieldCheck } from "lucide-react";
+import { Download, FileSpreadsheet, LogOut, Settings2, ShieldCheck, UserPlus } from "lucide-react";
 import styles from "../admin-v2.module.css";
 
 export default function AdminTopBar({
@@ -6,6 +6,7 @@ export default function AdminTopBar({
   activeTrackLabel,
   apiRuntimeAvailable,
   credentialSheetUrl,
+  onOpenAddTeam,
   onOpenEventControls,
   onExportCSV,
   onLogout,
@@ -38,6 +39,21 @@ export default function AdminTopBar({
         </div>
 
         <div className={styles.topBarActionButtons}>
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            title={
+              apiRuntimeAvailable
+                ? "Add a team registration manually"
+                : "Team creation is unavailable in Firestore fallback mode"
+            }
+            onClick={onOpenAddTeam}
+            disabled={!apiRuntimeAvailable}
+          >
+            <UserPlus size={14} aria-hidden="true" />
+            Add Team
+          </button>
+
           <button
             type="button"
             className={styles.btnPrimary}

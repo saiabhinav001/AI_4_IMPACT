@@ -238,6 +238,8 @@ export function useAdminDashboard() {
   const [bulkSendBusy, setBulkSendBusy] = useState(false);
   const [bulkActionMessage, setBulkActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
+  const [addTeamBusy, setAddTeamBusy] = useState(false);
+  const [addTeamError, setAddTeamError] = useState("");
 
   const [apiRuntimeAvailable, setApiRuntimeAvailable] = useState(true);
   const [runtimeNotice, setRuntimeNotice] = useState("");
@@ -1550,6 +1552,69 @@ export function useAdminDashboard() {
     refreshRegistrationsAfterMutation,
   ]);
 
+  const resetAddTeamError = useCallback(() => {
+    setAddTeamError("");
+  }, []);
+
+  const handleAddTeam = useCallback(async (payload) => {
+    if (!user) {
+      throw new Error("Admin session unavailable. Please sign in again.");
+    }
+
+    if (!apiRuntimeAvailable) {
+      const message =
+        "Team creation requires backend API runtime. This action is unavailable in Firestore fallback mode.";
+      setAddTeamError(message);
+      throw new Error(message);
+    }
+
+    if (addTeamBusy) {
+      throw new Error("Team creation is already in progress. Please wait.");
+    }
+
+    setAddTeamBusy(true);
+    setAddTeamError("");
+    setDataError("");
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(toRuntimeApiUrl("/api/admin/add-team"), {
+        method: "POST",
+        headers: buildRuntimeIdTokenHeaders(idToken, {
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify(payload || {}),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 404 || response.status === 405) {
+        setApiRuntimeAvailable(false);
+        setRuntimeNotice(API_RUNTIME_NOTICE);
+        throw new Error("Team creation is unavailable on static hosting mode.");
+      }
+
+      if (!response.ok || data?.success !== true) {
+        throw new Error(data?.error || "Failed to create team.");
+      }
+
+      setBulkActionMessage(data?.message || "Team added successfully.");
+      refreshRegistrationsAfterMutation();
+      return data;
+    } catch (error) {
+      const message = error?.message || "Failed to create team.";
+      setAddTeamError(message);
+      throw new Error(message);
+    } finally {
+      setAddTeamBusy(false);
+    }
+  }, [
+    user,
+    apiRuntimeAvailable,
+    addTeamBusy,
+    refreshRegistrationsAfterMutation,
+  ]);
+
   const handleSaveNotes = useCallback(async () => {
     if (!selectedTeam || updateBusy) return;
     const nextNotes = noteText.trim();
@@ -1685,6 +1750,8 @@ export function useAdminDashboard() {
     bulkSendCandidateIds,
     bulkSendBusy,
     bulkActionMessage,
+    addTeamBusy,
+    addTeamError,
 
     selectedTeam,
     selectedEmailDelivery,
@@ -1713,6 +1780,8 @@ export function useAdminDashboard() {
     handleSendCredentialEmail,
     handleBulkSendUnsent,
     handleDeleteRegistration,
+    handleAddTeam,
+    resetAddTeamError,
     handleSaveNotes,
 
     openTeamDetail,

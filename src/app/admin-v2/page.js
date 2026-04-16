@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { JetBrains_Mono, Sora } from "next/font/google";
 import { AnimatePresence, motion } from "framer-motion";
 import AdminShell from "./_components/AdminShell";
+import AddTeamModal from "./_components/AddTeamModal";
 import AdminTopBar from "./_components/AdminTopBar";
 import AnalyticsPanel from "./_components/AnalyticsPanel";
 import DetailDrawer from "./_components/DetailDrawer";
@@ -76,6 +77,7 @@ function DuplicateNotice({ duplicates }) {
 export default function AdminV2Page() {
   const dashboard = useAdminDashboard();
   const [eventControlsOpen, setEventControlsOpen] = useState(false);
+  const [addTeamOpen, setAddTeamOpen] = useState(false);
 
   const openEventControlsWorkspace = () => {
     setEventControlsOpen(true);
@@ -88,6 +90,20 @@ export default function AdminV2Page() {
     }
 
     setEventControlsOpen(false);
+  };
+
+  const openAddTeamWorkspace = () => {
+    dashboard.resetAddTeamError();
+    setAddTeamOpen(true);
+  };
+
+  const closeAddTeamWorkspace = () => {
+    if (dashboard.addTeamBusy) {
+      return;
+    }
+
+    dashboard.resetAddTeamError();
+    setAddTeamOpen(false);
   };
 
   const activeTrackLabel = useMemo(() => {
@@ -115,6 +131,7 @@ export default function AdminV2Page() {
           filterTrack={dashboard.filterTrack}
           credentialSheetUrl={dashboard.credentialSheetUrl}
           apiRuntimeAvailable={dashboard.apiRuntimeAvailable}
+          onOpenAddTeam={openAddTeamWorkspace}
           onOpenEventControls={openEventControlsWorkspace}
           onExportCSV={dashboard.exportCSV}
           onLogout={dashboard.handleLogout}
@@ -127,6 +144,7 @@ export default function AdminV2Page() {
               activeTrackLabel={activeTrackLabel}
               apiRuntimeAvailable={dashboard.apiRuntimeAvailable}
               credentialSheetUrl={dashboard.credentialSheetUrl}
+              onOpenAddTeam={openAddTeamWorkspace}
               onOpenEventControls={openEventControlsWorkspace}
               onExportCSV={dashboard.exportCSV}
               onLogout={dashboard.handleLogout}
@@ -267,6 +285,20 @@ export default function AdminV2Page() {
           </motion.main>
         </div>
       </div>
+
+      <AnimatePresence>
+        {addTeamOpen ? (
+          <AddTeamModal
+            key="admin-add-team-modal"
+            isOpen={addTeamOpen}
+            busy={dashboard.addTeamBusy}
+            error={dashboard.addTeamError}
+            onClose={closeAddTeamWorkspace}
+            onResetError={dashboard.resetAddTeamError}
+            onSubmit={(payload) => dashboard.handleAddTeam(payload)}
+          />
+        ) : null}
+      </AnimatePresence>
 
       <AnimatePresence>
         {eventControlsOpen ? (
