@@ -23,161 +23,295 @@
   pointer-events: none;
 }
 
-.minimalPanel {
+.container {
   position: relative;
   z-index: 1;
-  width: min(1200px, 100%);
+  width: min(1080px, 100%);
   margin: 0 auto;
-  min-height: calc(100vh - 200px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: clamp(40px, 8vw, 80px);
-  padding: 20px;
+  display: grid;
+  gap: 18px;
 }
 
-.branding {
+.header {
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  gap: 10px;
 }
 
-.brandTitle {
+.statusBadge {
+  margin: 0 auto;
+  width: max-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.statusOpen {
+  color: #86efac;
+  border-color: rgba(52, 211, 153, 0.52);
+  background: rgba(52, 211, 153, 0.16);
+}
+
+.statusScheduled {
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.52);
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.statusClosed {
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.52);
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.statusDisabled {
+  color: #d4d4d8;
+  border-color: rgba(113, 113, 122, 0.58);
+  background: rgba(113, 113, 122, 0.18);
+}
+
+.title {
   font-family: var(--font-heading);
-  font-size: clamp(0.7rem, 2vw, 1rem);
-  letter-spacing: 0.6em;
-  color: rgba(167, 139, 250, 0.8);
-  font-weight: 800;
-  margin-left: 0.6em; /* Optical centering for letter spacing */
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  font-size: clamp(1.4rem, 4vw, 2.8rem);
+  margin: 0;
+  opacity: 0.9;
 }
 
-.brandSubtitle {
-  font-size: 0.6rem;
-  letter-spacing: 0.25em;
-  color: rgba(237, 232, 245, 0.4);
-  font-weight: 600;
+.subtitle {
+  margin: 0;
+  color: #9feaf4;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  font-size: clamp(0.66rem, 1.7vw, 0.82rem);
+  font-weight: 700;
+}
+
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 32px;
+  background: linear-gradient(180deg, rgba(13, 13, 18, 0.6), rgba(6, 6, 10, 0.7));
+  backdrop-filter: blur(24px);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: clamp(20px, 6vw, 48px);
+  display: grid;
+  gap: 32px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  color: rgba(237, 232, 245, 0.6);
+  font-size: 0.75rem;
+  margin-top: 10px;
+}
+
+.metaChip {
+  border: 1px solid rgba(141, 54, 213, 0.3);
+  background: rgba(141, 54, 213, 0.1);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.8;
 }
 
 .timerGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(12px, 3vw, 32px);
-  width: 100%;
+  gap: 20px;
 }
 
 .timerCard {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: clamp(16px, 4vw, 32px);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
-  padding: clamp(32px, 8vw, 80px) 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  padding: clamp(24px, 5vw, 64px) 12px;
   text-align: center;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.timerCard::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.5), transparent);
 }
 
 .timerValue {
   display: block;
   margin: 0;
-  line-height: 0.85;
+  line-height: 0.9;
   font-family: "JetBrains Mono", "Consolas", monospace;
-  font-size: clamp(4rem, 16vw, 12rem);
+  font-size: clamp(3.5rem, 14vw, 9.5rem);
   font-weight: 800;
   color: #ffffff;
-  text-shadow: 0 0 40px rgba(167, 139, 250, 0.4);
+  text-shadow: 0 0 30px rgba(167, 139, 250, 0.3);
 }
 
 .timerLabel {
-  margin-top: clamp(12px, 2vw, 24px);
-  font-size: clamp(0.6rem, 1.2vw, 0.9rem);
+  margin-top: 16px;
+  font-size: clamp(0.65rem, 1.5vw, 0.9rem);
   color: #bc84e7;
   text-transform: uppercase;
-  letter-spacing: clamp(0.15em, 0.5vw, 0.4em);
+  letter-spacing: 0.3em;
   font-weight: 700;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .message {
   margin: 0;
   text-align: center;
-  color: #a78bfa;
-  font-size: clamp(0.8rem, 2vw, 1.2rem);
-  font-weight: 700;
+  color: #bc84e7;
+  font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  text-shadow: 0 0 20px rgba(167, 139, 250, 0.3);
+  letter-spacing: 0.1em;
+  opacity: 0.9;
 }
 
-.statusFooter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-top: 20px;
-  opacity: 0.6;
+.scheduleGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.statusBadgeDot {
+.scheduleCard {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(10, 10, 14, 0.72);
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.scheduleLabel {
+  margin: 0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: rgba(237, 232, 245, 0.54);
+}
+
+.scheduleValue {
+  margin: 0;
+  font-size: clamp(0.75rem, 1.4vw, 0.8rem);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.actions {
   display: flex;
-  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.statusText {
-  font-size: 0.72rem;
+.button,
+.buttonGhost {
+  border-radius: 10px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  font-size: 0.8rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button {
+  color: #050509;
+  background: linear-gradient(180deg, #a78bfa, #8d36d5);
+  box-shadow: 0 10px 20px rgba(141, 54, 213, 0.36);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buttonGhost {
   color: #e4e4e7;
+  border-color: rgba(255, 255, 255, 0.17);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.statusBadgeDot span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
+.buttonGhost:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.statusOpen span { background: #10b981; box-shadow: 0 0 10px #10b981; }
-.statusScheduled span { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
-.statusClosed span { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
-.statusDisabled span { background: #71717a; }
-
-.snapshot {
-  font-size: 0.65rem;
-  letter-spacing: 0.05em;
-  color: rgba(237, 232, 245, 0.5);
+.inlineError {
+  margin: 0;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.13);
+  padding: 10px 12px;
+  text-align: center;
+  color: #fecaca;
+  font-size: 0.82rem;
 }
 
-@media (max-width: 640px) {
-  .minimalPanel {
-    gap: 40px;
-    padding: 10px;
-    min-height: calc(100vh - 120px);
+@media (max-width: 860px) {
+  .timerGrid {
+    gap: 9px;
+  }
+
+  .scheduleGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .panel {
+    border-radius: 20px;
+    padding: 24px 16px;
+    gap: 24px;
   }
 
   .timerGrid {
-    gap: 8px;
+    gap: 12px;
   }
 
   .timerCard {
-    padding: 32px 4px;
-    border-radius: 12px;
+    padding: 20px 8px;
+    border-radius: 16px;
   }
 
   .timerValue {
-    font-size: clamp(3.2rem, 18vw, 5rem);
+    font-size: clamp(2.8rem, 16vw, 4rem);
   }
 
   .timerLabel {
-    margin-top: 8px;
-    font-size: 0.5rem;
-    letter-spacing: 0.12em;
-  }
-
-  .brandTitle {
-    font-size: 0.65rem;
-    letter-spacing: 0.4em;
+    margin-top: 10px;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
   }
 }
