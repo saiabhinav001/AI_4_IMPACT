@@ -298,8 +298,8 @@
 
             // Wait 2 seconds before starting the countdown
             setTimeout(() => {
-                const DURATION_MS = 30 * 60 * 60 * 1000;
-                targetTime = Date.now() + DURATION_MS;
+                const TARGET_ISO = "2026-04-18T16:30:00+05:30";
+                targetTime = new Date(TARGET_ISO).getTime();
                 timerStarted = true;
                 
                 // Initial update
