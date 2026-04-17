@@ -12,24 +12,18 @@
     <!-- Local Styles -->
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Specific overrides for this version */
-        .hero-logo-header {
-            margin-bottom: 3rem;
-            animation: fadeInDown 1.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        
-        .hero-logo-header img {
-            width: 140px;
+        .header img {
+            width: 150px;
             height: auto;
-            filter: drop-shadow(0 0 30px rgba(141, 54, 213, 0.5));
+            filter: drop-shadow(0 0 40px rgba(141, 54, 213, 0.5));
+            margin-bottom: 2rem;
             transition: transform 0.3s;
         }
 
-        .hero-logo-header img:hover {
+        .header img:hover {
             transform: scale(1.1) rotate(5deg);
         }
-
-        /* Remove scanline and neon bar elements as requested */
+        
         .scanline { display: none !important; }
     </style>
 </head>
@@ -42,9 +36,9 @@
 
     <!-- Branding Header -->
     <div class="container">
-        <header class="header hero-logo-header">
+        <header class="header">
             <img src="hero-logo.png" alt="AI4 Impact Logo">
-            <h1 style="margin-top: 1.5rem;">AI 4 IMPACT</h1>
+            <h1>AI 4 IMPACT</h1>
             <p class="subtitle">RUNTIME_REMAINING</p>
         </header>
 
@@ -79,7 +73,7 @@
     <!-- Initialization Overlay -->
     <div id="overlay">
         <div style="margin-bottom: 2rem;">
-            <img src="hero-logo.png" alt="AI4 Impact Logo" style="height: 120px; filter: drop-shadow(0 0 40px rgba(141, 54, 213, 0.6));">
+            <img src="hero-logo.png" alt="AI Logo" style="height: 120px; filter: drop-shadow(0 0 50px rgba(141, 54, 213, 0.5));">
         </div>
         <button class="activate-btn" onclick="activateSystem()">
             [ BOOT_SEQUENCE ]
@@ -102,12 +96,9 @@
 
             setTimeout(() => {
                 overlay.style.display = 'none';
-                
-                // TARGET: Tomorrow April 18 at 4:30 PM (16:30) IST
                 const TARGET_ISO = "2026-04-18T16:30:00+05:30";
                 targetTime = new Date(TARGET_ISO).getTime();
                 timerStarted = true;
-                
                 updateTimer();
                 setInterval(updateTimer, 1000);
             }, 800);
@@ -115,21 +106,17 @@
 
         function updateTimer() {
             if (!timerStarted) return;
-
             const now = Date.now();
             const diff = targetTime - now;
-
             if (diff <= 0) {
                 document.getElementById('hours').innerText = '00';
                 document.getElementById('minutes').innerText = '00';
                 document.getElementById('seconds').innerText = '00';
                 return;
             }
-
             const h = Math.floor(diff / (1000 * 60 * 60));
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const s = Math.floor((diff % (1000 * 60)) / 1000);
-
             document.getElementById('hours').innerText = String(h).padStart(2, '0');
             document.getElementById('minutes').innerText = String(m).padStart(2, '0');
             document.getElementById('seconds').innerText = String(s).padStart(2, '0');

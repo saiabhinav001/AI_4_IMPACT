@@ -39,7 +39,6 @@
                 radial-gradient(circle at 100% 100%, rgba(0, 255, 255, 0.15) 0%, transparent 50%);
         }
 
-        /* Moving Grid Background */
         .grid-layers {
             position: fixed;
             inset: -100px;
@@ -72,51 +71,25 @@
             z-index: 10;
             width: 100%;
             max-width: 1400px;
-            padding: 4rem;
+            padding: 2rem;
         }
 
         .header {
-            margin-bottom: 6rem;
+            margin-bottom: 5rem;
             animation: fadeInDown 1.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem 2rem;
-            background: rgba(0, 255, 255, 0.05);
-            border: 1px solid rgba(0, 255, 255, 0.2);
-            border-radius: 9999px;
+        .header img {
+            width: 150px;
+            height: auto;
+            filter: drop-shadow(0 0 40px rgba(141, 54, 213, 0.5));
             margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            background: var(--neon-cyan);
-            border-radius: 50%;
-            box-shadow: 0 0 20px var(--neon-cyan);
-            animation: blink 2s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-        }
-
-        .status-text {
-            font-size: 0.875rem;
-            font-weight: 900;
-            letter-spacing: 0.5em;
-            color: var(--neon-cyan);
-            text-transform: uppercase;
+            transition: transform 0.3s;
         }
 
         h1 {
             font-family: 'Syncopate', sans-serif;
-            font-size: clamp(3rem, 8vw, 7rem);
+            font-size: clamp(3rem, 8vw, 6.5rem);
             font-weight: 700;
             letter-spacing: -0.02em;
             text-transform: uppercase;
@@ -125,19 +98,16 @@
             background: linear-gradient(to bottom, #fff, #999);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            position: relative;
         }
 
         .subtitle {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             color: var(--neon-purple);
-            letter-spacing: 1em;
+            letter-spacing: 0.8em;
             text-transform: uppercase;
             font-weight: 900;
-            margin-left: 1em; /* Offset for letter spacing alignment */
         }
 
-        /* Massive Timer Grid */
         .timer-display {
             display: flex;
             gap: 3rem;
@@ -164,28 +134,9 @@
             box-shadow: 0 40px 100px rgba(0,0,0,0.5);
         }
 
-        .time-box::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(45deg, transparent, rgba(141, 54, 213, 0.1), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.8s;
-        }
-
-        .time-group:hover .time-box {
-            transform: translateY(-20px) scale(1.02);
-            border-color: rgba(0, 255, 255, 0.4);
-            box-shadow: 0 60px 120px rgba(141, 54, 213, 0.2);
-        }
-
-        .time-group:hover .time-box::before {
-            transform: translateX(100%);
-        }
-
         .time-value {
             font-family: 'JetBrains Mono', monospace;
-            font-size: clamp(5rem, 12vw, 11rem);
+            font-size: clamp(4rem, 11vw, 10rem);
             font-weight: 700;
             color: #fff;
             line-height: 1;
@@ -199,13 +150,13 @@
             font-size: 1rem;
             font-weight: 900;
             color: var(--neon-purple);
-            letter-spacing: 0.6em;
+            letter-spacing: 0.5em;
             text-transform: uppercase;
             opacity: 0.8;
         }
 
         .colon {
-            font-size: 8rem;
+            font-size: 7rem;
             font-weight: 100;
             color: var(--border);
             margin-bottom: 2rem;
@@ -218,7 +169,6 @@
             50% { opacity: 0.8; }
         }
 
-        /* Overlay Styles */
         #overlay {
             position: fixed;
             inset: 0;
@@ -236,17 +186,15 @@
             background: transparent;
             border: 2px solid var(--neon-cyan);
             color: var(--neon-cyan);
-            padding: 2rem 4rem;
-            border-radius: 20px;
+            padding: 1.5rem 3.5rem;
+            border-radius: 16px;
             font-family: 'JetBrains Mono';
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.4em;
+            letter-spacing: 0.3em;
             cursor: pointer;
             transition: all 0.4s;
-            font-size: 1rem;
-            position: relative;
-            overflow: hidden;
+            font-size: 0.875rem;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
         }
 
@@ -254,25 +202,6 @@
             background: var(--neon-cyan);
             color: #000;
             box-shadow: 0 0 60px var(--neon-cyan);
-            transform: scale(1.05);
-        }
-
-        /* Scanline Effect */
-        .scanline {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: rgba(0, 255, 255, 0.1);
-            z-index: 100;
-            pointer-events: none;
-            animation: scan 8s linear infinite;
-        }
-
-        @keyframes scan {
-            0% { transform: translateY(-100vh); }
-            100% { transform: translateY(100vh); }
         }
 
         @keyframes fadeInDown {
@@ -281,10 +210,11 @@
         }
 
         @media (max-width: 1024px) {
-            .timer-display { gap: 1rem; }
-            .time-box { padding: 2rem 1rem; min-width: 120px; }
-            .colon { font-size: 4rem; margin-bottom: 1rem; }
+            .timer-display { gap: 1rem; flex-wrap: wrap; }
+            .time-box { padding: 2.5rem 1rem; min-width: 140px; }
+            .colon { display: none; }
             .container { padding: 1.5rem; }
+            .header img { width: 100px; }
         }
     </style>
 </head>
@@ -294,14 +224,9 @@
         <div class="grid-pattern"></div>
     </div>
     
-    <div class="scanline"></div>
-
     <div class="container">
         <header class="header">
-            <div class="status-badge">
-                <div class="status-dot"></div>
-                <div class="status-text">SYSTEM_ACTIVE</div>
-            </div>
+            <img src="/site-icon.png" alt="AI4 Impact Logo">
             <h1>AI 4 IMPACT</h1>
             <p class="subtitle">RUNTIME_REMAINING</p>
         </header>
@@ -336,9 +261,8 @@
 
     <!-- Initialization Overlay -->
     <div id="overlay">
-        <div class="status-badge">
-            <div class="status-dot" style="background: #FFF; box-shadow: 0 0 20px #FFF;"></div>
-            <div class="status-text" style="color: #FFF;">STANDBY_MODE</div>
+        <div style="margin-bottom: 2rem;">
+            <img src="/site-icon.png" alt="AI Logo" style="height: 120px; filter: drop-shadow(0 0 50px rgba(141, 54, 213, 0.5));">
         </div>
         <button class="activate-btn" onclick="activateSystem()">
             [ BOOT_SEQUENCE ]
@@ -351,47 +275,37 @@
         let timerStarted = false;
 
         function activateSystem() {
-            // Fullscreen attempt
             const doc = document.documentElement;
             if (doc.requestFullscreen) doc.requestFullscreen();
             else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-            // Aesthetic transition
             const overlay = document.getElementById('overlay');
             overlay.style.opacity = '0';
             overlay.style.pointerEvents = 'none';
 
-            // Initialization sound/delay simulation
             setTimeout(() => {
                 overlay.style.display = 'none';
-                
-                // Set fixed target to tomorrow April 18 at 4:30 PM (16:30) IST
                 const TARGET_ISO = "2026-04-18T16:30:00+05:30";
                 targetTime = new Date(TARGET_ISO).getTime();
                 timerStarted = true;
-                
                 updateTimer();
                 setInterval(updateTimer, 1000);
-            }, 1000);
+            }, 800);
         }
 
         function updateTimer() {
             if (!timerStarted) return;
-
             const now = Date.now();
             const diff = targetTime - now;
-
             if (diff <= 0) {
                 document.getElementById('hours').innerText = '00';
                 document.getElementById('minutes').innerText = '00';
                 document.getElementById('seconds').innerText = '00';
                 return;
             }
-
             const h = Math.floor(diff / (1000 * 60 * 60));
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const s = Math.floor((diff % (1000 * 60)) / 1000);
-
             document.getElementById('hours').innerText = String(h).padStart(2, '0');
             document.getElementById('minutes').innerText = String(m).padStart(2, '0');
             document.getElementById('seconds').innerText = String(s).padStart(2, '0');
