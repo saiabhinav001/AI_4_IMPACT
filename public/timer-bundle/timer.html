@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 4 IMPACT | RUNTIME_CLOCK</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;400;900&family=JetBrains+Mono:wght@700&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+    <!-- Local Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- 3D Background -->
+    <div class="grid-layers">
+        <div class="grid-pattern"></div>
+    </div>
+    
+    <!-- Visual Effects -->
+    <div class="scanline"></div>
+
+    <!-- Branding -->
+    <div class="brand-logo">
+        <img src="logo.svg" alt="AI Logo">
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1>AI 4 IMPACT</h1>
+            <p class="subtitle">RUNTIME_REMAINING</p>
+        </header>
+
+        <main class="timer-display">
+            <div class="time-group">
+                <div class="time-box">
+                    <span class="time-value" id="hours">--</span>
+                    <span class="time-label">HOURS</span>
+                </div>
+            </div>
+            
+            <div class="colon">:</div>
+
+            <div class="time-group">
+                <div class="time-box">
+                    <span class="time-value" id="minutes">--</span>
+                    <span class="time-label">MINS</span>
+                </div>
+            </div>
+
+            <div class="colon">:</div>
+
+            <div class="time-group">
+                <div class="time-box">
+                    <span class="time-value" id="seconds">--</span>
+                    <span class="time-label">SECS</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Initialization Overlay -->
+    <div id="overlay">
+        <div class="brand-logo" style="position: static; margin-bottom: 2rem;">
+            <img src="logo.svg" alt="AI Logo" style="height: 60px;">
+        </div>
+        <button class="activate-btn" onclick="activateSystem()">
+            [ BOOT_SEQUENCE ]
+        </button>
+        <p style="font-size: 0.75rem; color: rgba(255,255,255,0.3); letter-spacing: 0.2em;">PRESS TO INITIALIZE REAL-TIME TRACKING</p>
+    </div>
+
+    <script>
+        let targetTime = null;
+        let timerStarted = false;
+
+        function activateSystem() {
+            // Fullscreen attempt
+            const doc = document.documentElement;
+            if (doc.requestFullscreen) doc.requestFullscreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+
+            // Aesthetic transition
+            const overlay = document.getElementById('overlay');
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+
+            // Initialization sound/delay simulation
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                
+                // TARGET: Tomorrow April 18 at 4:30 PM (16:30) IST
+                const TARGET_ISO = "2026-04-18T16:30:00+05:30";
+                targetTime = new Date(TARGET_ISO).getTime();
+                timerStarted = true;
+                
+                updateTimer();
+                setInterval(updateTimer, 1000);
+            }, 800);
+        }
+
+        function updateTimer() {
+            if (!timerStarted) return;
+
+            const now = Date.now();
+            const diff = targetTime - now;
+
+            if (diff <= 0) {
+                document.getElementById('hours').innerText = '00';
+                document.getElementById('minutes').innerText = '00';
+                document.getElementById('seconds').innerText = '00';
+                return;
+            }
+
+            const h = Math.floor(diff / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('hours').innerText = String(h).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(m).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(s).padStart(2, '0');
+        }
+    </script>
+</body>
+
+</html>
