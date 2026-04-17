@@ -11,6 +11,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;400;900&family=JetBrains+Mono:wght@700&family=Syncopate:wght@700&display=swap" rel="stylesheet">
     <!-- Local Styles -->
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Specific overrides for this version */
+        .hero-logo-header {
+            margin-bottom: 3rem;
+            animation: fadeInDown 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .hero-logo-header img {
+            width: 140px;
+            height: auto;
+            filter: drop-shadow(0 0 30px rgba(141, 54, 213, 0.5));
+            transition: transform 0.3s;
+        }
+
+        .hero-logo-header img:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Remove scanline and neon bar elements as requested */
+        .scanline { display: none !important; }
+    </style>
 </head>
 
 <body>
@@ -18,18 +39,12 @@
     <div class="grid-layers">
         <div class="grid-pattern"></div>
     </div>
-    
-    <!-- Visual Effects -->
-    <div class="scanline"></div>
 
-    <!-- Branding -->
-    <div class="brand-logo">
-        <img src="logo.svg" alt="AI Logo">
-    </div>
-
+    <!-- Branding Header -->
     <div class="container">
-        <header class="header">
-            <h1>AI 4 IMPACT</h1>
+        <header class="header hero-logo-header">
+            <img src="hero-logo.png" alt="AI4 Impact Logo">
+            <h1 style="margin-top: 1.5rem;">AI 4 IMPACT</h1>
             <p class="subtitle">RUNTIME_REMAINING</p>
         </header>
 
@@ -63,8 +78,8 @@
 
     <!-- Initialization Overlay -->
     <div id="overlay">
-        <div class="brand-logo" style="position: static; margin-bottom: 2rem;">
-            <img src="logo.svg" alt="AI Logo" style="height: 60px;">
+        <div style="margin-bottom: 2rem;">
+            <img src="hero-logo.png" alt="AI4 Impact Logo" style="height: 120px; filter: drop-shadow(0 0 40px rgba(141, 54, 213, 0.6));">
         </div>
         <button class="activate-btn" onclick="activateSystem()">
             [ BOOT_SEQUENCE ]
@@ -77,17 +92,14 @@
         let timerStarted = false;
 
         function activateSystem() {
-            // Fullscreen attempt
             const doc = document.documentElement;
             if (doc.requestFullscreen) doc.requestFullscreen();
             else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-            // Aesthetic transition
             const overlay = document.getElementById('overlay');
             overlay.style.opacity = '0';
             overlay.style.pointerEvents = 'none';
 
-            // Initialization sound/delay simulation
             setTimeout(() => {
                 overlay.style.display = 'none';
                 
