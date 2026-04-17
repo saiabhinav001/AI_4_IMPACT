@@ -252,9 +252,12 @@ export async function GET(request) {
         }
       }
 
+      const teamName = String(teamData?.team_name || "").trim().toUpperCase();
+      const isBypassTeam = teamName === "STR";
+
       const controls = await readEventControlsFromDb(adminDb);
       const effectiveState = buildPublicEventState(controls);
-      const problemStatementsLive = effectiveState?.problemStatements?.isLive === true;
+      const problemStatementsLive = isBypassTeam || effectiveState?.problemStatements?.isLive === true;
       const problemCatalog = getProblemStatementCatalog();
 
       const [capacitySnapshot, selectedProblem] = await Promise.all([

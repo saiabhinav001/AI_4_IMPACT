@@ -1,0 +1,196 @@
+﻿Listing all hackathon registrations to find 'STR'...
+Found Team ID: 3bDUMUT42QkcDwhQsBzo
+Data: {
+  "team_id": "3bDUMUT42QkcDwhQsBzo",
+  "team_name": "Pashupatastra Devs",
+  "team_name_normalized": "pashupatastra devs",
+  "college": "Neil Gogte Institute of technology",
+  "state": "Telangana",
+  "team_size": 4,
+  "member_ids": [
+    "h7mD5CXDdTtifKFrNR62",
+    "UxOKjI60SIaDFKbRAY1L",
+    "b2oIC5X3to05tEOVDRK2",
+    "gClK7u9qtQkBoCtMswmA"
+  ],
+  "members": [
+    {
+      "name": "T.JAYA SURYA REDDY",
+      "email": "tjsuryareddy@gmail.com",
+      "phone": "9505989004",
+      "roll_number": "245324733456",
+      "state": "Telangana",
+      "branch": "CSE",
+      "department": "CSE",
+      "branch_selection": "CSE",
+      "year_of_study": "2nd year",
+      "yearOfStudy": "2nd year"
+    },
+    {
+      "name": "Kola Suhaas",
+      "email": "suhaaskola@gmail.com",
+      "phone": "9346552833",
+      "roll_number": "245324733036",
+      "state": "Telangana",
+      "branch": "CSE",
+      "department": "CSE",
+      "branch_selection": "CSE",
+      "year_of_study": "2nd year",
+      "yearOfStudy": "2nd year"
+    },
+    {
+      "name": "SARDE RAGHAVA MANIKANTA",
+      "email": "sarderaghavamanikant1@gmail.com",
+      "phone": "7780621298",
+      "roll_number": "245324748114",
+      "state": "Telangana",
+      "branch": "CSM",
+      "department": "CSM",
+      "branch_selection": "CSM",
+      "year_of_study": "2nd year",
+      "yearOfStudy": "2nd year"
+    },
+    {
+      "name": "Vanukuri Rakshith Reddy",
+      "email": "rakhith06@gmail.com",
+      "phone": "9381805225",
+      "roll_number": "245324733461",
+      "state": "Telangana",
+      "branch": "CSE",
+      "department": "CSE",
+      "branch_selection": "CSE",
+      "year_of_study": "2nd year",
+      "yearOfStudy": "2nd year"
+    }
+  ],
+  "transaction_id": "SHPEPZnuDqVAsalZvrF3",
+  "created_at": {
+    "_seconds": 1776099955,
+    "_nanoseconds": 270000000
+  },
+  "team_access_id": "ai4i036",
+  "access_credentials": {
+    "leader_email": "tjsuryareddy@gmail.com",
+    "updated_at": {
+      "_seconds": 1776191663,
+      "_nanoseconds": 179000000
+    },
+    "leader_name": "T.JAYA SURYA REDDY",
+    "generated_at": {
+      "_seconds": 1776191663,
+      "_nanoseconds": 179000000
+    },
+    "password_version": 1,
+    "leader_phone": "9505989004",
+    "auth_uid": "BsvB3zynsyRskz8j7n60g5HBrNR2",
+    "team_id": "ai4i036"
+  },
+  "team_lead_auth_uid": "BsvB3zynsyRskz8j7n60g5HBrNR2",
+  "payment_verified": true
+}
+Found Team ID: 6nHFfsKLt3I2PlYMjmv2
+Data: {
+  "team_id": "6nHFfsKLt3I2PlYMjmv2",
+  "team_name": "Str",
+  "team_name_normalized": "str",
+  "college": "CBIT",
+  "state": "Assam",
+  "team_size": 2,
+  "member_ids": [
+    "NgSkoCvEKsYVkXXHywW0",
+    "Z5gSza9pYE8zts3KtMxQ"
+  ],
+  "members": [
+    {
+      "name": "Gangola Manikanta",
+      "email": "gangolamanikanta@gmail.com",
+      "phone": "8247364575",
+      "roll_number": "fdaklj",
+      "state": "Assam",
+      "branch": "CSM",
+      "department": "CSM",
+      "branch_selection": "CSM",
+      "year_of_study": "2nd year",
+      "yearOfStudy": "2nd year"
+    },
+    {
+      "name": "Gangola Manikanta",
+      "email": "cevomov751@azucore.com",
+      "phone": "8247364574",
+      "roll_number": "fdas",
+      "state": "Assam",
+      "branch": "AIDS",
+      "department": "AIDS",
+      "branch_selection": "AIDS",
+      "year_of_study": "4th year",
+      "yearOfStudy": "4th year"
+    }
+  ],
+  "transaction_id": "6hlDdWttA5V4WFjvaxVe",
+  "created_at": {
+    "_seconds": 1776227186,
+    "_nanoseconds": 642000000
+  },
+  "team_access_id": "ai4i042",
+  "team_lead_auth_uid": "l1ox8n9IEPTcWrBkOxxQRtQyFdF3",
+  "payment_verified": true,
+  "access_credentials": {
+    "leader_email": "gangolamanikanta@gmail.com",
+    "leader_name": "Gangola Manikanta",
+    "generated_at": {
+      "_seconds": 1776227223,
+      "_nanoseconds": 769000000
+    },
+    "password_version": 1,
+    "leader_phone": "8247364575",
+    "auth_uid": "l1ox8n9IEPTcWrBkOxxQRtQyFdF3",
+    "team_id": "ai4i042",
+    "updated_at": {
+      "_seconds": 1776227228,
+      "_nanoseconds": 820000000
+    },
+    "email_delivery": {
+      "collection": "mail",
+      "last_decision_reason": "INITIAL_SEND",
+      "request_count": 1,
+      "last_request_force": false,
+      "last_state_before_request": "UNSENT",
+      "requested_by": "bmikDHsWY0VNZN6BKLu35eu1D293",
+      "last_request_source": "single",
+      "queue_doc_id": "UBPC9XrmH8UHGSLI6YPv",
+      "retry_count": 0,
+      "recipient": "gangolamanikanta@gmail.com",
+      "state": "PENDING",
+      "request_id": "02c64604-70b1-4de2-9286-273ca54e617f",
+      "requested_at": {
+        "_seconds": 1776227228,
+        "_nanoseconds": 820000000
+      }
+    }
+  },
+  "updated_at": {
+    "_seconds": 1776357338,
+    "_nanoseconds": 357000000
+  },
+  "problem_statement_selection": {
+    "locked": true,
+    "locked_by_uid": "l1ox8n9IEPTcWrBkOxxQRtQyFdF3",
+    "locked_by_email": "gangolamanikanta@gmail.com",
+    "source": "TEAM_LEAD",
+    "problem_id": "PS_DEMO_01",
+    "problem_title": "Demo Problem Statement 01",
+    "problem_description": "Replace this placeholder with the final published problem statement content.",
+    "selected_count_at_selection": 2,
+    "max_teams_allowed_at_selection": 5,
+    "selected_by_uid": "l1ox8n9IEPTcWrBkOxxQRtQyFdF3",
+    "selected_by_email": "gangolamanikanta@gmail.com",
+    "selected_at": {
+      "_seconds": 1776357338,
+      "_nanoseconds": 357000000
+    },
+    "locked_at": {
+      "_seconds": 1776357338,
+      "_nanoseconds": 357000000
+    }
+  }
+}
