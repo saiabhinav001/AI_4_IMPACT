@@ -334,6 +334,10 @@ export default function EventControlsPanel({
             label="Problem Statements"
             status={effectiveState?.problemStatements?.status}
           />
+          <StatusPill
+            label="Timer"
+            status={effectiveState?.timer?.status}
+          />
           <StatusPill label="Freeze" status={effectiveState?.freeze?.status} />
           <span className={styles.eventStatusNow}>
             <CalendarClock size={14} aria-hidden="true" />
@@ -383,6 +387,19 @@ export default function EventControlsPanel({
               onChangeDraft?.({
                 ...(draftControls || {}),
                 problemStatements: nextProblemStatements,
+              })
+            }
+          />
+
+          <WindowEditor
+            title="Hackathon Timer"
+            description="Configure the public runtime countdown page."
+            value={draftControls?.timer || {}}
+            timezoneLabel={resolvedTimezoneLabel}
+            onChange={(nextTimer) =>
+              onChangeDraft?.({
+                ...(draftControls || {}),
+                timer: nextTimer,
               })
             }
           />

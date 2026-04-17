@@ -64,7 +64,7 @@ export default function EventControlsQuickAccess({
           </p>
           <h2 className={styles.eventControlsQuickTitle}>Schedule Settings</h2>
           <p className={styles.eventControlsQuickSubtitle}>
-            Open once to manage registration, problem release, and freeze timing.
+            Open once to manage registration, problem release, timer, and freeze timing.
           </p>
         </div>
 
@@ -99,6 +99,7 @@ export default function EventControlsQuickAccess({
             label="Problem Statements"
             status={effectiveState?.problemStatements?.status}
           />
+          <StatusPill label="Timer" status={effectiveState?.timer?.status} />
           <StatusPill label="Freeze" status={effectiveState?.freeze?.status} />
         </div>
       ) : (

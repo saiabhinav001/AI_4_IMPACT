@@ -99,7 +99,7 @@ export default function EventControlsWorkspaceModal({
             </p>
             <h2 className={styles.eventControlsModalTitle}>Schedule Settings</h2>
             <p className={styles.eventControlsModalSubtitle}>
-              Set timing for registration, problem release, and freeze.
+              Set timing for registration, problem release, timer, and freeze.
             </p>
             <div className={styles.eventControlsModalMeta}>
               <span className={styles.eventStatusNow}>

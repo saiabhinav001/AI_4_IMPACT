@@ -1,0 +1,282 @@
+.page {
+  min-height: 100vh;
+  padding: clamp(92px, 12vw, 124px) 16px 40px;
+  position: relative;
+  overflow: hidden;
+  color: #ede8f5;
+  background:
+    radial-gradient(1100px 620px at 12% 0%, rgba(141, 54, 213, 0.2), transparent 70%),
+    radial-gradient(900px 540px at 90% 100%, rgba(0, 255, 255, 0.12), transparent 74%),
+    #07020e;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at center, black 28%, transparent 82%);
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  text-align: center;
+  display: grid;
+  gap: 10px;
+}
+
+.statusBadge {
+  margin: 0 auto;
+  width: max-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.statusOpen {
+  color: #86efac;
+  border-color: rgba(52, 211, 153, 0.52);
+  background: rgba(52, 211, 153, 0.16);
+}
+
+.statusScheduled {
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.52);
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.statusClosed {
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.52);
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.statusDisabled {
+  color: #d4d4d8;
+  border-color: rgba(113, 113, 122, 0.58);
+  background: rgba(113, 113, 122, 0.18);
+}
+
+.title {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  font-size: clamp(2rem, 6vw, 4.8rem);
+  margin: 0;
+}
+
+.subtitle {
+  margin: 0;
+  color: #9feaf4;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  font-size: clamp(0.66rem, 1.7vw, 0.82rem);
+  font-weight: 700;
+}
+
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(13, 13, 18, 0.78), rgba(6, 6, 10, 0.84));
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 20px 42px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: clamp(16px, 4vw, 28px);
+  display: grid;
+  gap: 18px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  color: rgba(237, 232, 245, 0.8);
+  font-size: 0.8rem;
+}
+
+.metaChip {
+  border: 1px solid rgba(141, 54, 213, 0.45);
+  background: rgba(141, 54, 213, 0.15);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.timerGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.timerCard {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01));
+  padding: 16px 10px;
+  text-align: center;
+}
+
+.timerValue {
+  display: block;
+  margin: 0;
+  line-height: 1;
+  font-family: "JetBrains Mono", "Consolas", monospace;
+  font-size: clamp(2.2rem, 7vw, 4.4rem);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.timerLabel {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: #bc84e7;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-weight: 700;
+}
+
+.message {
+  margin: 0;
+  text-align: center;
+  color: rgba(237, 232, 245, 0.92);
+  font-size: clamp(0.84rem, 1.8vw, 1rem);
+}
+
+.scheduleGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.scheduleCard {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(10, 10, 14, 0.72);
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.scheduleLabel {
+  margin: 0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: rgba(237, 232, 245, 0.54);
+}
+
+.scheduleValue {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.button,
+.buttonGhost {
+  border-radius: 10px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button {
+  color: #050509;
+  background: linear-gradient(180deg, #a78bfa, #8d36d5);
+  box-shadow: 0 10px 20px rgba(141, 54, 213, 0.36);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buttonGhost {
+  color: #e4e4e7;
+  border-color: rgba(255, 255, 255, 0.17);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.buttonGhost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.inlineError {
+  margin: 0;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.13);
+  padding: 10px 12px;
+  text-align: center;
+  color: #fecaca;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 860px) {
+  .timerGrid {
+    gap: 9px;
+  }
+
+  .scheduleGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .panel {
+    border-radius: 16px;
+  }
+
+  .timerCard {
+    padding: 14px 8px;
+  }
+
+  .timerLabel {
+    letter-spacing: 0.12em;
+  }
+}

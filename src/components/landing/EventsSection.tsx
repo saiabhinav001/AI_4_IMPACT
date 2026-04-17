@@ -19,6 +19,14 @@ const events = [
     specs: ["JUDGE_REVIEW", "FEASIBILITY_SCORE", "IMPACT_METRICS"],
     icon: <Terminal size={16} />,
   },
+  {
+    title: "Runtime Timer",
+    detail: "Track the official hackathon countdown in real time from the public timer board.",
+    type: "LIVE_MONITOR",
+    specs: ["LIVE_CLOCK", "ADMIN_SYNC", "PUBLIC_VIEW"],
+    icon: <Cpu size={16} />,
+    href: "/timer",
+  },
 ];
 
 function EventCard({
@@ -92,6 +100,14 @@ function EventCard({
                 {spec}
               </div>
             ))}
+              {event.href ? (
+                <a
+                  href={event.href}
+                  className="mt-1 inline-flex items-center rounded-md border border-[#8D36D5]/40 bg-[#8D36D5]/10 px-3 py-1 text-[9px] font-black tracking-[0.2em] text-[#d7b5f4] transition-all hover:border-[#8D36D5] hover:bg-[#8D36D5]/20"
+                >
+                  OPEN_TIMER_BOARD
+                </a>
+              ) : null}
             <div className="mt-2 hidden items-center gap-2 lg:flex">
               <span className="h-1 w-1 animate-pulse rounded-full bg-[#8D36D5]" />
               <span className="text-[8px] font-black uppercase tracking-[0.4em] text-[#8D36D5]/50">LINK_ESTABLISHED</span>
