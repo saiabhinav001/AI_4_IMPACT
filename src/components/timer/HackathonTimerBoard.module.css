@@ -23,260 +23,161 @@
   pointer-events: none;
 }
 
-.container {
+.minimalPanel {
   position: relative;
   z-index: 1;
-  width: min(1080px, 100%);
+  width: min(1200px, 100%);
   margin: 0 auto;
-  display: grid;
-  gap: 18px;
-}
-
-.header {
-  text-align: center;
-  display: grid;
-  gap: 10px;
-}
-
-.statusBadge {
-  margin: 0 auto;
-  width: max-content;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-}
-
-.statusOpen {
-  color: #86efac;
-  border-color: rgba(52, 211, 153, 0.52);
-  background: rgba(52, 211, 153, 0.16);
-}
-
-.statusScheduled {
-  color: #fde68a;
-  border-color: rgba(245, 158, 11, 0.52);
-  background: rgba(245, 158, 11, 0.16);
-}
-
-.statusClosed {
-  color: #fecaca;
-  border-color: rgba(239, 68, 68, 0.52);
-  background: rgba(239, 68, 68, 0.16);
-}
-
-.statusDisabled {
-  color: #d4d4d8;
-  border-color: rgba(113, 113, 122, 0.58);
-  background: rgba(113, 113, 122, 0.18);
-}
-
-.title {
-  font-family: var(--font-heading);
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 0.9;
-  font-size: clamp(2rem, 6vw, 4.8rem);
-  margin: 0;
-}
-
-.subtitle {
-  margin: 0;
-  color: #9feaf4;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  font-size: clamp(0.66rem, 1.7vw, 0.82rem);
-  font-weight: 700;
-}
-
-.panel {
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(13, 13, 18, 0.78), rgba(6, 6, 10, 0.84));
-  backdrop-filter: blur(20px);
-  box-shadow:
-    0 20px 42px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  padding: clamp(16px, 4vw, 28px);
-  display: grid;
-  gap: 18px;
-}
-
-.metaRow {
+  min-height: calc(100vh - 200px);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  gap: 8px 14px;
-  color: rgba(237, 232, 245, 0.8);
-  font-size: 0.8rem;
+  align-items: center;
+  gap: clamp(40px, 8vw, 80px);
+  padding: 20px;
 }
 
-.metaChip {
-  border: 1px solid rgba(141, 54, 213, 0.45);
-  background: rgba(141, 54, 213, 0.15);
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.branding {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brandTitle {
+  font-family: var(--font-heading);
+  font-size: clamp(0.7rem, 2vw, 1rem);
+  letter-spacing: 0.6em;
+  color: rgba(167, 139, 250, 0.8);
+  font-weight: 800;
+  margin-left: 0.6em; /* Optical centering for letter spacing */
+}
+
+.brandSubtitle {
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  color: rgba(237, 232, 245, 0.4);
+  font-weight: 600;
 }
 
 .timerGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: clamp(12px, 3vw, 32px);
+  width: 100%;
 }
 
 .timerCard {
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01));
-  padding: 16px 10px;
+  border-radius: clamp(16px, 4vw, 32px);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  padding: clamp(32px, 8vw, 80px) 10px;
   text-align: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
 .timerValue {
   display: block;
   margin: 0;
-  line-height: 1;
+  line-height: 0.85;
   font-family: "JetBrains Mono", "Consolas", monospace;
-  font-size: clamp(2.2rem, 7vw, 4.4rem);
-  font-weight: 700;
+  font-size: clamp(4rem, 16vw, 12rem);
+  font-weight: 800;
   color: #ffffff;
+  text-shadow: 0 0 40px rgba(167, 139, 250, 0.4);
 }
 
 .timerLabel {
-  margin-top: 8px;
-  font-size: 0.7rem;
+  margin-top: clamp(12px, 2vw, 24px);
+  font-size: clamp(0.6rem, 1.2vw, 0.9rem);
   color: #bc84e7;
   text-transform: uppercase;
-  letter-spacing: 0.24em;
+  letter-spacing: clamp(0.15em, 0.5vw, 0.4em);
   font-weight: 700;
+  opacity: 0.7;
 }
 
 .message {
   margin: 0;
   text-align: center;
-  color: rgba(237, 232, 245, 0.92);
-  font-size: clamp(0.84rem, 1.8vw, 1rem);
-}
-
-.scheduleGrid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.scheduleCard {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  background: rgba(10, 10, 14, 0.72);
-  padding: 10px 12px;
-  display: grid;
-  gap: 6px;
-}
-
-.scheduleLabel {
-  margin: 0;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  color: rgba(237, 232, 245, 0.54);
-}
-
-.scheduleValue {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.actions {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.button,
-.buttonGhost {
-  border-radius: 10px;
-  border: 1px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px 14px;
-  font-size: 0.8rem;
+  color: #a78bfa;
+  font-size: clamp(0.8rem, 2vw, 1.2rem);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
-  cursor: pointer;
-  text-decoration: none;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 20px rgba(167, 139, 250, 0.3);
 }
 
-.button {
-  color: #050509;
-  background: linear-gradient(180deg, #a78bfa, #8d36d5);
-  box-shadow: 0 10px 20px rgba(141, 54, 213, 0.36);
-}
-
-.button:hover {
-  transform: translateY(-1px);
-}
-
-.button:disabled {
+.statusFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
   opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
 }
 
-.buttonGhost {
+.statusBadgeDot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusText {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: #e4e4e7;
-  border-color: rgba(255, 255, 255, 0.17);
-  background: rgba(255, 255, 255, 0.05);
 }
 
-.buttonGhost:hover {
-  background: rgba(255, 255, 255, 0.1);
+.statusBadgeDot span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
-.inlineError {
-  margin: 0;
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  border-radius: 10px;
-  background: rgba(239, 68, 68, 0.13);
-  padding: 10px 12px;
-  text-align: center;
-  color: #fecaca;
-  font-size: 0.82rem;
+.statusOpen span { background: #10b981; box-shadow: 0 0 10px #10b981; }
+.statusScheduled span { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+.statusClosed span { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+.statusDisabled span { background: #71717a; }
+
+.snapshot {
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  color: rgba(237, 232, 245, 0.5);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 640px) {
+  .minimalPanel {
+    gap: 40px;
+    padding: 10px;
+    min-height: calc(100vh - 120px);
+  }
+
   .timerGrid {
-    gap: 9px;
-  }
-
-  .scheduleGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 560px) {
-  .panel {
-    border-radius: 16px;
+    gap: 8px;
   }
 
   .timerCard {
-    padding: 14px 8px;
+    padding: 32px 4px;
+    border-radius: 12px;
+  }
+
+  .timerValue {
+    font-size: clamp(3.2rem, 18vw, 5rem);
   }
 
   .timerLabel {
+    margin-top: 8px;
+    font-size: 0.5rem;
     letter-spacing: 0.12em;
+  }
+
+  .brandTitle {
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
   }
 }

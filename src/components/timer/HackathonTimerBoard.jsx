@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, RefreshCw } from "lucide-react";
+import { Info } from "lucide-react";
 import { toRuntimeApiUrl } from "../../../lib/api-base";
 import styles from "./HackathonTimerBoard.module.css";
 
@@ -155,72 +155,39 @@ export default function HackathonTimerBoard() {
 
   return (
     <main className={styles.page}>
-      <div className={styles.container}>
-        <header className={styles.header}>
-          <span className={`${styles.statusBadge} ${statusClassName(timerStatus)}`}>
-            Hackathon Timer: {timerLabel}
-          </span>
-          <h1 className={styles.title}>AI 4 Impact Runtime</h1>
-          <p className={styles.subtitle}>System Countdown Board</p>
-        </header>
+      <section className={styles.minimalPanel} aria-live="polite">
+        {error ? <p className={styles.inlineError}>{error}</p> : null}
 
-        <section className={styles.panel} aria-live="polite">
-          {error ? <p className={styles.inlineError}>{error}</p> : null}
+        <div className={styles.branding}>
+          <span className={styles.brandTitle}>AI 4 IMPACT</span>
+          <span className={styles.brandSubtitle}>RUNTIME MONITOR</span>
+        </div>
 
-          <div className={styles.metaRow}>
-            <span className={styles.metaChip}>Public Page: /timer</span>
-            <span className={styles.metaChip}>Timezone: IST (Asia/Kolkata)</span>
-            <span className={styles.metaChip}>Snapshot: {toIstDateLabel(eventState?.now)}</span>
+        <div className={styles.timerGrid}>
+          <article className={styles.timerCard}>
+            <p className={styles.timerValue}>{remaining.hours}</p>
+            <p className={styles.timerLabel}>Hours</p>
+          </article>
+          <article className={styles.timerCard}>
+            <p className={styles.timerValue}>{remaining.minutes}</p>
+            <p className={styles.timerLabel}>Minutes</p>
+          </article>
+          <article className={styles.timerCard}>
+            <p className={styles.timerValue}>{remaining.seconds}</p>
+            <p className={styles.timerLabel}>Seconds</p>
+          </article>
+        </div>
+
+        <p className={styles.message}>{helperMessage}</p>
+
+        <div className={styles.statusFooter}>
+          <div className={styles.statusBadgeDot}>
+            <span className={statusClassName(timerStatus)} />
+            <span className={styles.statusText}>{timerLabel}</span>
           </div>
-
-          <div className={styles.timerGrid}>
-            <article className={styles.timerCard}>
-              <p className={styles.timerValue}>{remaining.hours}</p>
-              <p className={styles.timerLabel}>Hours</p>
-            </article>
-            <article className={styles.timerCard}>
-              <p className={styles.timerValue}>{remaining.minutes}</p>
-              <p className={styles.timerLabel}>Minutes</p>
-            </article>
-            <article className={styles.timerCard}>
-              <p className={styles.timerValue}>{remaining.seconds}</p>
-              <p className={styles.timerLabel}>Seconds</p>
-            </article>
-          </div>
-
-          <p className={styles.message}>{helperMessage}</p>
-
-          <div className={styles.scheduleGrid}>
-            <article className={styles.scheduleCard}>
-              <p className={styles.scheduleLabel}>Open At (IST)</p>
-              <p className={styles.scheduleValue}>{toIstDateLabel(timerState?.openAt)}</p>
-            </article>
-            <article className={styles.scheduleCard}>
-              <p className={styles.scheduleLabel}>Close At (IST)</p>
-              <p className={styles.scheduleValue}>{toIstDateLabel(timerState?.closeAt)}</p>
-            </article>
-          </div>
-
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.button}
-              onClick={() => {
-                setLoading(true);
-                void fetchEventState();
-              }}
-              disabled={loading}
-            >
-              <RefreshCw size={14} aria-hidden="true" />
-              {loading ? "Refreshing" : "Refresh Timer"}
-            </button>
-            <a className={styles.buttonGhost} href="/admin" target="_blank" rel="noreferrer">
-              <CalendarClock size={14} aria-hidden="true" />
-              Open Admin Controls
-            </a>
-          </div>
-        </section>
-      </div>
+          <span className={styles.snapshot}>Snapshot: {toIstDateLabel(eventState?.now)}</span>
+        </div>
+      </section>
     </main>
   );
 }
